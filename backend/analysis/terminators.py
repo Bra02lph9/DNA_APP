@@ -1,0 +1,426 @@
+from __future__ import annotations
+
+from dataclasses import dataclass, asdict
+from typing import List, Dict, Tuple
+
+from .utils import reverse_complement
+
+
+@dataclass
+class TerminatorHit:
+    strand: str  # '+' or '-'
+    stem_left_start: int
+    stem_left_end: int
+    stem_left_seq: str
+    loop_seq: str
+    stem_right_start: int
+    stem_right_end: int
+    stem_right_seq: str
+    poly_t_start: int
+    poly_t_end: int
+    poly_t_seq: str
+    stem_length: int
+    loop_length: int
+    mismatches: int
+    gc_fraction: float
+    poly_t_length: int
+    score: float
+
+
+VALID_DNA = {"A", "T", "C", "G", "N"}
+
+
+def _clean_sequence(sequence: str) -> str:
+    return (
+        sequence.replace("\n", "")
+        .replace("\r", "")
+        .replace(" ", "")
+        .upper()
+    )
+
+
+def _contains_only_dna(sequence: str) -> bool:
+    return all(base in VALID_DNA for base in sequence)
+
+
+def _is_gc_rich(sequence: str, threshold: float = 0.7) -> bool:
+    if not sequence:
+        return False
+    gc = sum(1 for nt in sequence if nt in {"G", "C"})
+    return (gc / len(sequence)) >= threshold
+
+
+def _gc_fraction(sequence: str) -> float:
+    if not sequence:
+        return 0.0
+    gc = sum(1 for nt in sequence if nt in {"G", "C"})
+    return gc / len(sequence)
+
+
+def _revcomp_simple(seq: str) -> str:
+    trans = str.maketrans("ATCGN", "TAGCN")
+    return seq.translate(trans)[::-1]
+
+
+def _map_rev_to_forward(
+    rev_start_0: int,
+    rev_end_0_exclusive: int,
+    original_len: int,
+) -> tuple[int, int]:
+    """
+    Convert reverse-complement interval [rev_start_0, rev_end_0_exclusive)
+    into forward-strand 1-based inclusive coordinates.
+    """
+    forward_start_0 = original_len - rev_end_0_exclusive
+    forward_end_0_exclusive = original_len - rev_start_0
+    return forward_start_0 + 1, forward_end_0_exclusive
+
+
+def _count_mismatches(seq1: str, seq2: str) -> int:
+    return sum(1 for a, b in zip(seq1, seq2) if a != b)
+
+
+def _calculate_score(
+    stem_length: int,
+    loop_length: int,
+    mismatches: int,
+    gc_fraction: float,
+    poly_t_length: int,
+) -> float:
+    """
+    Heuristic biological score:
+    - better with longer stem
+    - better with higher GC in stem
+    - better with longer poly-T tract
+    - worse with more mismatches
+    - slightly penalize loops far from ~4-5 nt
+    """
+    loop_penalty = abs(loop_length - 4.5) * 0.8
+    mismatch_penalty = mismatches * 4.0
+
+    score = (
+        stem_length * 2.5
+        + gc_fraction * 12.0
+        + poly_t_length * 3.0
+        - mismatch_penalty
+        - loop_penalty
+    )
+    return round(score, 3)
+
+
+def _build_hit(
+    strand: str,
+    sequence_len: int,
+    left_start_0: int,
+    left_end_0_exclusive: int,
+    left_seq: str,
+    loop_seq: str,
+    right_start_0: int,
+    right_end_0_exclusive: int,
+    right_seq: str,
+    poly_start_0: int,
+    poly_end_0_exclusive: int,
+    poly_t_seq: str,
+    stem_length: int,
+    loop_length: int,
+    mismatches: int,
+) -> TerminatorHit:
+    gc_fraction = _gc_fraction(left_seq)
+    poly_t_length = len(poly_t_seq)
+    score = _calculate_score(
+        stem_length=stem_length,
+        loop_length=loop_length,
+        mismatches=mismatches,
+        gc_fraction=gc_fraction,
+        poly_t_length=poly_t_length,
+    )
+
+    if strand == "+":
+        stem_left_start = left_start_0 + 1
+        stem_left_end = left_end_0_exclusive
+        stem_right_start = right_start_0 + 1
+        stem_right_end = right_end_0_exclusive
+        poly_t_start = poly_start_0 + 1
+        poly_t_end = poly_end_0_exclusive
+    else:
+        stem_left_start, stem_left_end = _map_rev_to_forward(
+            left_start_0, left_end_0_exclusive, sequence_len
+        )
+        stem_right_start, stem_right_end = _map_rev_to_forward(
+            right_start_0, right_end_0_exclusive, sequence_len
+        )
+        poly_t_start, poly_t_end = _map_rev_to_forward(
+            poly_start_0, poly_end_0_exclusive, sequence_len
+        )
+
+    return TerminatorHit(
+        strand=strand,
+        stem_left_start=stem_left_start,
+        stem_left_end=stem_left_end,
+        stem_left_seq=left_seq,
+        loop_seq=loop_seq,
+        stem_right_start=stem_right_start,
+        stem_right_end=stem_right_end,
+        stem_right_seq=right_seq,
+        poly_t_start=poly_t_start,
+        poly_t_end=poly_t_end,
+        poly_t_seq=poly_t_seq,
+        stem_length=stem_length,
+        loop_length=loop_length,
+        mismatches=mismatches,
+        gc_fraction=round(gc_fraction, 3),
+        poly_t_length=poly_t_length,
+        score=score,
+    )
+
+
+def _deduplicate_hits(hits: List[TerminatorHit]) -> List[TerminatorHit]:
+    """
+    Remove exact duplicates based on strand + coordinates.
+    Keep highest score if duplicate appears.
+    """
+    best_by_key: Dict[Tuple, TerminatorHit] = {}
+
+    for hit in hits:
+        key = (
+            hit.strand,
+            hit.stem_left_start,
+            hit.stem_left_end,
+            hit.stem_right_start,
+            hit.stem_right_end,
+            hit.poly_t_start,
+            hit.poly_t_end,
+        )
+        current = best_by_key.get(key)
+        if current is None or hit.score > current.score:
+            best_by_key[key] = hit
+
+    return list(best_by_key.values())
+
+
+def _overlap(a_start: int, a_end: int, b_start: int, b_end: int) -> bool:
+    return not (a_end < b_start or b_end < a_start)
+
+
+def _filter_redundant_overlaps(hits: List[TerminatorHit]) -> List[TerminatorHit]:
+    """
+    Keep best scoring hit among strongly overlapping candidates on same strand.
+    """
+    sorted_hits = sorted(hits, key=lambda h: (-h.score, h.strand, h.poly_t_start))
+    kept: List[TerminatorHit] = []
+
+    for hit in sorted_hits:
+        hit_start = min(hit.poly_t_start, hit.stem_left_start, hit.stem_right_start)
+        hit_end = max(hit.poly_t_end, hit.stem_left_end, hit.stem_right_end)
+
+        redundant = False
+        for prev in kept:
+            if hit.strand != prev.strand:
+                continue
+
+            prev_start = min(prev.poly_t_start, prev.stem_left_start, prev.stem_right_start)
+            prev_end = max(prev.poly_t_end, prev.stem_left_end, prev.stem_right_end)
+
+            if _overlap(hit_start, hit_end, prev_start, prev_end):
+                redundant = True
+                break
+
+        if not redundant:
+            kept.append(hit)
+
+    return kept
+
+
+def _sort_terminators_biologically(hits: List[TerminatorHit]) -> List[TerminatorHit]:
+    return sorted(
+        hits,
+        key=lambda h: (
+            -h.score,
+            -h.poly_t_length,
+            -h.stem_length,
+            h.mismatches,
+            h.loop_length,
+            0 if h.strand == "+" else 1,
+            min(h.poly_t_start, h.stem_left_start, h.stem_right_start),
+        ),
+    )
+
+
+def find_rho_independent_terminators_in_strand(
+    sequence: str,
+    strand: str = "+",
+    stem_min: int = 5,
+    stem_max: int = 10,
+    loop_min: int = 3,
+    loop_max: int = 7,
+    max_stem_mismatches: int = 1,
+    min_poly_t: int = 5,
+    gc_threshold: float = 0.7,
+) -> List[TerminatorHit]:
+    """
+    Search one strand for intrinsic (rho-independent) terminator-like motifs.
+
+    Biological model:
+    - GC-rich inverted repeat (hairpin stem)
+    - short loop
+    - downstream poly-T tract on DNA (corresponding to poly-U in RNA)
+
+    This is still a heuristic detector, but stricter than a simple motif finder.
+    """
+    seq = _clean_sequence(sequence)
+    if not seq or not _contains_only_dna(seq):
+        return []
+
+    search_seq = seq if strand == "+" else reverse_complement(seq)
+    n = len(search_seq)
+
+    hits: List[TerminatorHit] = []
+
+    for i in range(n):
+        for stem_len in range(stem_min, stem_max + 1):
+            left_start_0 = i
+            left_end_0_exclusive = i + stem_len
+            if left_end_0_exclusive > n:
+                continue
+
+            left = search_seq[left_start_0:left_end_0_exclusive]
+
+            if "N" in left:
+                continue
+            if not _is_gc_rich(left, threshold=gc_threshold):
+                continue
+
+            for loop_len in range(loop_min, loop_max + 1):
+                right_start_0 = left_end_0_exclusive + loop_len
+                right_end_0_exclusive = right_start_0 + stem_len
+                if right_end_0_exclusive > n:
+                    continue
+
+                right = search_seq[right_start_0:right_end_0_exclusive]
+                if "N" in right:
+                    continue
+
+                expected_right = _revcomp_simple(left)
+                mismatches = _count_mismatches(right, expected_right)
+
+                if mismatches > max_stem_mismatches:
+                    continue
+
+                poly_start_0 = right_end_0_exclusive
+                poly_end_0_exclusive = poly_start_0
+
+                while (
+                    poly_end_0_exclusive < n
+                    and search_seq[poly_end_0_exclusive] == "T"
+                ):
+                    poly_end_0_exclusive += 1
+
+                poly_t_seq = search_seq[poly_start_0:poly_end_0_exclusive]
+                poly_t_len = len(poly_t_seq)
+
+                if poly_t_len < min_poly_t:
+                    continue
+
+                loop_seq = search_seq[left_end_0_exclusive:right_start_0]
+                if "N" in loop_seq:
+                    continue
+
+                hit = _build_hit(
+                    strand=strand,
+                    sequence_len=len(seq),
+                    left_start_0=left_start_0,
+                    left_end_0_exclusive=left_end_0_exclusive,
+                    left_seq=left,
+                    loop_seq=loop_seq,
+                    right_start_0=right_start_0,
+                    right_end_0_exclusive=right_end_0_exclusive,
+                    right_seq=right,
+                    poly_start_0=poly_start_0,
+                    poly_end_0_exclusive=poly_end_0_exclusive,
+                    poly_t_seq=poly_t_seq,
+                    stem_length=stem_len,
+                    loop_length=loop_len,
+                    mismatches=mismatches,
+                )
+                hits.append(hit)
+
+    hits = _deduplicate_hits(hits)
+    hits = _filter_redundant_overlaps(hits)
+    return _sort_terminators_biologically(hits)
+
+
+def find_rho_independent_terminators(
+    sequence: str,
+    stem_min: int = 5,
+    stem_max: int = 10,
+    loop_min: int = 3,
+    loop_max: int = 7,
+    max_stem_mismatches: int = 1,
+    min_poly_t: int = 5,
+    gc_threshold: float = 0.7,
+) -> List[TerminatorHit]:
+    """
+    Search both DNA strands (+ and -) for rho-independent terminator-like motifs.
+    Coordinates are returned on the original forward sequence.
+    """
+    seq = _clean_sequence(sequence)
+    if not seq or not _contains_only_dna(seq):
+        return []
+
+    plus_hits = find_rho_independent_terminators_in_strand(
+        sequence=seq,
+        strand="+",
+        stem_min=stem_min,
+        stem_max=stem_max,
+        loop_min=loop_min,
+        loop_max=loop_max,
+        max_stem_mismatches=max_stem_mismatches,
+        min_poly_t=min_poly_t,
+        gc_threshold=gc_threshold,
+    )
+
+    minus_hits = find_rho_independent_terminators_in_strand(
+        sequence=seq,
+        strand="-",
+        stem_min=stem_min,
+        stem_max=stem_max,
+        loop_min=loop_min,
+        loop_max=loop_max,
+        max_stem_mismatches=max_stem_mismatches,
+        min_poly_t=min_poly_t,
+        gc_threshold=gc_threshold,
+    )
+
+    return _sort_terminators_biologically(plus_hits + minus_hits)
+
+
+def terminator_to_dict(t: TerminatorHit) -> dict:
+    return asdict(t)
+
+
+def format_terminators(terminators: List[TerminatorHit]) -> str:
+    if not terminators:
+        return "No rho-independent terminator-like structure found."
+
+    lines = [f"Detected {len(terminators)} terminator-like region(s):", ""]
+
+    for idx, t in enumerate(terminators, start=1):
+        lines.extend(
+            [
+                f"Terminator {idx}",
+                f"  Strand:       {t.strand}",
+                f"  Left stem:    {t.stem_left_seq} at {t.stem_left_start}..{t.stem_left_end}",
+                f"  Loop:         {t.loop_seq}",
+                f"  Right stem:   {t.stem_right_seq} at {t.stem_right_start}..{t.stem_right_end}",
+                f"  Poly-T:       {t.poly_t_seq} at {t.poly_t_start}..{t.poly_t_end}",
+                f"  Stem length:  {t.stem_length}",
+                f"  Loop length:  {t.loop_length}",
+                f"  Mismatches:   {t.mismatches}",
+                f"  GC fraction:  {t.gc_fraction}",
+                f"  Poly-T len:   {t.poly_t_length}",
+                f"  Score:        {t.score}",
+                "",
+            ]
+        )
+
+    return "\n".join(lines)
