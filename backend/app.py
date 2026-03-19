@@ -9,7 +9,13 @@ from analysis.utils import validate_dna, load_fasta_folder
 from analysis.coding_orfs import find_coding_orfs, choose_best_coding_orf,coding_orfs_to_dicts, coding_orf_to_dict
 
 app = Flask(__name__)
-CORS(app)
+CORS(
+    app,
+    resources={r"/*": {"origins": [
+        "https://dna-app-2.onrender.com",
+        "http://localhost:5173"
+    ]}}
+)
 
 
 def clean_sequence(sequence: str) -> str:
