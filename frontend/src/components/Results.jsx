@@ -99,6 +99,33 @@ function Pagination({
   );
 }
 
+function scoreToStars(score) {
+  const numericScore = Number(score);
+
+  if (Number.isNaN(numericScore)) return "N/A";
+  if (numericScore >= 20) return "★★★★★";
+  if (numericScore >= 15) return "★★★★☆";
+  if (numericScore >= 10) return "★★★☆☆";
+  if (numericScore >= 5) return "★★☆☆☆";
+  return "★☆☆☆☆";
+}
+
+function StrandBadge({ strand }) {
+  const value = strand || "N/A";
+  const cls =
+    value === "+"
+      ? "bg-emerald-100 text-emerald-700"
+      : value === "-"
+      ? "bg-violet-100 text-violet-700"
+      : "bg-slate-100 text-slate-700";
+
+  return (
+    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${cls}`}>
+      Strand {value}
+    </span>
+  );
+}
+
 function ORFTable({ items = [], onSelectFeature }) {
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -109,6 +136,7 @@ function ORFTable({ items = [], onSelectFeature }) {
   if (!items.length) return <EmptyState text="No ORFs found." />;
 
   const paginatedItems = paginateItems(items, currentPage);
+
   const handleClickOrf = (orf) => {
     if (!onSelectFeature) return;
 
@@ -137,12 +165,14 @@ function ORFTable({ items = [], onSelectFeature }) {
               <th className="px-4 py-3 text-left">Start / Stop</th>
             </tr>
           </thead>
+
           <tbody>
             {paginatedItems.map((orf, index) => (
               <tr
                 key={index}
                 onClick={() => handleClickOrf(orf)}
                 className="cursor-pointer border-t border-slate-200 transition hover:bg-cyan-50"
+                title="Click to highlight this ORF in the sequence viewer"
               >
                 <td className="px-4 py-3">{orf.strand}</td>
                 <td className="px-4 py-3">{orf.frame}</td>
@@ -214,21 +244,31 @@ function PromoterList({ items = [], onSelectFeature }) {
           <div
             key={index}
             onClick={() => handleClickPromoter(p)}
-            className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:bg-cyan-50"
+            className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-cyan-300 hover:bg-cyan-50 hover:shadow-sm"
+            title="Click to highlight this promoter in the sequence viewer"
           >
-            <p className="font-semibold text-slate-900">
-              Promoter {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
-            </p>
-
-            <div className="mt-2 grid gap-2 text-sm text-slate-700 md:grid-cols-2">
-              <p>
-                <span className="font-medium">Strand:</span>{" "}
-                {p.strand ?? "N/A"}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="font-semibold text-slate-900">
+                Promoter {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
               </p>
 
+              <div className="flex items-center gap-2">
+                <StrandBadge strand={p.strand} />
+                <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                  {scoreToStars(p.score)}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-3 grid gap-2 text-sm text-slate-700 md:grid-cols-2">
               <p>
                 <span className="font-medium">Spacing:</span>{" "}
                 {p.spacing ?? "N/A"} nt
+              </p>
+
+              <p>
+                <span className="font-medium">Score:</span>{" "}
+                {p.score ?? "N/A"}
               </p>
 
               <p>
@@ -256,14 +296,9 @@ function PromoterList({ items = [], onSelectFeature }) {
                 {p.spacer_seq ?? "-"}
               </p>
 
-              <p>
+              <p className="md:col-span-2">
                 <span className="font-medium">Spacer AT fraction:</span>{" "}
                 {p.spacer_at_fraction ?? "N/A"}
-              </p>
-
-              <p>
-                <span className="font-medium">Score:</span>{" "}
-                {p.score ?? "N/A"}
               </p>
             </div>
           </div>
@@ -295,26 +330,36 @@ function TerminatorList({ items = [], onSelectFeature }) {
   const handleClickTerminator = (t) => {
     if (!onSelectFeature) return;
 
-    onSelectFeature([
-      {
+    const highlights = [];
+
+    if (t.stem_left_start && t.stem_left_end) {
+      highlights.push({
         start: t.stem_left_start,
         end: t.stem_left_end,
         type: "terminatorLeft",
         strand: t.strand,
-      },
-      {
+      });
+    }
+
+    if (t.stem_right_start && t.stem_right_end) {
+      highlights.push({
         start: t.stem_right_start,
         end: t.stem_right_end,
         type: "terminatorRight",
         strand: t.strand,
-      },
-      {
+      });
+    }
+
+    if (t.poly_t_start && t.poly_t_end) {
+      highlights.push({
         start: t.poly_t_start,
         end: t.poly_t_end,
         type: "polyT",
         strand: t.strand,
-      },
-    ]);
+      });
+    }
+
+    onSelectFeature(highlights);
   };
 
   return (
@@ -324,17 +369,23 @@ function TerminatorList({ items = [], onSelectFeature }) {
           <div
             key={index}
             onClick={() => handleClickTerminator(t)}
-            className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:bg-cyan-50"
+            className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-cyan-300 hover:bg-cyan-50 hover:shadow-sm"
+            title="Click to highlight this terminator in the sequence viewer"
           >
-            <p className="font-semibold text-slate-900">
-              Terminator {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
-            </p>
-
-            <div className="mt-2 space-y-1 text-sm text-slate-700">
-              <p>
-                <span className="font-medium">Strand:</span>{" "}
-                {t.strand ?? "N/A"}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="font-semibold text-slate-900">
+                Terminator {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
               </p>
+
+              <div className="flex items-center gap-2">
+                <StrandBadge strand={t.strand} />
+                <span className="rounded-full bg-rose-100 px-2.5 py-1 text-xs font-semibold text-rose-700">
+                  {scoreToStars(t.score)}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-3 space-y-1 text-sm text-slate-700">
               <p>
                 <span className="font-medium">Left stem:</span> {t.stem_left_seq} (
                 {t.stem_left_start}-{t.stem_left_end})
@@ -432,21 +483,25 @@ function ShineDalgarnoList({ items = [], onSelectFeature }) {
           <div
             key={index}
             onClick={() => handleClickSD(site)}
-            className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:bg-cyan-50"
+            className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-cyan-300 hover:bg-cyan-50 hover:shadow-sm"
+            title="Click to highlight this Shine-Dalgarno site in the sequence viewer"
           >
-            <p className="font-semibold text-slate-900">
-              Site {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
-            </p>
-
-            <div className="mt-2 space-y-1 text-sm text-slate-700">
-              <p>
-                <span className="font-medium">Strand:</span>{" "}
-                {site.strand ?? "N/A"}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="font-semibold text-slate-900">
+                Site {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
               </p>
 
+              <div className="flex items-center gap-2">
+                <StrandBadge strand={site.strand} />
+                <span className="rounded-full bg-lime-100 px-2.5 py-1 text-xs font-semibold text-lime-700">
+                  {scoreToStars(site.score)}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-3 space-y-1 text-sm text-slate-700">
               <p>
-                <span className="font-medium">Sequence:</span>{" "}
-                {site.sequence}
+                <span className="font-medium">Sequence:</span> {site.sequence}
               </p>
 
               <p>
@@ -556,7 +611,7 @@ export default function Results({
   if (loading) {
     return (
       <section
-        className="rounded-2xl border border-slate-200 backdrop-blur-md p-6 shadow-sm bg-cover bg-center"
+        className="rounded-2xl border border-slate-200 bg-cover bg-center p-6 shadow-sm backdrop-blur-md"
         style={{ backgroundImage: `url(${bgImage})` }}
       >
         <h3 className="text-xl font-semibold text-slate-900">
@@ -570,7 +625,7 @@ export default function Results({
   if (mode === "folder") {
     return (
       <section
-        className="rounded-2xl border border-slate-200 backdrop-blur-md p-6 shadow-sm bg-cover bg-center"
+        className="rounded-2xl border border-slate-200 bg-cover bg-center p-6 shadow-sm backdrop-blur-md"
         style={{ backgroundImage: `url(${bgImage})` }}
       >
         <h3 className="mb-4 text-xl font-semibold text-slate-900">
@@ -584,7 +639,7 @@ export default function Results({
   if (!results) {
     return (
       <section
-        className="rounded-2xl border border-slate-200 backdrop-blur-md p-6 shadow-sm bg-cover bg-center"
+        className="rounded-2xl border border-slate-200 bg-cover bg-center p-6 shadow-sm backdrop-blur-md"
         style={{ backgroundImage: `url(${bgImage})` }}
       >
         <h3 className="mb-4 text-xl font-semibold text-slate-900">
@@ -600,7 +655,7 @@ export default function Results({
 
     return (
       <section
-        className="rounded-2xl border border-slate-200 backdrop-blur-md p-6 shadow-sm bg-cover bg-center"
+        className="rounded-2xl border border-slate-200 bg-cover bg-center p-6 shadow-sm backdrop-blur-md"
         style={{ backgroundImage: `url(${bgImage})` }}
       >
         <SectionCard title="ORF Results" count={items.length}>
@@ -621,7 +676,7 @@ export default function Results({
 
     return (
       <section
-        className="space-y-6 rounded-2xl border border-slate-200 backdrop-blur-md p-6 shadow-sm bg-cover bg-center"
+        className="space-y-6 rounded-2xl border border-slate-200 bg-cover bg-center p-6 shadow-sm backdrop-blur-md"
         style={{ backgroundImage: `url(${bgImage})` }}
       >
         {best && (
@@ -642,7 +697,7 @@ export default function Results({
 
     return (
       <section
-        className="rounded-2xl border border-slate-200 backdrop-blur-md p-6 shadow-sm bg-cover bg-center"
+        className="rounded-2xl border border-slate-200 bg-cover bg-center p-6 shadow-sm backdrop-blur-md"
         style={{ backgroundImage: `url(${bgImage})` }}
       >
         <SectionCard title="Promoter Results" count={items.length}>
@@ -657,7 +712,7 @@ export default function Results({
 
     return (
       <section
-        className="rounded-2xl border border-slate-200 backdrop-blur-md p-6 shadow-sm bg-cover bg-center"
+        className="rounded-2xl border border-slate-200 bg-cover bg-center p-6 shadow-sm backdrop-blur-md"
         style={{ backgroundImage: `url(${bgImage})` }}
       >
         <SectionCard title="Terminator Results" count={items.length}>
@@ -675,7 +730,7 @@ export default function Results({
 
     return (
       <section
-        className="rounded-2xl border border-slate-200 backdrop-blur-md p-6 shadow-sm bg-cover bg-center"
+        className="rounded-2xl border border-slate-200 bg-cover bg-center p-6 shadow-sm backdrop-blur-md"
         style={{ backgroundImage: `url(${bgImage})` }}
       >
         <SectionCard title="Shine-Dalgarno Results" count={items.length}>
@@ -694,7 +749,7 @@ export default function Results({
 
   return (
     <section
-      className="space-y-6 rounded-2xl border border-slate-200 backdrop-blur-md p-6 shadow-sm bg-cover bg-center"
+      className="space-y-6 rounded-2xl border border-slate-200 bg-cover bg-center p-6 shadow-sm backdrop-blur-md"
       style={{ backgroundImage: `url(${bgImage})` }}
     >
       <div>
@@ -721,7 +776,10 @@ export default function Results({
       </SectionCard>
 
       <SectionCard title="Promoters" count={summary.promoters}>
-        <PromoterList items={results.promoters || []} />
+        <PromoterList
+          items={results.promoters || []}
+          onSelectFeature={onSelectFeature}
+        />
       </SectionCard>
 
       <SectionCard title="Terminators" count={summary.terminators}>
@@ -732,7 +790,10 @@ export default function Results({
       </SectionCard>
 
       <SectionCard title="Shine-Dalgarno" count={summary.shine}>
-        <ShineDalgarnoList items={results.shine_dalgarno || []} />
+        <ShineDalgarnoList
+          items={results.shine_dalgarno || []}
+          onSelectFeature={onSelectFeature}
+        />
       </SectionCard>
     </section>
   );

@@ -38,6 +38,7 @@ export default function Home() {
 
       setLoading(true);
       setResults(null);
+      setSelectedHighlight([]);
       setActiveView(endpoint);
 
       const payload =
@@ -53,6 +54,26 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSelectFeature = (highlights) => {
+    setSelectedHighlight(highlights || []);
+
+    if (!highlights || !highlights.length) return;
+
+    const firstPosition = highlights[0]?.start;
+    if (!firstPosition) return;
+
+    setTimeout(() => {
+      const targetBase = document.getElementById(`base-${firstPosition}`);
+      if (targetBase) {
+        targetBase.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+          inline: "center",
+        });
+      }
+    }, 80);
   };
 
   const downloadResults = () => {
@@ -103,11 +124,21 @@ export default function Home() {
               }}
             >
               <UploadFile
-                setSequence={setSequence}
+                setSequence={(value) => {
+                  setMode("single");
+                  setSequence(value);
+                  setSelectedHighlight([]);
+                }}
                 setLoadedFileName={setLoadedFileName}
-                setFolderFiles={setFolderFiles}
+                setFolderFiles={(files) => {
+                  setFolderFiles(files);
+                  setSelectedHighlight([]);
+                }}
                 setMode={setMode}
-                setResults={setResults}
+                setResults={(data) => {
+                  setResults(data);
+                  setSelectedHighlight([]);
+                }}
               />
             </div>
 
@@ -117,6 +148,7 @@ export default function Home() {
                 setSequence={(value) => {
                   setMode("single");
                   setSequence(value);
+                  setSelectedHighlight([]);
                 }}
                 loadedFileName={loadedFileName}
                 folderFiles={folderFiles}
@@ -129,7 +161,7 @@ export default function Home() {
                 loading={loading}
                 mode={mode}
                 activeView={activeView}
-                onSelectFeature={setSelectedHighlight}
+                onSelectFeature={handleSelectFeature}
               />
             </div>
 
