@@ -22,23 +22,23 @@ function getHighlightClass(pos, highlights) {
 
   switch (hit.type) {
     case "promoter35":
-      return "bg-yellow-300 text-black rounded px-[2px] shadow-sm";
+      return "bg-yellow-300 text-black rounded-sm";
     case "promoter10":
-      return "bg-orange-300 text-black rounded px-[2px] shadow-sm";
+      return "bg-orange-300 text-black rounded-sm";
     case "terminatorLeft":
-      return "bg-pink-300 text-black rounded px-[2px] shadow-sm";
+      return "bg-pink-300 text-black rounded-sm";
     case "terminatorRight":
-      return "bg-fuchsia-300 text-black rounded px-[2px] shadow-sm";
+      return "bg-fuchsia-300 text-black rounded-sm";
     case "polyT":
-      return "bg-red-300 text-black rounded px-[2px] shadow-sm";
+      return "bg-red-300 text-black rounded-sm";
     case "orf":
-      return "bg-cyan-300 text-black rounded px-[2px] shadow-sm font-semibold";
+      return "bg-cyan-300 text-black rounded-sm";
     case "shineDalgarno":
-      return "bg-lime-300 text-black rounded px-[2px] shadow-sm";
+      return "bg-lime-300 text-black rounded-sm";
     case "startCodon":
-      return "bg-emerald-300 text-black rounded px-[2px] shadow-sm font-semibold";
+      return "bg-emerald-300 text-black rounded-sm";
     default:
-      return "bg-sky-300 text-black rounded px-[2px] shadow-sm";
+      return "bg-sky-300 text-black rounded-sm";
   }
 }
 
@@ -124,7 +124,7 @@ function renderSequenceLine(line, startPos, highlights = []) {
           key={index}
           id={`base-${currentPos}`}
           title={`Position ${currentPos}`}
-          className={cls}
+          className={`${cls} inline-block w-[1ch] text-center align-middle`}
         >
           {char}
         </span>
@@ -135,7 +135,10 @@ function renderSequenceLine(line, startPos, highlights = []) {
     }
 
     return (
-      <span key={index} className="text-slate-400">
+      <span
+        key={index}
+        className="inline-block w-[1ch] text-center align-middle text-slate-400"
+      >
         {char}
       </span>
     );
@@ -159,7 +162,7 @@ function renderComplementLine(line, startPos, highlights = []) {
         <span
           key={index}
           title={`Complement of position ${currentPos}`}
-          className={cls}
+          className={`${cls} inline-block w-[1ch] text-center align-middle`}
         >
           {comp}
         </span>
@@ -170,7 +173,10 @@ function renderComplementLine(line, startPos, highlights = []) {
     }
 
     return (
-      <span key={index} className="text-slate-400">
+      <span
+        key={index}
+        className="inline-block w-[1ch] text-center align-middle text-slate-400"
+      >
         {char}
       </span>
     );
@@ -341,7 +347,7 @@ function DoubleStrandPreview({ sequence, highlights = [] }) {
             <div className="whitespace-pre text-slate-500">
               <span className="mr-3 inline-block w-14 text-right"></span>
               <span className="mr-2">  </span>
-              {matchLine}
+              <span className="inline-block">{matchLine}</span>
             </div>
 
             <div className="whitespace-pre">
@@ -370,7 +376,7 @@ export default function SequenceViewer({
   setSequence,
   loadedFileName,
   folderFiles,
-  mode,
+ mode,
   highlights = [],
 }) {
   const stats = useMemo(() => {
