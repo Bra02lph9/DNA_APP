@@ -115,13 +115,13 @@ Il permet d’explorer les signaux biologiques impliqués dans l’expression de
 
 ---
 # Screenshots
-![Interface](screenshots/uu.png)
-![Sequence Viewer](screenshots/aa.png)
-![Results](screenshots/zz.png)
-![Results](screenshots/ee.png)
-![Results](screenshots/rr.png)
-![Results](screenshots/tt.png)
-![Results](screenshots/yy.png)
+![Interface](screnshots/uu.png)
+![Sequence Viewer](screnshots/aa.png)
+![Results](screnshots/zz.png)
+![Results](screnshots/ee.png)
+![Results](screnshots/rr.png)
+![Results](screnshots/tt.png)
+![Results](screnshots/yy.png)
 
 ---
 
