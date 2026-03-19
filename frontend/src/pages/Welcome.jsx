@@ -5,20 +5,21 @@ export default function Welcome({ onEnter }) {
         autoPlay
         loop
         muted
+        playsInline
         className="absolute inset-0 h-full w-full object-cover"
       >
-        <source src="./public/bg.mp4" type="video/mp4" />
+        <source src="/bg.mp4" type="video/mp4" />
       </video>
 
       <div className="absolute inset-0 bg-black/60"></div>
+
       <div className="relative z-10 flex h-full items-center justify-center text-center text-white">
         <div className="max-w-xl px-6">
-
           <h1 className="mb-6 text-6xl font-bold tracking-tight">
             DNA Analyzer
           </h1>
 
-          <p className="mb-15 text-lg text-slate-100">
+          <p className="mb-10 text-lg text-slate-100">
             Explore DNA sequences and detect biological signals such as
             ORFs, promoters, transcription terminators and Shine-Dalgarno motifs.
           </p>
@@ -31,12 +32,9 @@ export default function Welcome({ onEnter }) {
               →
             </span>
             Enter Application
-
           </button>
-
         </div>
       </div>
-
     </div>
   );
 }
