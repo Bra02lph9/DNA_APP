@@ -1,4 +1,22 @@
-import bgImage from "../assets/bgh.jpg"
+import bgImage from "../assets/bgh.jpg";
+
+function SidebarButton({
+  children,
+  onClick,
+  className = "",
+  disabled = false,
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`w-full rounded-lg px-3 py-2.5 text-left text-sm font-medium text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:bg-slate-400 ${className}`}
+    >
+      {children}
+    </button>
+  );
+}
+
 export default function Sidebar({
   mode,
   folderFiles,
@@ -8,86 +26,96 @@ export default function Sidebar({
   onClear,
 }) {
   return (
-    <aside className="hidden w-72 shrink-0 lg:block">
-     <div
-       className="sticky top-0 h-screen rounded-2xl border border-slate-200 backdrop-blur-md p-6 shadow-sm bg-cover bg-center"
-       style={{ backgroundImage: `url(${bgImage})` }}
-       >
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-900">DNA Analyzer</h1>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            Analyse ORFs, promoters, terminators and Shine-Dalgarno motifs.
-          </p>
-        </div>
+    <aside className="hidden w-56 shrink-0 lg:block">
+      <div
+        className="sticky top-0 h-screen rounded-2xl border border-slate-200/80 bg-cover bg-center p-4 shadow-sm"
+        style={{ backgroundImage: `url(${bgImage})` }}
+      >
+        <div className="h-full rounded-2xl bg-white/78 p-4 backdrop-blur-md">
+          <div className="mb-4">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+              DNA Analyzer
+            </h1>
+          </div>
 
-        <div className="space-y-3">
-          <button
-            onClick={() => onRunAnalysis("orfs")}
-            className="w-full rounded-xl bg-slate-900 px-4 py-3 text-left text-sm font-medium text-white transition hover:bg-slate-800"
-          >
-            Find ORFs
-          </button>
+          <div className="space-y-2">
+            <SidebarButton
+              onClick={() => onRunAnalysis("orfs")}
+              className="bg-slate-900 hover:bg-slate-800"
+            >
+              Find ORFs
+            </SidebarButton>
 
-          <button
-            onClick={() => onRunAnalysis("coding-orfs")}
-            className="w-full rounded-xl bg-slate-900 px-4 py-3 text-left text-sm font-medium text-white transition hover:bg-slate-800"
-          >
-            Find Coding ORFs
-          </button>
+            <SidebarButton
+              onClick={() => onRunAnalysis("coding-orfs")}
+              className="bg-slate-900 hover:bg-slate-800"
+            >
+              Find Coding ORFs
+            </SidebarButton>
 
-          <button
-            onClick={() => onRunAnalysis("promoters")}
-            className="w-full rounded-xl bg-slate-900 px-4 py-3 text-left text-sm font-medium text-white transition hover:bg-slate-800"
-          >
-            Detect Promoters
-          </button>
+            <SidebarButton
+              onClick={() => onRunAnalysis("promoters")}
+              className="bg-slate-900 hover:bg-slate-800"
+            >
+              Detect Promoters
+            </SidebarButton>
 
-          <button
-            onClick={() => onRunAnalysis("terminators")}
-            className="w-full rounded-xl bg-slate-900 px-4 py-3 text-left text-sm font-medium text-white transition hover:bg-slate-800"
-          >
-            Detect Terminators
-          </button>
+            <SidebarButton
+              onClick={() => onRunAnalysis("terminators")}
+              className="bg-slate-900 hover:bg-slate-800"
+            >
+              Detect Terminators
+            </SidebarButton>
 
-          <button
-            onClick={() => onRunAnalysis("shine-dalgarno")}
-            className="w-full rounded-xl bg-slate-900 px-4 py-3 text-left text-sm font-medium text-white transition hover:bg-slate-800"
-          >
-            Detect Shine-Dalgarno
-          </button>
+            <SidebarButton
+              onClick={() => onRunAnalysis("shine-dalgarno")}
+              className="bg-slate-900 hover:bg-slate-800"
+            >
+              Detect Shine-Dalgarno
+            </SidebarButton>
 
-          <button
-            onClick={() => onRunAnalysis("all")}
-            className="w-full rounded-xl bg-cyan-600 px-4 py-3 text-left text-sm font-medium text-white transition hover:bg-cyan-700"
-          >
-            Run Full Analysis
-          </button>
+            <SidebarButton
+              onClick={() => onRunAnalysis("ranked-coding-orfs")}
+              className="bg-fuchsia-700 hover:bg-fuchsia-600"
+            >
+              Most Plausible Coding ORFs
+            </SidebarButton>
 
-          <button
-            onClick={onDownload}
-            disabled={!results}
-            className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-left text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-400"
-          >
-            Download Results
-          </button>
+            <div className="my-3 h-px bg-slate-200" />
 
-          <button
-            onClick={onClear}
-            className="w-full rounded-xl bg-red-500 px-4 py-3 text-left text-sm font-medium text-white transition hover:bg-red-600"
-          >
-            Clear Data
-          </button>
-        </div>
+            <SidebarButton
+              onClick={() => onRunAnalysis("all")}
+              className="bg-cyan-600 hover:bg-cyan-700"
+            >
+              Run Full Analysis
+            </SidebarButton>
 
-        <div className="mt-6 rounded-xl bg-slate-50 p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-            Mode
-          </p>
-          <p className="mt-2 text-sm text-slate-700">
-            {mode === "folder"
-              ? `Folder mode (${folderFiles.length} files)`
-              : "Single sequence mode"}
-          </p>
+            <SidebarButton
+              onClick={onDownload}
+              disabled={!results}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              Download Results
+            </SidebarButton>
+
+            <SidebarButton
+              onClick={onClear}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Clear Data
+            </SidebarButton>
+          </div>
+
+          <div className="mt-4 rounded-xl border border-slate-200 bg-white/70 p-3">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+              Mode
+            </p>
+            <p className="mt-1 text-sm text-slate-700">
+              {mode === "folder"
+                ? `Folder mode (${folderFiles.length} files)`
+                : "Single sequence mode"}
+            </p>
+          </div>
         </div>
       </div>
     </aside>

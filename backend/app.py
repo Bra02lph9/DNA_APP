@@ -5,8 +5,14 @@ from analysis.orf_finder import find_all_orfs
 from analysis.promoters import find_promoters
 from analysis.terminators import find_rho_independent_terminators
 from analysis.shine_dalgarno import find_shine_dalgarno_sites
+from analysis.coding_orfs import (find_coding_orfs, choose_best_coding_orf,
+                                  coding_orfs_to_dicts, coding_orf_to_dict)
+from analysis.coding_orf_ranker import (
+    rank_coding_orfs,
+    choose_best_ranked_coding_orf,
+)
 from analysis.utils import validate_dna, load_fasta_folder
-from analysis.coding_orfs import find_coding_orfs, choose_best_coding_orf,coding_orfs_to_dicts, coding_orf_to_dict
+
 
 app = Flask(__name__)
 CORS(
@@ -264,7 +270,6 @@ def analyze_terminators():
 
             return jsonify(output)
 
-        # mode single
         sequence = clean_sequence(data.get("sequence", ""))
         validate_dna(sequence)
 
@@ -318,6 +323,47 @@ def analyze_sd():
     except Exception as e:
         print("SHINE-DALGARNO ERROR:", e)
         return jsonify({"error": str(e)}), 400
+
+
+@app.route("/analyze/ranked-coding-orfs", methods=["POST"])
+def analyze_ranked_coding_orfs():
+    data = request.get_json() or {}
+    mode = data.get("mode", "single")
+
+    if mode == "single":
+        seq = clean_sequence(data.get("sequence", ""))
+        validate_dna(seq)
+
+        ranked = rank_coding_orfs(seq)
+        best = choose_best_ranked_coding_orf(seq)
+
+        return jsonify({
+            "length": len(seq),
+            "ranked_coding_orfs": ranked,
+            "best_ranked_coding_orf": best,
+        })
+
+    elif mode == "folder":
+        files = data.get("files", [])
+        output = []
+
+        for f in files:
+            seq = clean_sequence(f.get("sequence", ""))
+            validate_dna(seq)
+
+            ranked = rank_coding_orfs(seq)
+            best = choose_best_ranked_coding_orf(seq)
+
+            output.append({
+                "file": f.get("name"),
+                "length": len(seq),
+                "ranked_coding_orfs": ranked,
+                "best_ranked_coding_orf": best,
+            })
+
+        return jsonify(output)
+
+    return jsonify({"error": "Invalid mode"}), 400
 
 
 @app.route("/analyze/all", methods=["POST"])

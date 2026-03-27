@@ -126,6 +126,42 @@ function StrandBadge({ strand }) {
   );
 }
 
+function getDisplayRange(item) {
+  if (item?.strand === "-") {
+    return {
+      displayStart: item.end,
+      displayEnd: item.start,
+    };
+  }
+
+  return {
+    displayStart: item.start,
+    displayEnd: item.end,
+  };
+}
+
+function getDisplayPair(start, end, strand) {
+  if (start == null || end == null) {
+    return { start, end };
+  }
+
+  if (strand === "-") {
+    return { start: end, end: start };
+  }
+
+  return { start, end };
+}
+
+function getDisplayCodonRange(startPos, strand) {
+  if (startPos == null) return null;
+
+  if (strand === "-") {
+    return `${startPos + 2}-${startPos}`;
+  }
+
+  return `${startPos}-${startPos + 2}`;
+}
+
 function ORFTable({ items = [], onSelectFeature }) {
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -167,24 +203,28 @@ function ORFTable({ items = [], onSelectFeature }) {
           </thead>
 
           <tbody>
-            {paginatedItems.map((orf, index) => (
-              <tr
-                key={index}
-                onClick={() => handleClickOrf(orf)}
-                className="cursor-pointer border-t border-slate-200 transition hover:bg-cyan-50"
-                title="Click to highlight this ORF in the sequence viewer"
-              >
-                <td className="px-4 py-3">{orf.strand}</td>
-                <td className="px-4 py-3">{orf.frame}</td>
-                <td className="px-4 py-3">{orf.start}</td>
-                <td className="px-4 py-3">{orf.end}</td>
-                <td className="px-4 py-3">{orf.length_nt}</td>
-                <td className="px-4 py-3">{orf.peptide_length_aa}</td>
-                <td className="px-4 py-3">
-                  {orf.start_codon} / {orf.stop_codon}
-                </td>
-              </tr>
-            ))}
+            {paginatedItems.map((orf, index) => {
+              const { displayStart, displayEnd } = getDisplayRange(orf);
+
+              return (
+                <tr
+                  key={index}
+                  onClick={() => handleClickOrf(orf)}
+                  className="cursor-pointer border-t border-slate-200 transition hover:bg-cyan-50"
+                  title="Click to highlight this ORF in the sequence viewer"
+                >
+                  <td className="px-4 py-3">{orf.strand}</td>
+                  <td className="px-4 py-3">{orf.frame}</td>
+                  <td className="px-4 py-3">{displayStart}</td>
+                  <td className="px-4 py-3">{displayEnd}</td>
+                  <td className="px-4 py-3">{orf.length_nt}</td>
+                  <td className="px-4 py-3">{orf.peptide_length_aa}</td>
+                  <td className="px-4 py-3">
+                    {orf.start_codon} / {orf.stop_codon}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -240,69 +280,82 @@ function PromoterList({ items = [], onSelectFeature }) {
   return (
     <>
       <div className="space-y-3">
-        {paginatedItems.map((p, index) => (
-          <div
-            key={index}
-            onClick={() => handleClickPromoter(p)}
-            className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-cyan-300 hover:bg-cyan-50 hover:shadow-sm"
-            title="Click to highlight this promoter in the sequence viewer"
-          >
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="font-semibold text-slate-900">
-                Promoter {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
-              </p>
+        {paginatedItems.map((p, index) => {
+          const box35Display = getDisplayPair(
+            p.box35_start,
+            p.box35_end,
+            p.strand
+          );
+          const box10Display = getDisplayPair(
+            p.box10_start,
+            p.box10_end,
+            p.strand
+          );
 
-              <div className="flex items-center gap-2">
-                <StrandBadge strand={p.strand} />
-                <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
-                  {scoreToStars(p.score)}
-                </span>
+          return (
+            <div
+              key={index}
+              onClick={() => handleClickPromoter(p)}
+              className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-cyan-300 hover:bg-cyan-50 hover:shadow-sm"
+              title="Click to highlight this promoter in the sequence viewer"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="font-semibold text-slate-900">
+                  Promoter {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
+                </p>
+
+                <div className="flex items-center gap-2">
+                  <StrandBadge strand={p.strand} />
+                  <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                    {scoreToStars(p.score)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-3 grid gap-2 text-sm text-slate-700 md:grid-cols-2">
+                <p>
+                  <span className="font-medium">Spacing:</span>{" "}
+                  {p.spacing ?? "N/A"} nt
+                </p>
+
+                <p>
+                  <span className="font-medium">Score:</span>{" "}
+                  {p.score ?? "N/A"}
+                </p>
+
+                <p>
+                  <span className="font-medium">-35 box:</span>{" "}
+                  {p.box35_seq} ({box35Display.start}-{box35Display.end})
+                </p>
+
+                <p>
+                  <span className="font-medium">-35 mismatches:</span>{" "}
+                  {p.box35_mismatches}
+                </p>
+
+                <p>
+                  <span className="font-medium">-10 box:</span>{" "}
+                  {p.box10_seq} ({box10Display.start}-{box10Display.end})
+                </p>
+
+                <p>
+                  <span className="font-medium">-10 mismatches:</span>{" "}
+                  {p.box10_mismatches}
+                </p>
+
+                <p className="md:col-span-2">
+                  <span className="font-medium">Spacer sequence:</span>{" "}
+                  {p.spacer_seq ?? "-"}
+                </p>
+
+                <p className="md:col-span-2">
+                  <span className="font-medium">Spacer AT fraction:</span>{" "}
+                  {p.spacer_at_fraction ?? "N/A"}
+                </p>
               </div>
             </div>
-
-            <div className="mt-3 grid gap-2 text-sm text-slate-700 md:grid-cols-2">
-              <p>
-                <span className="font-medium">Spacing:</span>{" "}
-                {p.spacing ?? "N/A"} nt
-              </p>
-
-              <p>
-                <span className="font-medium">Score:</span>{" "}
-                {p.score ?? "N/A"}
-              </p>
-
-              <p>
-                <span className="font-medium">-35 box:</span>{" "}
-                {p.box35_seq} ({p.box35_start}-{p.box35_end})
-              </p>
-
-              <p>
-                <span className="font-medium">-35 mismatches:</span>{" "}
-                {p.box35_mismatches}
-              </p>
-
-              <p>
-                <span className="font-medium">-10 box:</span>{" "}
-                {p.box10_seq} ({p.box10_start}-{p.box10_end})
-              </p>
-
-              <p>
-                <span className="font-medium">-10 mismatches:</span>{" "}
-                {p.box10_mismatches}
-              </p>
-
-              <p className="md:col-span-2">
-                <span className="font-medium">Spacer sequence:</span>{" "}
-                {p.spacer_seq ?? "-"}
-              </p>
-
-              <p className="md:col-span-2">
-                <span className="font-medium">Spacer AT fraction:</span>{" "}
-                {p.spacer_at_fraction ?? "N/A"}
-              </p>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <Pagination
@@ -365,69 +418,87 @@ function TerminatorList({ items = [], onSelectFeature }) {
   return (
     <>
       <div className="space-y-3">
-        {paginatedItems.map((t, index) => (
-          <div
-            key={index}
-            onClick={() => handleClickTerminator(t)}
-            className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-cyan-300 hover:bg-cyan-50 hover:shadow-sm"
-            title="Click to highlight this terminator in the sequence viewer"
-          >
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="font-semibold text-slate-900">
-                Terminator {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
-              </p>
+        {paginatedItems.map((t, index) => {
+          const leftDisplay = getDisplayPair(
+            t.stem_left_start,
+            t.stem_left_end,
+            t.strand
+          );
+          const rightDisplay = getDisplayPair(
+            t.stem_right_start,
+            t.stem_right_end,
+            t.strand
+          );
+          const polyTDisplay = getDisplayPair(
+            t.poly_t_start,
+            t.poly_t_end,
+            t.strand
+          );
 
-              <div className="flex items-center gap-2">
-                <StrandBadge strand={t.strand} />
-                <span className="rounded-full bg-rose-100 px-2.5 py-1 text-xs font-semibold text-rose-700">
-                  {scoreToStars(t.score)}
-                </span>
+          return (
+            <div
+              key={index}
+              onClick={() => handleClickTerminator(t)}
+              className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-cyan-300 hover:bg-cyan-50 hover:shadow-sm"
+              title="Click to highlight this terminator in the sequence viewer"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="font-semibold text-slate-900">
+                  Terminator {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
+                </p>
+
+                <div className="flex items-center gap-2">
+                  <StrandBadge strand={t.strand} />
+                  <span className="rounded-full bg-rose-100 px-2.5 py-1 text-xs font-semibold text-rose-700">
+                    {scoreToStars(t.score)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-3 space-y-1 text-sm text-slate-700">
+                <p>
+                  <span className="font-medium">Left stem:</span>{" "}
+                  {t.stem_left_seq} ({leftDisplay.start}-{leftDisplay.end})
+                </p>
+                <p>
+                  <span className="font-medium">Loop:</span> {t.loop_seq || "-"}
+                </p>
+                <p>
+                  <span className="font-medium">Right stem:</span>{" "}
+                  {t.stem_right_seq} ({rightDisplay.start}-{rightDisplay.end})
+                </p>
+                <p>
+                  <span className="font-medium">Poly-T:</span> {t.poly_t_seq} (
+                  {polyTDisplay.start}-{polyTDisplay.end})
+                </p>
+                <p>
+                  <span className="font-medium">Stem length:</span>{" "}
+                  {t.stem_length ?? "N/A"}
+                </p>
+                <p>
+                  <span className="font-medium">Loop length:</span>{" "}
+                  {t.loop_length ?? "N/A"}
+                </p>
+                <p>
+                  <span className="font-medium">Mismatches:</span>{" "}
+                  {t.mismatches ?? "N/A"}
+                </p>
+                <p>
+                  <span className="font-medium">GC fraction:</span>{" "}
+                  {t.gc_fraction ?? "N/A"}
+                </p>
+                <p>
+                  <span className="font-medium">Poly-T length:</span>{" "}
+                  {t.poly_t_length ?? "N/A"}
+                </p>
+                <p>
+                  <span className="font-medium">Score:</span>{" "}
+                  {t.score ?? "N/A"}
+                </p>
               </div>
             </div>
-
-            <div className="mt-3 space-y-1 text-sm text-slate-700">
-              <p>
-                <span className="font-medium">Left stem:</span> {t.stem_left_seq} (
-                {t.stem_left_start}-{t.stem_left_end})
-              </p>
-              <p>
-                <span className="font-medium">Loop:</span> {t.loop_seq || "-"}
-              </p>
-              <p>
-                <span className="font-medium">Right stem:</span>{" "}
-                {t.stem_right_seq} ({t.stem_right_start}-{t.stem_right_end})
-              </p>
-              <p>
-                <span className="font-medium">Poly-T:</span> {t.poly_t_seq} (
-                {t.poly_t_start}-{t.poly_t_end})
-              </p>
-              <p>
-                <span className="font-medium">Stem length:</span>{" "}
-                {t.stem_length ?? "N/A"}
-              </p>
-              <p>
-                <span className="font-medium">Loop length:</span>{" "}
-                {t.loop_length ?? "N/A"}
-              </p>
-              <p>
-                <span className="font-medium">Mismatches:</span>{" "}
-                {t.mismatches ?? "N/A"}
-              </p>
-              <p>
-                <span className="font-medium">GC fraction:</span>{" "}
-                {t.gc_fraction ?? "N/A"}
-              </p>
-              <p>
-                <span className="font-medium">Poly-T length:</span>{" "}
-                {t.poly_t_length ?? "N/A"}
-              </p>
-              <p>
-                <span className="font-medium">Score:</span>{" "}
-                {t.score ?? "N/A"}
-              </p>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <Pagination
@@ -479,60 +550,68 @@ function ShineDalgarnoList({ items = [], onSelectFeature }) {
   return (
     <>
       <div className="space-y-3">
-        {paginatedItems.map((site, index) => (
-          <div
-            key={index}
-            onClick={() => handleClickSD(site)}
-            className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-cyan-300 hover:bg-cyan-50 hover:shadow-sm"
-            title="Click to highlight this Shine-Dalgarno site in the sequence viewer"
-          >
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="font-semibold text-slate-900">
-                Site {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
-              </p>
+        {paginatedItems.map((site, index) => {
+          const siteDisplay = getDisplayPair(site.start, site.end, site.strand);
+          const linkedStartDisplay = getDisplayCodonRange(
+            site.linked_start_position,
+            site.strand
+          );
 
-              <div className="flex items-center gap-2">
-                <StrandBadge strand={site.strand} />
-                <span className="rounded-full bg-lime-100 px-2.5 py-1 text-xs font-semibold text-lime-700">
-                  {scoreToStars(site.score)}
-                </span>
+          return (
+            <div
+              key={index}
+              onClick={() => handleClickSD(site)}
+              className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-cyan-300 hover:bg-cyan-50 hover:shadow-sm"
+              title="Click to highlight this Shine-Dalgarno site in the sequence viewer"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="font-semibold text-slate-900">
+                  Site {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
+                </p>
+
+                <div className="flex items-center gap-2">
+                  <StrandBadge strand={site.strand} />
+                  <span className="rounded-full bg-lime-100 px-2.5 py-1 text-xs font-semibold text-lime-700">
+                    {scoreToStars(site.score)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-3 space-y-1 text-sm text-slate-700">
+                <p>
+                  <span className="font-medium">Sequence:</span> {site.sequence}
+                </p>
+
+                <p>
+                  <span className="font-medium">Position:</span>{" "}
+                  {siteDisplay.start}-{siteDisplay.end}
+                </p>
+
+                <p>
+                  <span className="font-medium">Mismatches:</span>{" "}
+                  {site.mismatches}
+                </p>
+
+                <p>
+                  <span className="font-medium">Linked start codon:</span>{" "}
+                  {site.linked_start_codon
+                    ? `${site.linked_start_codon} (${linkedStartDisplay})`
+                    : "Not found"}
+                </p>
+
+                <p>
+                  <span className="font-medium">Distance to start:</span>{" "}
+                  {site.distance_to_start ?? "Not found"} nt
+                </p>
+
+                <p>
+                  <span className="font-medium">Score:</span>{" "}
+                  {site.score ?? "N/A"}
+                </p>
               </div>
             </div>
-
-            <div className="mt-3 space-y-1 text-sm text-slate-700">
-              <p>
-                <span className="font-medium">Sequence:</span> {site.sequence}
-              </p>
-
-              <p>
-                <span className="font-medium">Position:</span>{" "}
-                {site.start}-{site.end}
-              </p>
-
-              <p>
-                <span className="font-medium">Mismatches:</span>{" "}
-                {site.mismatches}
-              </p>
-
-              <p>
-                <span className="font-medium">Linked start codon:</span>{" "}
-                {site.linked_start_codon
-                  ? `${site.linked_start_codon} (${site.linked_start_position})`
-                  : "Not found"}
-              </p>
-
-              <p>
-                <span className="font-medium">Distance to start:</span>{" "}
-                {site.distance_to_start ?? "Not found"} nt
-              </p>
-
-              <p>
-                <span className="font-medium">Score:</span>{" "}
-                {site.score ?? "N/A"}
-              </p>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <Pagination
@@ -595,10 +674,244 @@ function FolderResults({ files = [] }) {
   );
 }
 
+function RankedCodingORFList({ items = [], onSelectFeature }) {
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [items]);
+
+  if (!items.length) {
+    return <EmptyState text="No ranked coding ORFs found." />;
+  }
+
+  const paginatedItems = paginateItems(items, currentPage);
+
+  const handleClickRankedOrf = (item) => {
+  if (!onSelectFeature) return;
+
+  const orf = item.orf;
+  if (!orf) return;
+
+  const highlights = [];
+
+  if (orf.strand === "+") {
+    highlights.push({
+      start: orf.start,
+      end: orf.start + 2,
+      type: "startCodon",
+      strand: orf.strand,
+    });
+  } else {
+    highlights.push({
+      start: orf.end - 2,
+      end: orf.end,
+      type: "startCodon",
+      strand: orf.strand,
+    });
+  }
+
+  highlights.push({
+    start: orf.start,
+    end: orf.end,
+    type: "orf",
+    strand: orf.strand,
+  });
+
+  // 3) SD lié
+  if (item.best_shine_dalgarno) {
+    highlights.push({
+      start: item.best_shine_dalgarno.start,
+      end: item.best_shine_dalgarno.end,
+      type: "shineDalgarno",
+      strand: item.best_shine_dalgarno.strand,
+    });
+  }
+
+  if (item.best_promoter) {
+    highlights.push({
+      start: item.best_promoter.box35_start,
+      end: item.best_promoter.box35_end,
+      type: "promoter35",
+      strand: item.best_promoter.strand,
+    });
+
+    highlights.push({
+      start: item.best_promoter.box10_start,
+      end: item.best_promoter.box10_end,
+      type: "promoter10",
+      strand: item.best_promoter.strand,
+    });
+  }
+
+  if (item.best_terminator) {
+    highlights.push({
+      start: item.best_terminator.stem_left_start,
+      end: item.best_terminator.stem_left_end,
+      type: "terminatorLeft",
+      strand: item.best_terminator.strand,
+    });
+
+    highlights.push({
+      start: item.best_terminator.stem_right_start,
+      end: item.best_terminator.stem_right_end,
+      type: "terminatorRight",
+      strand: item.best_terminator.strand,
+    });
+
+    highlights.push({
+      start: item.best_terminator.poly_t_start,
+      end: item.best_terminator.poly_t_end,
+      type: "polyT",
+      strand: item.best_terminator.strand,
+    });
+  }
+
+  onSelectFeature(highlights);
+};
+
+  return (
+    <>
+      <div className="space-y-3">
+        {paginatedItems.map((item, index) => {
+          const orf = item.orf || {};
+          const { displayStart, displayEnd } = getDisplayRange(orf);
+
+          return (
+            <div
+              key={index}
+              onClick={() => handleClickRankedOrf(item)}
+              className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:border-fuchsia-300 hover:bg-fuchsia-50 hover:shadow-sm"
+              title="Click to highlight this ranked coding ORF in the sequence viewer"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="font-semibold text-slate-900">
+                  Candidate {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
+                </p>
+
+                <div className="flex items-center gap-2">
+                  <StrandBadge strand={orf.strand} />
+                  <span className="rounded-full bg-fuchsia-100 px-2.5 py-1 text-xs font-semibold text-fuchsia-700">
+                    Score {item.total_score ?? "N/A"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-3 grid gap-2 text-sm text-slate-700 md:grid-cols-2">
+                <p>
+                  <span className="font-medium">Frame:</span> {orf.frame}
+                </p>
+                <p>
+                  <span className="font-medium">Start codon:</span>{" "}
+                  {orf.start_codon}
+                </p>
+                <p>
+                  <span className="font-medium">Start:</span> {displayStart}
+                </p>
+                <p>
+                  <span className="font-medium">End:</span> {displayEnd}
+                </p>
+                <p>
+                  <span className="font-medium">Length:</span> {orf.length_nt} nt
+                </p>
+                <p>
+                  <span className="font-medium">Peptide:</span>{" "}
+                  {orf.peptide_length_aa} aa
+                </p>
+              </div>
+
+              <div className="mt-4 grid gap-2 text-sm text-slate-700 md:grid-cols-2 xl:grid-cols-5">
+                <p>
+                  <span className="font-medium">Length score:</span>{" "}
+                  {item.score_breakdown?.length_score ?? 0}
+                </p>
+                <p>
+                  <span className="font-medium">Start score:</span>{" "}
+                  {item.score_breakdown?.start_codon_score ?? 0}
+                </p>
+                <p>
+                  <span className="font-medium">SD score:</span>{" "}
+                  {item.score_breakdown?.shine_dalgarno_score ?? 0}
+                </p>
+                <p>
+                  <span className="font-medium">Promoter score:</span>{" "}
+                  {item.score_breakdown?.promoter_score ?? 0}
+                </p>
+                <p>
+                  <span className="font-medium">Terminator score:</span>{" "}
+                  {item.score_breakdown?.terminator_score ?? 0}
+                </p>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                    item.best_promoter
+                      ? "bg-amber-100 text-amber-700"
+                      : "bg-slate-100 text-slate-500"
+                  }`}
+                >
+                  {item.best_promoter ? "Promoter linked" : "No promoter"}
+                </span>
+
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                    item.best_shine_dalgarno
+                      ? "bg-lime-100 text-lime-700"
+                      : "bg-slate-100 text-slate-500"
+                  }`}
+                >
+                  {item.best_shine_dalgarno ? "SD linked" : "No SD"}
+                </span>
+
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                    item.best_terminator
+                      ? "bg-rose-100 text-rose-700"
+                      : "bg-slate-100 text-slate-500"
+                  }`}
+                >
+                  {item.best_terminator ? "Terminator linked" : "No terminator"}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <Pagination
+        currentPage={currentPage}
+        totalItems={items.length}
+        onPageChange={setCurrentPage}
+      />
+    </>
+  );
+}
+
 function getItems(results, key) {
   if (Array.isArray(results)) return results;
   if (Array.isArray(results?.[key])) return results[key];
   return [];
+}
+
+function ResultsContainer({ children, className = "" }) {
+  return (
+    <section
+      className={`rounded-2xl border border-slate-200 bg-cover bg-center p-6 shadow-sm backdrop-blur-md ${className}`}
+      style={{ backgroundImage: `url(${bgImage})` }}
+    >
+      {children}
+    </section>
+  );
+}
+
+function ResultsHeader({ title, subtitle, className = "" }) {
+  return (
+    <div className={className}>
+      <h3 className="text-xl font-semibold text-slate-900">{title}</h3>
+      {subtitle && <p className="mt-1 text-sm text-slate-600">{subtitle}</p>}
+    </div>
+  );
 }
 
 export default function Results({
@@ -608,64 +921,43 @@ export default function Results({
   activeView,
   onSelectFeature,
 }) {
-  if (loading) {
-    return (
-      <section
-        className="rounded-2xl border border-slate-200 bg-cover bg-center p-6 shadow-sm backdrop-blur-md"
-        style={{ backgroundImage: `url(${bgImage})` }}
-      >
-        <h3 className="text-xl font-semibold text-slate-900">
-          Analysis Results
-        </h3>
-        <p className="mt-3 text-sm text-slate-600">Running analysis...</p>
-      </section>
-    );
-  }
+  const renderLoading = () => (
+    <ResultsContainer>
+      <ResultsHeader title="Analysis Results" />
+      <div className="mt-4 flex items-center gap-3 text-slate-600">
+        <div className="h-4 w-4 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent" />
+        <span className="text-sm">Running analysis...</span>
+      </div>
+    </ResultsContainer>
+  );
 
-  if (mode === "folder") {
-    return (
-      <section
-        className="rounded-2xl border border-slate-200 bg-cover bg-center p-6 shadow-sm backdrop-blur-md"
-        style={{ backgroundImage: `url(${bgImage})` }}
-      >
-        <h3 className="mb-4 text-xl font-semibold text-slate-900">
-          Folder Results
-        </h3>
-        <FolderResults files={Array.isArray(results) ? results : []} />
-      </section>
-    );
-  }
+  const renderEmpty = () => (
+    <ResultsContainer>
+      <ResultsHeader title="Analysis Results" className="mb-4" />
+      <EmptyState text="Run an analysis to see results." />
+    </ResultsContainer>
+  );
 
-  if (!results) {
-    return (
-      <section
-        className="rounded-2xl border border-slate-200 bg-cover bg-center p-6 shadow-sm backdrop-blur-md"
-        style={{ backgroundImage: `url(${bgImage})` }}
-      >
-        <h3 className="mb-4 text-xl font-semibold text-slate-900">
-          Analysis Results
-        </h3>
-        <EmptyState text="Run an analysis to see results." />
-      </section>
-    );
-  }
+  const renderFolderMode = () => (
+    <ResultsContainer>
+      <ResultsHeader title="Folder Results" className="mb-4" />
+      <FolderResults files={Array.isArray(results) ? results : []} />
+    </ResultsContainer>
+  );
 
-  if (activeView === "orfs") {
+  const renderOrfs = () => {
     const items = getItems(results, "orfs");
 
     return (
-      <section
-        className="rounded-2xl border border-slate-200 bg-cover bg-center p-6 shadow-sm backdrop-blur-md"
-        style={{ backgroundImage: `url(${bgImage})` }}
-      >
+      <ResultsContainer>
         <SectionCard title="ORF Results" count={items.length}>
           <ORFTable items={items} onSelectFeature={onSelectFeature} />
         </SectionCard>
-      </section>
+      </ResultsContainer>
     );
-  }
+  };
 
-  if (activeView === "coding-orfs") {
+  const renderCodingOrfs = () => {
     const items = Array.isArray(results?.coding_orfs)
       ? results.coding_orfs
       : Array.isArray(results)
@@ -675,10 +967,7 @@ export default function Results({
     const best = results?.best_coding_orf ?? null;
 
     return (
-      <section
-        className="space-y-6 rounded-2xl border border-slate-200 bg-cover bg-center p-6 shadow-sm backdrop-blur-md"
-        style={{ backgroundImage: `url(${bgImage})` }}
-      >
+      <ResultsContainer className="space-y-6">
         {best && (
           <SectionCard title="Best Candidate ORF" count={1}>
             <ORFTable items={[best]} onSelectFeature={onSelectFeature} />
@@ -688,113 +977,156 @@ export default function Results({
         <SectionCard title="Coding ORF Results" count={items.length}>
           <ORFTable items={items} onSelectFeature={onSelectFeature} />
         </SectionCard>
-      </section>
+      </ResultsContainer>
     );
-  }
+  };
 
-  if (activeView === "promoters") {
+  const renderRankedCodingOrfs = () => {
+    const items = Array.isArray(results?.ranked_coding_orfs)
+      ? results.ranked_coding_orfs
+      : Array.isArray(results)
+      ? results
+      : [];
+
+    const best = results?.best_ranked_coding_orf ?? null;
+
+    return (
+      <ResultsContainer className="space-y-6">
+        {best && (
+          <SectionCard title="Best Ranked Coding ORF" count={1}>
+            <RankedCodingORFList
+              items={[best]}
+              onSelectFeature={onSelectFeature}
+            />
+          </SectionCard>
+        )}
+
+        <SectionCard title="Ranked Coding ORFs" count={items.length}>
+          <RankedCodingORFList
+            items={items}
+            onSelectFeature={onSelectFeature}
+          />
+        </SectionCard>
+      </ResultsContainer>
+    );
+  };
+
+  const renderPromoters = () => {
     const items = getItems(results, "promoters");
 
     return (
-      <section
-        className="rounded-2xl border border-slate-200 bg-cover bg-center p-6 shadow-sm backdrop-blur-md"
-        style={{ backgroundImage: `url(${bgImage})` }}
-      >
+      <ResultsContainer>
         <SectionCard title="Promoter Results" count={items.length}>
           <PromoterList items={items} onSelectFeature={onSelectFeature} />
         </SectionCard>
-      </section>
+      </ResultsContainer>
     );
-  }
+  };
 
-  if (activeView === "terminators") {
+  const renderTerminators = () => {
     const items = getItems(results, "terminators");
 
     return (
-      <section
-        className="rounded-2xl border border-slate-200 bg-cover bg-center p-6 shadow-sm backdrop-blur-md"
-        style={{ backgroundImage: `url(${bgImage})` }}
-      >
+      <ResultsContainer>
         <SectionCard title="Terminator Results" count={items.length}>
           <TerminatorList
             items={items}
             onSelectFeature={onSelectFeature}
           />
         </SectionCard>
-      </section>
+      </ResultsContainer>
     );
-  }
+  };
 
-  if (activeView === "shine-dalgarno") {
+  const renderShineDalgarno = () => {
     const items = getItems(results, "shine_dalgarno");
 
     return (
-      <section
-        className="rounded-2xl border border-slate-200 bg-cover bg-center p-6 shadow-sm backdrop-blur-md"
-        style={{ backgroundImage: `url(${bgImage})` }}
-      >
+      <ResultsContainer>
         <SectionCard title="Shine-Dalgarno Results" count={items.length}>
           <ShineDalgarnoList items={items} onSelectFeature={onSelectFeature} />
         </SectionCard>
-      </section>
+      </ResultsContainer>
     );
-  }
-
-  const summary = {
-    orfs: results.orfs?.length ?? 0,
-    promoters: results.promoters?.length ?? 0,
-    terminators: results.terminators?.length ?? 0,
-    shine: results.shine_dalgarno?.length ?? 0,
   };
 
-  return (
-    <section
-      className="space-y-6 rounded-2xl border border-slate-200 bg-cover bg-center p-6 shadow-sm backdrop-blur-md"
-      style={{ backgroundImage: `url(${bgImage})` }}
-    >
-      <div>
-        <h3 className="text-xl font-semibold text-slate-900">
-          Analysis Results
-        </h3>
-        <p className="mt-1 text-sm text-slate-600">
-          Clear biological interpretation of detected features.
-        </p>
-      </div>
+  const renderAllResults = () => {
+    const summary = {
+      orfs: results.orfs?.length ?? 0,
+      promoters: results.promoters?.length ?? 0,
+      terminators: results.terminators?.length ?? 0,
+      shine: results.shine_dalgarno?.length ?? 0,
+    };
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="ORFs" value={summary.orfs} />
-        <StatCard title="Promoters" value={summary.promoters} />
-        <StatCard title="Terminators" value={summary.terminators} />
-        <StatCard title="Shine-Dalgarno" value={summary.shine} />
-      </div>
-
-      <SectionCard title="ORFs" count={summary.orfs}>
-        <ORFTable
-          items={results.orfs || []}
-          onSelectFeature={onSelectFeature}
+    return (
+      <ResultsContainer className="space-y-6">
+        <ResultsHeader
+          title="Analysis Results"
+          subtitle="Clear biological interpretation of detected features."
         />
-      </SectionCard>
 
-      <SectionCard title="Promoters" count={summary.promoters}>
-        <PromoterList
-          items={results.promoters || []}
-          onSelectFeature={onSelectFeature}
-        />
-      </SectionCard>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <StatCard title="ORFs" value={summary.orfs} />
+          <StatCard title="Promoters" value={summary.promoters} />
+          <StatCard title="Terminators" value={summary.terminators} />
+          <StatCard title="Shine-Dalgarno" value={summary.shine} />
+        </div>
 
-      <SectionCard title="Terminators" count={summary.terminators}>
-        <TerminatorList
-          items={results.terminators || []}
-          onSelectFeature={onSelectFeature}
-        />
-      </SectionCard>
+        <SectionCard title="ORFs" count={summary.orfs}>
+          <ORFTable
+            items={results.orfs || []}
+            onSelectFeature={onSelectFeature}
+          />
+        </SectionCard>
 
-      <SectionCard title="Shine-Dalgarno" count={summary.shine}>
-        <ShineDalgarnoList
-          items={results.shine_dalgarno || []}
-          onSelectFeature={onSelectFeature}
-        />
-      </SectionCard>
-    </section>
-  );
+        <SectionCard title="Promoters" count={summary.promoters}>
+          <PromoterList
+            items={results.promoters || []}
+            onSelectFeature={onSelectFeature}
+          />
+        </SectionCard>
+
+        <SectionCard title="Terminators" count={summary.terminators}>
+          <TerminatorList
+            items={results.terminators || []}
+            onSelectFeature={onSelectFeature}
+          />
+        </SectionCard>
+
+        <SectionCard title="Shine-Dalgarno" count={summary.shine}>
+          <ShineDalgarnoList
+            items={results.shine_dalgarno || []}
+            onSelectFeature={onSelectFeature}
+          />
+        </SectionCard>
+      </ResultsContainer>
+    );
+  };
+
+  if (loading) return renderLoading();
+  if (mode === "folder") return renderFolderMode();
+  if (!results) return renderEmpty();
+
+  switch (activeView) {
+    case "orfs":
+      return renderOrfs();
+
+    case "coding-orfs":
+      return renderCodingOrfs();
+
+    case "ranked-coding-orfs":
+      return renderRankedCodingOrfs();
+
+    case "promoters":
+      return renderPromoters();
+
+    case "terminators":
+      return renderTerminators();
+
+    case "shine-dalgarno":
+      return renderShineDalgarno();
+
+    default:
+      return renderAllResults();
+  }
 }

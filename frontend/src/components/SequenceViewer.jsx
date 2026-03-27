@@ -1,7 +1,9 @@
 import { useMemo } from "react";
 import bgImage from "../assets/bgh.jpg";
 
-const LINE_LENGTH = 100;
+const LINE_LENGTH = 60;
+const LEFT_INDEX_WIDTH = "w-14";
+const SIDE_LABEL_WIDTH = "w-6";
 
 function StatCard({ title, value, subtitle }) {
   return (
@@ -16,29 +18,46 @@ function StatCard({ title, value, subtitle }) {
 }
 
 function getHighlightClass(pos, highlights) {
-  const hit = highlights.find((h) => pos >= h.start && pos <= h.end);
+  const hits = highlights.filter((h) => pos >= h.start && pos <= h.end);
 
-  if (!hit) return "text-slate-800";
+  if (!hits.length) return "text-slate-800";
+
+  const priority = [
+    "startCodon",
+    "shineDalgarno",
+    "promoter35",
+    "promoter10",
+    "terminatorLeft",
+    "terminatorRight",
+    "polyT",
+    "orf",
+  ];
+
+  hits.sort(
+    (a, b) => priority.indexOf(a.type) - priority.indexOf(b.type)
+  );
+
+  const hit = hits[0];
 
   switch (hit.type) {
-    case "promoter35":
-      return "bg-yellow-300 text-black rounded-sm";
-    case "promoter10":
-      return "bg-orange-300 text-black rounded-sm";
-    case "terminatorLeft":
-      return "bg-pink-300 text-black rounded-sm";
-    case "terminatorRight":
-      return "bg-fuchsia-300 text-black rounded-sm";
-    case "polyT":
-      return "bg-red-300 text-black rounded-sm";
-    case "orf":
-      return "bg-cyan-300 text-black rounded-sm";
-    case "shineDalgarno":
-      return "bg-lime-300 text-black rounded-sm";
     case "startCodon":
-      return "bg-emerald-300 text-black rounded-sm";
+      return "bg-blue-600 text-white rounded px-[2px] shadow-sm";
+    case "shineDalgarno":
+      return "bg-lime-300 text-black rounded px-[2px] shadow-sm";
+    case "promoter35":
+      return "bg-yellow-300 text-black rounded px-[2px] shadow-sm";
+    case "promoter10":
+      return "bg-orange-300 text-black rounded px-[2px] shadow-sm";
+    case "terminatorLeft":
+      return "bg-pink-300 text-black rounded px-[2px] shadow-sm";
+    case "terminatorRight":
+      return "bg-rose-300 text-black rounded px-[2px] shadow-sm";
+    case "polyT":
+      return "bg-red-300 text-black rounded px-[2px] shadow-sm";
+    case "orf":
+      return "bg-cyan-300 text-black rounded px-[2px] shadow-sm";
     default:
-      return "bg-sky-300 text-black rounded-sm";
+      return "text-slate-800";
   }
 }
 
@@ -51,13 +70,6 @@ function complementBase(base) {
     N: "N",
   };
   return map[base] || base;
-}
-
-function buildMatchLine(line) {
-  return line
-    .split("")
-    .map((char) => (/[ATGCN]/i.test(char) ? "|" : " "))
-    .join("");
 }
 
 function chunkSequence(seq, chunkSize = LINE_LENGTH) {
@@ -73,43 +85,44 @@ function formatSequenceForDisplay(seq, lineLength = LINE_LENGTH) {
   return chunkSequence(clean, lineLength).join("\n");
 }
 
-function buildForwardRuler(start, length) {
-  const chars = Array(length).fill(" ");
+function renderRulerLine(start, length) {
+  const chars = Array(length).fill("");
 
   for (let pos = start; pos < start + length; pos++) {
     if (pos % 10 === 0) {
       const label = String(pos);
-      const index = pos - start - label.length + 1;
+      const column = pos - start;
+      const labelStart = column - label.length + 1;
 
-      if (index >= 0) {
-        for (let i = 0; i < label.length && index + i < chars.length; i++) {
-          chars[index + i] = label[i];
+      if (labelStart >= 0) {
+        for (let i = 0; i < label.length; i++) {
+          if (labelStart + i < length) {
+            chars[labelStart + i] = label[i];
+          }
         }
       }
     }
   }
 
-  return chars.join("");
+  return chars.map((char, index) => (
+    <span
+      key={index}
+      className="inline-block w-[1ch] text-center align-middle text-slate-400"
+    >
+      {char || " "}
+    </span>
+  ));
 }
 
-function buildReverseRuler(start, length) {
-  const chars = Array(length).fill(" ");
-  const end = start + length - 1;
-
-  for (let pos = end; pos >= start; pos--) {
-    if (pos % 10 === 0) {
-      const label = String(pos);
-      const index = end - pos;
-
-      if (index + label.length <= chars.length) {
-        for (let i = 0; i < label.length; i++) {
-          chars[index + i] = label[i];
-        }
-      }
-    }
-  }
-
-  return chars.join("");
+function renderMatchLine(line) {
+  return line.split("").map((char, index) => (
+    <span
+      key={index}
+      className="inline-block w-[1ch] text-center align-middle text-slate-500"
+    >
+      {/[ATGCN]/i.test(char) ? "|" : " "}
+    </span>
+  ));
 }
 
 function renderSequenceLine(line, startPos, highlights = []) {
@@ -202,10 +215,13 @@ function GenomeMiniMap({ sequenceLength, features = [] }) {
     { key: "startCodon", label: "Start codon", color: "bg-emerald-400" },
   ];
 
-  const grouped = trackConfig.map((track) => ({
-    ...track,
-    features: features.filter((f) => f.type === track.key),
-  }));
+  const colorByType = Object.fromEntries(
+    trackConfig.map((item) => [item.key, item.color])
+  );
+
+  const labelByType = Object.fromEntries(
+    trackConfig.map((item) => [item.key, item.label])
+  );
 
   const handleScrollToFeature = (feature) => {
     const el = document.getElementById(`base-${feature.start}`);
@@ -233,50 +249,37 @@ function GenomeMiniMap({ sequenceLength, features = [] }) {
         </div>
       </div>
 
-      <div className="mb-4 flex items-center justify-between text-xs text-slate-500">
+      <div className="mb-3 flex items-center justify-between text-xs text-slate-500">
         <span>1</span>
         <span>{Math.floor(sequenceLength / 2)}</span>
         <span>{sequenceLength}</span>
       </div>
 
-      <div className="space-y-3">
-        {grouped.map((track) => (
-          <div key={track.key} className="grid grid-cols-[120px_1fr] items-center gap-3">
-            <div className="text-xs font-medium text-slate-600">
-              {track.label}
-            </div>
+      <div className="relative h-6 rounded-full bg-slate-200/80 shadow-inner overflow-hidden">
+        {features.length === 0 ? (
+          <div className="absolute inset-0 rounded-full border border-dashed border-slate-300" />
+        ) : (
+          features.map((feature, index) => {
+            const start = Math.max(1, feature.start);
+            const end = Math.max(start, feature.end);
+            const left = ((start - 1) / sequenceLength) * 100;
+            const width = Math.max(((end - start + 1) / sequenceLength) * 100, 1);
 
-            <div className="relative h-5 rounded-full bg-slate-200/80 shadow-inner">
-              {track.features.length === 0 ? (
-                <div className="absolute inset-0 rounded-full border border-dashed border-slate-300" />
-              ) : (
-                track.features.map((feature, index) => {
-                  const start = Math.max(1, feature.start);
-                  const end = Math.max(start, feature.end);
-                  const left = ((start - 1) / sequenceLength) * 100;
-                  const width = Math.max(
-                    ((end - start + 1) / sequenceLength) * 100,
-                    1
-                  );
-
-                  return (
-                    <button
-                      key={`${feature.type}-${feature.start}-${feature.end}-${index}`}
-                      type="button"
-                      title={`${track.label}: ${feature.start}-${feature.end}`}
-                      onClick={() => handleScrollToFeature(feature)}
-                      className={`absolute top-0 h-5 rounded-full ${track.color} ring-1 ring-black/10 transition hover:scale-y-110 hover:shadow-md`}
-                      style={{
-                        left: `${left}%`,
-                        width: `${width}%`,
-                      }}
-                    />
-                  );
-                })
-              )}
-            </div>
-          </div>
-        ))}
+            return (
+              <button
+                key={`${feature.type}-${feature.start}-${feature.end}-${index}`}
+                type="button"
+                title={`${labelByType[feature.type] || feature.type}: ${feature.start}-${feature.end}`}
+                onClick={() => handleScrollToFeature(feature)}
+                className={`absolute top-0 h-6 ${colorByType[feature.type] || "bg-sky-400"} ring-1 ring-black/10 transition hover:scale-y-110 hover:shadow-md`}
+                style={{
+                  left: `${left}%`,
+                  width: `${width}%`,
+                }}
+              />
+            );
+          })
+        )}
       </div>
 
       <div className="mt-5 border-t border-slate-200 pt-4">
@@ -300,6 +303,23 @@ function GenomeMiniMap({ sequenceLength, features = [] }) {
   );
 }
 
+function SequenceRow({ leftLabel, leftTag, content, rightTag }) {
+  return (
+    <div className="flex items-center min-w-max whitespace-nowrap">
+      <span className={`mr-3 inline-block ${LEFT_INDEX_WIDTH} text-right text-slate-500`}>
+        {leftLabel}
+      </span>
+      <span className={`mr-2 inline-block ${SIDE_LABEL_WIDTH} text-slate-500`}>
+        {leftTag || ""}
+      </span>
+      <div className="inline-block">{content}</div>
+      <span className={`ml-2 inline-block ${SIDE_LABEL_WIDTH} text-slate-500`}>
+        {rightTag || ""}
+      </span>
+    </div>
+  );
+}
+
 function DoubleStrandPreview({ sequence, highlights = [] }) {
   const cleanSequence = sequence.replace(/[^ATGCN]/gi, "").toUpperCase();
 
@@ -315,54 +335,41 @@ function DoubleStrandPreview({ sequence, highlights = [] }) {
   let biologicalPos = 1;
 
   return (
-    <div className="max-h-96 overflow-y-auto overflow-x-auto rounded-lg bg-white/70 p-3 font-mono text-sm leading-6">
+    <div className="max-h-96 overflow-auto rounded-lg bg-white/70 p-3 font-mono text-sm leading-6">
       {chunks.map((line, lineIndex) => {
         const top = renderSequenceLine(line, biologicalPos, highlights);
         const bottom = renderComplementLine(line, biologicalPos, highlights);
-        const matchLine = buildMatchLine(line);
+
         const startLabel = biologicalPos;
         const endLabel = top.nextPos - 1;
-        const topRuler = buildForwardRuler(startLabel, line.length);
-        const bottomRuler = buildReverseRuler(startLabel, line.length);
+
+        const topRuler = renderRulerLine(startLabel, line.length);
+        const bottomRuler = renderRulerLine(startLabel, line.length);
+        const matchLine = renderMatchLine(line);
 
         biologicalPos = top.nextPos;
 
         return (
-          <div key={lineIndex} className="mb-4 min-w-max">
-            <div className="whitespace-pre text-xs text-slate-400">
-              <span className="mr-3 inline-block w-14 text-right"></span>
-              <span className="mr-2"></span>
-              {topRuler}
-            </div>
+          <div key={lineIndex} className="mb-4">
+            <SequenceRow leftLabel="" leftTag="" content={topRuler} rightTag="" />
+            <SequenceRow
+              leftLabel={startLabel}
+              leftTag="5'"
+              content={top.rendered}
+              rightTag="3'"
+            />
+            <SequenceRow leftLabel="" leftTag="" content={matchLine} rightTag="" />
+            <SequenceRow
+              leftLabel={startLabel}
+              leftTag="3'"
+              content={bottom.rendered}
+              rightTag="5'"
+            />
+            <SequenceRow leftLabel="" leftTag="" content={bottomRuler} rightTag="" />
 
-            <div className="whitespace-pre">
-              <span className="mr-3 inline-block w-14 text-right text-slate-500">
-                {startLabel}
-              </span>
-              <span className="mr-2 text-slate-500">5&apos;</span>
-              {top.rendered}
-              <span className="ml-2 text-slate-500">3&apos;</span>
-            </div>
-
-            <div className="whitespace-pre text-slate-500">
-              <span className="mr-3 inline-block w-14 text-right"></span>
-              <span className="mr-2">  </span>
-              <span className="inline-block">{matchLine}</span>
-            </div>
-
-            <div className="whitespace-pre">
-              <span className="mr-3 inline-block w-14 text-right text-slate-500">
-                {endLabel}
-              </span>
-              <span className="mr-2 text-slate-500">3&apos;</span>
-              {bottom.rendered}
-              <span className="ml-2 text-slate-500">5&apos;</span>
-            </div>
-
-            <div className="whitespace-pre text-xs text-slate-400">
-              <span className="mr-3 inline-block w-14 text-right"></span>
-              <span className="mr-2"></span>
-              {bottomRuler}
+            <div className="mt-1 flex justify-between text-[11px] text-slate-400">
+              <span>Range: {startLabel}</span>
+              <span>{endLabel}</span>
             </div>
           </div>
         );
@@ -376,7 +383,7 @@ export default function SequenceViewer({
   setSequence,
   loadedFileName,
   folderFiles,
- mode,
+  mode,
   highlights = [],
 }) {
   const stats = useMemo(() => {
@@ -421,9 +428,7 @@ export default function SequenceViewer({
 
       {mode === "folder" && folderFiles.length > 0 && (
         <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <p className="mb-2 text-sm font-medium text-slate-800">
-            Files in folder
-          </p>
+          <p className="mb-2 text-sm font-medium text-slate-800">Files in folder</p>
           <div className="max-h-36 space-y-2 overflow-auto">
             {folderFiles.map((file, index) => (
               <div

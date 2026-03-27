@@ -98,23 +98,27 @@ export default function Home() {
 
   return (
     <div
-      className="relative min-h-screen bg-cover bg-center bg-fixed"
+      className="relative min-h-screen bg-cover bg-center lg:bg-fixed lg:h-screen lg:overflow-hidden"
       style={{ backgroundImage: `url(${bgImage})` }}
     >
-      <div className="absolute inset-0 bg-black/35 backdrop-blur-[2px]"></div>
+      <div className="absolute inset-0 bg-black/35 backdrop-blur-[2px]" />
 
-      <div className="relative z-10">
-        <div className="mx-auto flex max-w-7xl gap-6 px-4 py-6">
-          <Sidebar
-            mode={mode}
-            folderFiles={folderFiles}
-            results={results}
-            onRunAnalysis={handleRunAnalysis}
-            onDownload={downloadResults}
-            onClear={clearAll}
-          />
+      <div className="relative z-10 lg:h-full">
+        <div className="mx-auto hidden h-full max-w-[1800px] gap-6 px-4 py-4 lg:grid lg:grid-cols-[220px_minmax(0,1.7fr)_minmax(0,1fr)]">
+          <aside className="sticky top-4 h-[calc(100vh-2rem)] self-start">
+            <div className="h-full overflow-hidden rounded-2xl">
+              <Sidebar
+                mode={mode}
+                folderFiles={folderFiles}
+                results={results}
+                onRunAnalysis={handleRunAnalysis}
+                onDownload={downloadResults}
+                onClear={clearAll}
+              />
+            </div>
+          </aside>
 
-          <main className="flex-1 space-y-6">
+          <section className="flex h-[calc(100vh-2rem)] min-h-0 flex-col gap-6">
             <div
               className="relative overflow-hidden rounded-2xl border border-slate-200 p-6 shadow-sm"
               style={{
@@ -142,20 +146,26 @@ export default function Home() {
               />
             </div>
 
-            <div className="flex flex-col gap-6">
-              <SequenceViewer
-                sequence={sequence}
-                setSequence={(value) => {
-                  setMode("single");
-                  setSequence(value);
-                  setSelectedHighlight([]);
-                }}
-                loadedFileName={loadedFileName}
-                folderFiles={folderFiles}
-                mode={mode}
-                highlights={selectedHighlight}
-              />
+            <div className="min-h-0 flex-1 overflow-hidden rounded-2xl">
+              <div className="h-full overflow-y-auto pr-2">
+                <SequenceViewer
+                  sequence={sequence}
+                  setSequence={(value) => {
+                    setMode("single");
+                    setSequence(value);
+                    setSelectedHighlight([]);
+                  }}
+                  loadedFileName={loadedFileName}
+                  folderFiles={folderFiles}
+                  mode={mode}
+                  highlights={selectedHighlight}
+                />
+              </div>
+            </div>
+          </section>
 
+          <section className="h-[calc(100vh-2rem)] min-h-0 overflow-hidden rounded-2xl">
+            <div className="h-full overflow-y-auto pr-2">
               <Results
                 results={results}
                 loading={loading}
@@ -164,14 +174,64 @@ export default function Home() {
                 onSelectFeature={handleSelectFeature}
               />
             </div>
+          </section>
+        </div>
 
-            <MobileActions
-              results={results}
-              onRunAnalysis={handleRunAnalysis}
-              onDownload={downloadResults}
-              onClear={clearAll}
+        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 lg:hidden">
+          <div
+            className="relative overflow-hidden rounded-2xl border border-slate-200 p-6 shadow-sm"
+            style={{
+              backgroundImage: `url(${bgImage1})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
+          >
+            <UploadFile
+              setSequence={(value) => {
+                setMode("single");
+                setSequence(value);
+                setSelectedHighlight([]);
+              }}
+              setLoadedFileName={setLoadedFileName}
+              setFolderFiles={(files) => {
+                setFolderFiles(files);
+                setSelectedHighlight([]);
+              }}
+              setMode={setMode}
+              setResults={(data) => {
+                setResults(data);
+                setSelectedHighlight([]);
+              }}
             />
-          </main>
+          </div>
+
+          <SequenceViewer
+            sequence={sequence}
+            setSequence={(value) => {
+              setMode("single");
+              setSequence(value);
+              setSelectedHighlight([]);
+            }}
+            loadedFileName={loadedFileName}
+            folderFiles={folderFiles}
+            mode={mode}
+            highlights={selectedHighlight}
+          />
+
+          <Results
+            results={results}
+            loading={loading}
+            mode={mode}
+            activeView={activeView}
+            onSelectFeature={handleSelectFeature}
+          />
+
+          <MobileActions
+            results={results}
+            onRunAnalysis={handleRunAnalysis}
+            onDownload={downloadResults}
+            onClear={clearAll}
+          />
         </div>
       </div>
     </div>
