@@ -15,14 +15,13 @@ from analysis.utils import validate_dna, load_fasta_folder
 
 
 app = Flask(__name__)
-CORS(
-    app,
-    resources={r"/*": {"origins": [
+
+CORS(app,
+     resources={r"/*": {"origins": [
         "https://dna-app-2.onrender.com",
         "http://localhost:5173",
-        "https://dna-app-seven.vercel.app"correct
-    ]}}
-)
+        "https://dna-app-seven.vercel.app"
+     ]}})
 
 
 def clean_sequence(sequence: str) -> str:
