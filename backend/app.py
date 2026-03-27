@@ -19,7 +19,8 @@ CORS(
     app,
     resources={r"/*": {"origins": [
         "https://dna-app-2.onrender.com",
-        "http://localhost:5173"
+        "http://localhost:5173",
+        "https://dna-app-seven.vercel.app/"
     ]}}
 )
 
