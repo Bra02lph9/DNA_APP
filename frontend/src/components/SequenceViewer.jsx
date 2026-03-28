@@ -1,9 +1,11 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import bgImage from "../assets/bgh.jpg";
 
 const LINE_LENGTH = 60;
 const LEFT_INDEX_WIDTH = "w-14";
 const SIDE_LABEL_WIDTH = "w-6";
+const DEFAULT_WINDOW_SIZE = 3000;
+const MAX_EDITABLE_LENGTH = 50000;
 
 function StatCard({ title, value, subtitle }) {
   return (
@@ -17,9 +19,46 @@ function StatCard({ title, value, subtitle }) {
   );
 }
 
-function getHighlightClass(pos, highlights) {
-  const hits = highlights.filter((h) => pos >= h.start && pos <= h.end);
+function complementBase(base) {
+  const map = { A: "T", T: "A", G: "C", C: "G", N: "N" };
+  return map[base] || base;
+}
 
+function chunkSequence(seq, chunkSize = LINE_LENGTH) {
+  const chunks = [];
+  for (let i = 0; i < seq.length; i += chunkSize) {
+    chunks.push(seq.slice(i, i + chunkSize));
+  }
+  return chunks;
+}
+
+function formatSequenceForDisplay(seq, lineLength = LINE_LENGTH) {
+  const clean = seq.replace(/[^ATGCN]/gi, "").toUpperCase();
+  return chunkSequence(clean, lineLength).join("\n");
+}
+
+function buildHighlightLookup(highlights, visibleStart, visibleEnd) {
+  const lookup = new Map();
+
+  for (const h of highlights) {
+    const start = Math.max(h.start, visibleStart);
+    const end = Math.min(h.end, visibleEnd);
+
+    if (start > end) continue;
+
+    for (let pos = start; pos <= end; pos++) {
+      if (!lookup.has(pos)) {
+        lookup.set(pos, []);
+      }
+      lookup.get(pos).push(h);
+    }
+  }
+
+  return lookup;
+}
+
+function getHighlightClass(pos, highlightLookup) {
+  const hits = highlightLookup.get(pos) || [];
   if (!hits.length) return "text-slate-800";
 
   const priority = [
@@ -33,10 +72,7 @@ function getHighlightClass(pos, highlights) {
     "orf",
   ];
 
-  hits.sort(
-    (a, b) => priority.indexOf(a.type) - priority.indexOf(b.type)
-  );
-
+  hits.sort((a, b) => priority.indexOf(a.type) - priority.indexOf(b.type));
   const hit = hits[0];
 
   switch (hit.type) {
@@ -59,30 +95,6 @@ function getHighlightClass(pos, highlights) {
     default:
       return "text-slate-800";
   }
-}
-
-function complementBase(base) {
-  const map = {
-    A: "T",
-    T: "A",
-    G: "C",
-    C: "G",
-    N: "N",
-  };
-  return map[base] || base;
-}
-
-function chunkSequence(seq, chunkSize = LINE_LENGTH) {
-  const chunks = [];
-  for (let i = 0; i < seq.length; i += chunkSize) {
-    chunks.push(seq.slice(i, i + chunkSize));
-  }
-  return chunks;
-}
-
-function formatSequenceForDisplay(seq, lineLength = LINE_LENGTH) {
-  const clean = seq.replace(/[^ATGCN]/gi, "").toUpperCase();
-  return chunkSequence(clean, lineLength).join("\n");
 }
 
 function renderRulerLine(start, length) {
@@ -125,12 +137,12 @@ function renderMatchLine(line) {
   ));
 }
 
-function renderSequenceLine(line, startPos, highlights = []) {
+function renderSequenceLine(line, startPos, highlightLookup) {
   let currentPos = startPos;
 
   const rendered = line.split("").map((char, index) => {
     if (/[ATGCN]/i.test(char)) {
-      const cls = getHighlightClass(currentPos, highlights);
+      const cls = getHighlightClass(currentPos, highlightLookup);
 
       const element = (
         <span
@@ -157,19 +169,16 @@ function renderSequenceLine(line, startPos, highlights = []) {
     );
   });
 
-  return {
-    rendered,
-    nextPos: currentPos,
-  };
+  return { rendered, nextPos: currentPos };
 }
 
-function renderComplementLine(line, startPos, highlights = []) {
+function renderComplementLine(line, startPos, highlightLookup) {
   let currentPos = startPos;
 
   const rendered = line.split("").map((char, index) => {
     if (/[ATGCN]/i.test(char)) {
       const comp = complementBase(char.toUpperCase());
-      const cls = getHighlightClass(currentPos, highlights);
+      const cls = getHighlightClass(currentPos, highlightLookup);
 
       const element = (
         <span
@@ -195,13 +204,10 @@ function renderComplementLine(line, startPos, highlights = []) {
     );
   });
 
-  return {
-    rendered,
-    nextPos: currentPos,
-  };
+  return { rendered, nextPos: currentPos };
 }
 
-function GenomeMiniMap({ sequenceLength, features = [] }) {
+function GenomeMiniMap({ sequenceLength, features = [], onJumpToFeature }) {
   if (!sequenceLength) return null;
 
   const trackConfig = [
@@ -215,47 +221,29 @@ function GenomeMiniMap({ sequenceLength, features = [] }) {
     { key: "startCodon", label: "Start codon", color: "bg-emerald-400" },
   ];
 
-  const colorByType = Object.fromEntries(
-    trackConfig.map((item) => [item.key, item.color])
-  );
-
-  const labelByType = Object.fromEntries(
-    trackConfig.map((item) => [item.key, item.label])
-  );
-
-  const handleScrollToFeature = (feature) => {
-    const el = document.getElementById(`base-${feature.start}`);
-    if (el) {
-      el.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-        inline: "center",
-      });
-    }
-  };
+  const colorByType = Object.fromEntries(trackConfig.map((item) => [item.key, item.color]));
+  const labelByType = Object.fromEntries(trackConfig.map((item) => [item.key, item.label]));
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm backdrop-blur-sm">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold text-slate-900">Genome Mini Map</h3>
-          <p className="text-xs text-slate-500">
-            Interactive overview of selected genomic features
-          </p>
+          <p className="text-xs text-slate-500">Interactive overview of selected genomic features</p>
         </div>
 
         <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-          {sequenceLength} nt
+          {sequenceLength.toLocaleString()} nt
         </div>
       </div>
 
       <div className="mb-3 flex items-center justify-between text-xs text-slate-500">
         <span>1</span>
-        <span>{Math.floor(sequenceLength / 2)}</span>
-        <span>{sequenceLength}</span>
+        <span>{Math.floor(sequenceLength / 2).toLocaleString()}</span>
+        <span>{sequenceLength.toLocaleString()}</span>
       </div>
 
-      <div className="relative h-6 rounded-full bg-slate-200/80 shadow-inner overflow-hidden">
+      <div className="relative h-6 overflow-hidden rounded-full bg-slate-200/80 shadow-inner">
         {features.length === 0 ? (
           <div className="absolute inset-0 rounded-full border border-dashed border-slate-300" />
         ) : (
@@ -263,19 +251,16 @@ function GenomeMiniMap({ sequenceLength, features = [] }) {
             const start = Math.max(1, feature.start);
             const end = Math.max(start, feature.end);
             const left = ((start - 1) / sequenceLength) * 100;
-            const width = Math.max(((end - start + 1) / sequenceLength) * 100, 1);
+            const width = Math.max(((end - start + 1) / sequenceLength) * 100, 0.15);
 
             return (
               <button
                 key={`${feature.type}-${feature.start}-${feature.end}-${index}`}
                 type="button"
                 title={`${labelByType[feature.type] || feature.type}: ${feature.start}-${feature.end}`}
-                onClick={() => handleScrollToFeature(feature)}
+                onClick={() => onJumpToFeature?.(feature)}
                 className={`absolute top-0 h-6 ${colorByType[feature.type] || "bg-sky-400"} ring-1 ring-black/10 transition hover:scale-y-110 hover:shadow-md`}
-                style={{
-                  left: `${left}%`,
-                  width: `${width}%`,
-                }}
+                style={{ left: `${left}%`, width: `${width}%` }}
               />
             );
           })
@@ -305,7 +290,7 @@ function GenomeMiniMap({ sequenceLength, features = [] }) {
 
 function SequenceRow({ leftLabel, leftTag, content, rightTag }) {
   return (
-    <div className="flex items-center min-w-max whitespace-nowrap">
+    <div className="flex min-w-max items-center whitespace-nowrap">
       <span className={`mr-3 inline-block ${LEFT_INDEX_WIDTH} text-right text-slate-500`}>
         {leftLabel}
       </span>
@@ -320,8 +305,19 @@ function SequenceRow({ leftLabel, leftTag, content, rightTag }) {
   );
 }
 
-function DoubleStrandPreview({ sequence, highlights = [] }) {
+function DoubleStrandPreview({
+  sequence,
+  highlights = [],
+  globalStart = 1,
+}) {
   const cleanSequence = sequence.replace(/[^ATGCN]/gi, "").toUpperCase();
+
+  const visibleEnd = globalStart + cleanSequence.length - 1;
+
+  const highlightLookup = useMemo(
+    () => buildHighlightLookup(highlights, globalStart, visibleEnd),
+    [highlights, globalStart, visibleEnd]
+  );
 
   if (!cleanSequence) {
     return (
@@ -332,13 +328,13 @@ function DoubleStrandPreview({ sequence, highlights = [] }) {
   }
 
   const chunks = chunkSequence(cleanSequence, LINE_LENGTH);
-  let biologicalPos = 1;
+  let biologicalPos = globalStart;
 
   return (
     <div className="max-h-96 overflow-auto rounded-lg bg-white/70 p-3 font-mono text-sm leading-6">
       {chunks.map((line, lineIndex) => {
-        const top = renderSequenceLine(line, biologicalPos, highlights);
-        const bottom = renderComplementLine(line, biologicalPos, highlights);
+        const top = renderSequenceLine(line, biologicalPos, highlightLookup);
+        const bottom = renderComplementLine(line, biologicalPos, highlightLookup);
 
         const startLabel = biologicalPos;
         const endLabel = top.nextPos - 1;
@@ -368,8 +364,8 @@ function DoubleStrandPreview({ sequence, highlights = [] }) {
             <SequenceRow leftLabel="" leftTag="" content={bottomRuler} rightTag="" />
 
             <div className="mt-1 flex justify-between text-[11px] text-slate-400">
-              <span>Range: {startLabel}</span>
-              <span>{endLabel}</span>
+              <span>Range: {startLabel.toLocaleString()}</span>
+              <span>{endLabel.toLocaleString()}</span>
             </div>
           </div>
         );
@@ -385,9 +381,38 @@ export default function SequenceViewer({
   folderFiles,
   mode,
   highlights = [],
+  sequenceMeta = null,
+  fullSequenceRef = null,
 }) {
+  const [viewStart, setViewStart] = useState(1);
+  const [windowSize, setWindowSize] = useState(DEFAULT_WINDOW_SIZE);
+
+  const fullSequence = fullSequenceRef?.current || sequence || "";
+  const cleanFullSequence = useMemo(
+    () => fullSequence.replace(/[^ATGCN]/gi, "").toUpperCase(),
+    [fullSequence]
+  );
+
+  const totalLength = sequenceMeta?.length || cleanFullSequence.length;
+
+  useEffect(() => {
+    setViewStart(1);
+  }, [loadedFileName]);
+
+  const visibleSequence = useMemo(() => {
+    if (!cleanFullSequence) return "";
+    const startIdx = Math.max(0, viewStart - 1);
+    const endIdx = Math.min(cleanFullSequence.length, startIdx + windowSize);
+    return cleanFullSequence.slice(startIdx, endIdx);
+  }, [cleanFullSequence, viewStart, windowSize]);
+
+  const visibleEnd = useMemo(() => {
+    if (!visibleSequence.length) return viewStart;
+    return viewStart + visibleSequence.length - 1;
+  }, [viewStart, visibleSequence]);
+
   const stats = useMemo(() => {
-    const seq = sequence.replace(/[^ATGCN]/gi, "").toUpperCase();
+    const seq = cleanFullSequence;
     const length = seq.length;
     const gcCount = (seq.match(/[GC]/g) || []).length;
     const atCount = (seq.match(/[AT]/g) || []).length;
@@ -397,15 +422,11 @@ export default function SequenceViewer({
       gc: length ? ((gcCount / length) * 100).toFixed(2) : "0.00",
       at: length ? ((atCount / length) * 100).toFixed(2) : "0.00",
     };
-  }, [sequence]);
-
-  const cleanSequence = useMemo(() => {
-    return sequence.replace(/[^ATGCN]/gi, "").toUpperCase();
-  }, [sequence]);
+  }, [cleanFullSequence]);
 
   const displaySequence = useMemo(() => {
-    return formatSequenceForDisplay(sequence, LINE_LENGTH);
-  }, [sequence]);
+    return formatSequenceForDisplay(visibleSequence, LINE_LENGTH);
+  }, [visibleSequence]);
 
   const miniMapFeatures = useMemo(() => {
     return highlights.map((h, index) => ({
@@ -415,6 +436,45 @@ export default function SequenceViewer({
       type: h.type,
     }));
   }, [highlights]);
+
+  const canEditDirectly = totalLength <= MAX_EDITABLE_LENGTH;
+
+  const jumpToPosition = (position) => {
+    if (!totalLength) return;
+
+    const safePos = Math.min(Math.max(1, position), totalLength);
+    const half = Math.floor(windowSize / 2);
+    let newStart = safePos - half;
+
+    if (newStart < 1) newStart = 1;
+    if (newStart + windowSize - 1 > totalLength) {
+      newStart = Math.max(1, totalLength - windowSize + 1);
+    }
+
+    setViewStart(newStart);
+
+    requestAnimationFrame(() => {
+      const el = document.getElementById(`base-${safePos}`);
+      if (el) {
+        el.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+          inline: "center",
+        });
+      }
+    });
+  };
+
+  const handleJumpToFeature = (feature) => {
+    jumpToPosition(feature.start);
+  };
+
+  const handleVisibleSequenceEdit = (e) => {
+    if (!canEditDirectly) return;
+
+    const raw = e.target.value.replace(/[^ATGCN]/gi, "").toUpperCase();
+    setSequence(raw);
+  };
 
   return (
     <section
@@ -442,36 +502,81 @@ export default function SequenceViewer({
         </div>
       )}
 
-      <label className="mb-2 block text-sm font-medium text-slate-900">
-        DNA Sequence
-      </label>
-
-      <textarea
-        value={displaySequence}
-        onChange={(e) => {
-          const raw = e.target.value.replace(/[^ATGCN]/gi, "");
-          setSequence(raw.toUpperCase());
-        }}
-        rows={14}
-        wrap="off"
-        spellCheck={false}
-        className="w-full overflow-x-auto rounded-xl border border-slate-300 bg-slate-50 p-4 font-mono text-sm text-slate-900 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200"
-        placeholder="Paste DNA sequence here..."
-      />
-
-      <div className="mt-5 grid gap-4 sm:grid-cols-3">
-        <StatCard title="Length" value={stats.length} subtitle="nucleotides" />
+      <div className="mb-4 grid gap-4 sm:grid-cols-3">
+        <StatCard title="Length" value={stats.length.toLocaleString()} subtitle="nucleotides" />
         <StatCard title="GC%" value={stats.gc} subtitle="GC content" />
         <StatCard title="AT%" value={stats.at} subtitle="AT content" />
       </div>
 
-      {cleanSequence.length > 0 && (
+      <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm font-medium text-slate-800">Visible window</p>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => jumpToPosition(Math.max(1, viewStart - windowSize))}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-sm text-slate-700 hover:bg-slate-100"
+            >
+              Prev
+            </button>
+
+            <button
+              type="button"
+              onClick={() => jumpToPosition(Math.min(totalLength, viewStart + windowSize))}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-sm text-slate-700 hover:bg-slate-100"
+            >
+              Next
+            </button>
+
+            <select
+              value={windowSize}
+              onChange={(e) => setWindowSize(Number(e.target.value))}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-sm text-slate-700"
+            >
+              <option value={1000}>1000 nt</option>
+              <option value={3000}>3000 nt</option>
+              <option value={5000}>5000 nt</option>
+              <option value={10000}>10000 nt</option>
+            </select>
+          </div>
+        </div>
+
+        <p className="text-sm text-slate-600">
+          Showing positions <span className="font-medium">{viewStart.toLocaleString()}</span> to{" "}
+          <span className="font-medium">{visibleEnd.toLocaleString()}</span>
+        </p>
+      </div>
+
+      {totalLength > 0 && (
         <div className="mt-5">
           <GenomeMiniMap
-            sequenceLength={cleanSequence.length}
+            sequenceLength={totalLength}
             features={miniMapFeatures}
+            onJumpToFeature={handleJumpToFeature}
           />
         </div>
+      )}
+
+      <label className="mt-5 mb-2 block text-sm font-medium text-slate-900">
+        DNA Sequence Window
+      </label>
+
+      <textarea
+        value={displaySequence}
+        onChange={handleVisibleSequenceEdit}
+        rows={14}
+        wrap="off"
+        spellCheck={false}
+        disabled={!canEditDirectly}
+        className="w-full overflow-x-auto rounded-xl border border-slate-300 bg-slate-50 p-4 font-mono text-sm text-slate-900 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
+        placeholder="Paste DNA sequence here..."
+      />
+
+      {!canEditDirectly && (
+        <p className="mt-2 text-xs text-amber-700">
+          Direct full-sequence editing is disabled for very large sequences. Use navigation and feature jumps instead.
+        </p>
       )}
 
       <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -481,7 +586,11 @@ export default function SequenceViewer({
           </p>
         </div>
 
-        <DoubleStrandPreview sequence={sequence} highlights={highlights} />
+        <DoubleStrandPreview
+          sequence={visibleSequence}
+          highlights={highlights}
+          globalStart={viewStart}
+        />
       </div>
     </section>
   );

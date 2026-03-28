@@ -8,6 +8,7 @@ from .utils import reverse_complement
 
 START_CODONS = {"ATG", "GTG", "TTG"}
 STOP_CODONS = {"TAA", "TAG", "TGA"}
+CODON_SIZE = 3
 
 
 @dataclass
@@ -32,7 +33,7 @@ def _clean_sequence(sequence: str) -> str:
 def _map_rev_to_forward(
     rev_start_0: int,
     rev_end_0_exclusive: int,
-    original_len: int
+    original_len: int,
 ) -> tuple[int, int]:
     forward_start_0 = original_len - rev_end_0_exclusive
     forward_end_0_exclusive = original_len - rev_start_0
@@ -49,6 +50,10 @@ def _start_codon_priority(codon: str) -> int:
     return 3
 
 
+def _peptide_length_from_nt(length_nt: int) -> int:
+    return (length_nt // CODON_SIZE) - 1
+
+
 def _build_orf(
     scanned_seq: str,
     original_seq_len: int,
@@ -57,7 +62,7 @@ def _build_orf(
     start_0: int,
     stop_0: int,
 ) -> CodingORF:
-    end_0_exclusive = stop_0 + 3
+    end_0_exclusive = stop_0 + CODON_SIZE
     orf_seq = scanned_seq[start_0:end_0_exclusive]
     length_nt = len(orf_seq)
 
@@ -65,7 +70,11 @@ def _build_orf(
         start = start_0 + 1
         end = end_0_exclusive
     else:
-        start, end = _map_rev_to_forward(start_0, end_0_exclusive, original_seq_len)
+        start, end = _map_rev_to_forward(
+            start_0,
+            end_0_exclusive,
+            original_seq_len,
+        )
 
     return CodingORF(
         strand=strand,
@@ -73,9 +82,9 @@ def _build_orf(
         start=start,
         end=end,
         length_nt=length_nt,
-        peptide_length_aa=(length_nt // 3) - 1,
-        start_codon=scanned_seq[start_0:start_0 + 3],
-        stop_codon=scanned_seq[stop_0:stop_0 + 3],
+        peptide_length_aa=_peptide_length_from_nt(length_nt),
+        start_codon=scanned_seq[start_0:start_0 + CODON_SIZE],
+        stop_codon=scanned_seq[stop_0:stop_0 + CODON_SIZE],
         sequence=orf_seq,
         start_index_in_strand=start_0,
         stop_index_in_strand=stop_0,
@@ -95,6 +104,11 @@ def _sort_orfs_biologically(orfs: List[CodingORF]) -> List[CodingORF]:
     )
 
 
+def _iter_frame_codons(sequence: str, frame_offset: int):
+    for i in range(frame_offset, len(sequence) - 2, CODON_SIZE):
+        yield i, sequence[i:i + CODON_SIZE]
+
+
 def find_coding_orfs_in_strand(
     sequence: str,
     strand: str = "+",
@@ -107,49 +121,53 @@ def find_coding_orfs_in_strand(
     if not seq:
         return []
 
-    if start_codons is None:
-        start_codons = START_CODONS
-    if stop_codons is None:
-        stop_codons = STOP_CODONS
+    start_codons = start_codons or START_CODONS
+    stop_codons = stop_codons or STOP_CODONS
 
     scanned_seq = seq if strand == "+" else reverse_complement(seq)
     original_len = len(seq)
 
+    if len(scanned_seq) < CODON_SIZE * 2:
+        return []
+
     found: List[CodingORF] = []
 
-    for frame_offset in range(3):
+    for frame_offset in range(CODON_SIZE):
         starts_in_frame: List[int] = []
 
-        for i in range(frame_offset, len(scanned_seq) - 2, 3):
-            codon = scanned_seq[i:i + 3]
-
+        for i, codon in _iter_frame_codons(scanned_seq, frame_offset):
             if codon in start_codons:
                 starts_in_frame.append(i)
 
-            if codon in stop_codons:
-                if starts_in_frame:
-                    if longest_only_per_stop:
-                        candidate_starts = [starts_in_frame[0]]
-                    else:
-                        candidate_starts = starts_in_frame[:]
+            if codon not in stop_codons:
+                continue
 
-                    for start_0 in candidate_starts:
-                        length_nt = (i + 3) - start_0
-                        peptide_len = (length_nt // 3) - 1
+            if starts_in_frame:
+                candidate_starts = (
+                    [starts_in_frame[0]]
+                    if longest_only_per_stop
+                    else starts_in_frame[:]
+                )
 
-                        if peptide_len >= min_aa:
-                            found.append(
-                                _build_orf(
-                                    scanned_seq=scanned_seq,
-                                    original_seq_len=original_len,
-                                    strand=strand,
-                                    frame_offset=frame_offset,
-                                    start_0=start_0,
-                                    stop_0=i,
-                                )
-                            )
+                for start_0 in candidate_starts:
+                    length_nt = (i + CODON_SIZE) - start_0
+                    peptide_len = _peptide_length_from_nt(length_nt)
 
-                starts_in_frame = []
+                    if peptide_len < min_aa:
+                        continue
+
+                    found.append(
+                        _build_orf(
+                            scanned_seq=scanned_seq,
+                            original_seq_len=original_len,
+                            strand=strand,
+                            frame_offset=frame_offset,
+                            start_0=start_0,
+                            stop_0=i,
+                        )
+                    )
+
+            starts_in_frame = []
 
     return _sort_orfs_biologically(found)
 
@@ -183,8 +201,7 @@ def find_coding_orfs(
         longest_only_per_stop=longest_only_per_stop,
     )
 
-    all_orfs = plus_orfs + minus_orfs
-    return _sort_orfs_biologically(all_orfs)
+    return _sort_orfs_biologically(plus_orfs + minus_orfs)
 
 
 def choose_best_coding_orf(
@@ -200,11 +217,7 @@ def choose_best_coding_orf(
         stop_codons=stop_codons,
         longest_only_per_stop=False,
     )
-
-    if not orfs:
-        return None
-
-    return orfs[0]
+    return orfs[0] if orfs else None
 
 
 def coding_orf_to_dict(orf: CodingORF) -> dict:

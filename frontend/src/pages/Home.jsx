@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import UploadFile from "../components/UploadFile";
 import SequenceViewer from "../components/SequenceViewer";
 import Results from "../components/Results";
@@ -10,6 +10,138 @@ import { downloadPdfFile } from "../utils/downloadResults";
 import bgImage from "../assets/bg2.jpg";
 import bgImage1 from "../assets/bgh.jpg";
 
+function computeSequenceMeta(sequence, fileName = "") {
+  const clean = (sequence || "").replace(/[^ATGCN]/gi, "").toUpperCase();
+  const length = clean.length;
+
+  if (!length) {
+    return {
+      fileName,
+      length: 0,
+      gcPercent: 0,
+      atPercent: 0,
+    };
+  }
+
+  const gcCount = (clean.match(/[GC]/g) || []).length;
+  const atCount = (clean.match(/[AT]/g) || []).length;
+
+  return {
+    fileName,
+    length,
+    gcPercent: (gcCount / length) * 100,
+    atPercent: (atCount / length) * 100,
+  };
+}
+
+function shiftSimpleRangeFeature(feature, offset) {
+  return {
+    ...feature,
+    start: feature.start + offset - 1,
+    end: feature.end + offset - 1,
+  };
+}
+
+function shiftPromoterFeature(feature, offset) {
+  return {
+    ...feature,
+    box35_start: feature.box35_start + offset - 1,
+    box35_end: feature.box35_end + offset - 1,
+    box10_start: feature.box10_start + offset - 1,
+    box10_end: feature.box10_end + offset - 1,
+  };
+}
+
+function shiftTerminatorFeature(feature, offset) {
+  return {
+    ...feature,
+    stem_left_start: feature.stem_left_start + offset - 1,
+    stem_left_end: feature.stem_left_end + offset - 1,
+    stem_right_start: feature.stem_right_start + offset - 1,
+    stem_right_end: feature.stem_right_end + offset - 1,
+    poly_t_start: feature.poly_t_start + offset - 1,
+    poly_t_end: feature.poly_t_end + offset - 1,
+  };
+}
+
+function shiftShineDalgarnoFeature(feature, offset) {
+  return {
+    ...feature,
+    start: feature.start + offset - 1,
+    end: feature.end + offset - 1,
+    linked_start_position: feature.linked_start_position
+      ? feature.linked_start_position + offset - 1
+      : null,
+  };
+}
+
+function shiftCodingOrfFeature(feature, offset) {
+  return {
+    ...feature,
+    start: feature.start + offset - 1,
+    end: feature.end + offset - 1,
+  };
+}
+
+function shiftRankedCodingOrfEntry(entry, offset) {
+  return {
+    ...entry,
+    orf: entry.orf ? shiftCodingOrfFeature(entry.orf, offset) : null,
+    best_promoter: entry.best_promoter
+      ? shiftPromoterFeature(entry.best_promoter, offset)
+      : null,
+    best_shine_dalgarno: entry.best_shine_dalgarno
+      ? shiftShineDalgarnoFeature(entry.best_shine_dalgarno, offset)
+      : null,
+    best_terminator: entry.best_terminator
+      ? shiftTerminatorFeature(entry.best_terminator, offset)
+      : null,
+  };
+}
+
+function shiftResultsToGlobal(result, offset) {
+  if (!result || typeof result !== "object") return result;
+
+  return {
+    ...result,
+    orfs: Array.isArray(result.orfs)
+      ? result.orfs.map((item) => shiftSimpleRangeFeature(item, offset))
+      : result.orfs,
+
+    promoters: Array.isArray(result.promoters)
+      ? result.promoters.map((item) => shiftPromoterFeature(item, offset))
+      : result.promoters,
+
+    terminators: Array.isArray(result.terminators)
+      ? result.terminators.map((item) => shiftTerminatorFeature(item, offset))
+      : result.terminators,
+
+    shine_dalgarno: Array.isArray(result.shine_dalgarno)
+      ? result.shine_dalgarno.map((item) =>
+          shiftShineDalgarnoFeature(item, offset)
+        )
+      : result.shine_dalgarno,
+
+    coding_orfs: Array.isArray(result.coding_orfs)
+      ? result.coding_orfs.map((item) => shiftCodingOrfFeature(item, offset))
+      : result.coding_orfs,
+
+    best_coding_orf: result.best_coding_orf
+      ? shiftCodingOrfFeature(result.best_coding_orf, offset)
+      : result.best_coding_orf,
+
+    ranked_coding_orfs: Array.isArray(result.ranked_coding_orfs)
+      ? result.ranked_coding_orfs.map((item) =>
+          shiftRankedCodingOrfEntry(item, offset)
+        )
+      : result.ranked_coding_orfs,
+
+    best_ranked_coding_orf: result.best_ranked_coding_orf
+      ? shiftRankedCodingOrfEntry(result.best_ranked_coding_orf, offset)
+      : result.best_ranked_coding_orf,
+  };
+}
+
 export default function Home() {
   const [sequence, setSequence] = useState("");
   const [results, setResults] = useState(null);
@@ -19,10 +151,25 @@ export default function Home() {
   const [mode, setMode] = useState("single");
   const [activeView, setActiveView] = useState("all");
   const [selectedHighlight, setSelectedHighlight] = useState([]);
+  const [sequenceMeta, setSequenceMeta] = useState(null);
+
+  const fullSequenceRef = useRef("");
+  const latestWindowRequestIdRef = useRef(0);
+
+  const setSingleSequenceState = (value) => {
+    const clean = (value || "").replace(/[^ATGCN]/gi, "").toUpperCase();
+    fullSequenceRef.current = clean;
+    setSequence(clean);
+    setSequenceMeta(computeSequenceMeta(clean, loadedFileName));
+    setMode("single");
+    setSelectedHighlight([]);
+  };
 
   const handleRunAnalysis = async (endpoint) => {
     try {
-      const cleanedSequence = sequence.replace(/\s+/g, "").toUpperCase();
+      const cleanedSequence = (
+        fullSequenceRef.current || sequence || ""
+      ).replace(/\s+/g, "").toUpperCase();
 
       if (mode === "folder") {
         if (!folderFiles.length) {
@@ -53,6 +200,41 @@ export default function Home() {
       alert(error.message || "Error during analysis");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAnalyzeWindow = async ({ sequence: windowSequence, start }) => {
+    if (mode !== "single") return;
+    if (!windowSequence) return;
+
+    const endpoint = activeView || "all";
+    const requestId = Date.now();
+    latestWindowRequestIdRef.current = requestId;
+
+    try {
+      setLoading(true);
+      setSelectedHighlight([]);
+
+      const payload = {
+        mode: "single",
+        sequence: windowSequence,
+      };
+
+      const data = await runAnalysis(endpoint, payload);
+
+      if (latestWindowRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      const shifted = shiftResultsToGlobal(data, start);
+      setResults(shifted);
+    } catch (error) {
+      console.error(error);
+      alert(error.message || "Error during window analysis");
+    } finally {
+      if (latestWindowRequestIdRef.current === requestId) {
+        setLoading(false);
+      }
     }
   };
 
@@ -87,7 +269,9 @@ export default function Home() {
   };
 
   const clearAll = () => {
+    fullSequenceRef.current = "";
     setSequence("");
+    setSequenceMeta(null);
     setResults(null);
     setLoadedFileName("");
     setFolderFiles([]);
@@ -143,6 +327,10 @@ export default function Home() {
                   setResults(data);
                   setSelectedHighlight([]);
                 }}
+                setFullSequenceRef={(seq) => {
+                  fullSequenceRef.current = seq;
+                }}
+                setSequenceMeta={setSequenceMeta}
               />
             </div>
 
@@ -150,15 +338,14 @@ export default function Home() {
               <div className="h-full overflow-y-auto pr-2">
                 <SequenceViewer
                   sequence={sequence}
-                  setSequence={(value) => {
-                    setMode("single");
-                    setSequence(value);
-                    setSelectedHighlight([]);
-                  }}
+                  setSequence={setSingleSequenceState}
                   loadedFileName={loadedFileName}
                   folderFiles={folderFiles}
                   mode={mode}
                   highlights={selectedHighlight}
+                  sequenceMeta={sequenceMeta}
+                  fullSequenceRef={fullSequenceRef}
+                  onAnalyzeWindow={handleAnalyzeWindow}
                 />
               </div>
             </div>
@@ -202,20 +389,23 @@ export default function Home() {
                 setResults(data);
                 setSelectedHighlight([]);
               }}
+              setFullSequenceRef={(seq) => {
+                fullSequenceRef.current = seq;
+              }}
+              setSequenceMeta={setSequenceMeta}
             />
           </div>
 
           <SequenceViewer
             sequence={sequence}
-            setSequence={(value) => {
-              setMode("single");
-              setSequence(value);
-              setSelectedHighlight([]);
-            }}
+            setSequence={setSingleSequenceState}
             loadedFileName={loadedFileName}
             folderFiles={folderFiles}
             mode={mode}
             highlights={selectedHighlight}
+            sequenceMeta={sequenceMeta}
+            fullSequenceRef={fullSequenceRef}
+            onAnalyzeWindow={handleAnalyzeWindow}
           />
 
           <Results

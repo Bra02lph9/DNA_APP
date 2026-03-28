@@ -4,11 +4,15 @@ from dataclasses import dataclass, asdict
 from typing import List, Dict, Tuple
 
 from .utils import reverse_complement
+from .numba_helpers import gc_fraction_numba, hamming_distance_numba
+
+
+VALID_DNA = {"A", "T", "C", "G", "N"}
 
 
 @dataclass
 class TerminatorHit:
-    strand: str  # '+' or '-'
+    strand: str
     stem_left_start: int
     stem_left_end: int
     stem_left_seq: str
@@ -27,9 +31,6 @@ class TerminatorHit:
     score: float
 
 
-VALID_DNA = {"A", "T", "C", "G", "N"}
-
-
 def _clean_sequence(sequence: str) -> str:
     return (
         sequence.replace("\n", "")
@@ -46,15 +47,13 @@ def _contains_only_dna(sequence: str) -> bool:
 def _is_gc_rich(sequence: str, threshold: float = 0.7) -> bool:
     if not sequence:
         return False
-    gc = sum(1 for nt in sequence if nt in {"G", "C"})
-    return (gc / len(sequence)) >= threshold
+    return gc_fraction_numba(sequence) >= threshold
 
 
 def _gc_fraction(sequence: str) -> float:
     if not sequence:
         return 0.0
-    gc = sum(1 for nt in sequence if nt in {"G", "C"})
-    return gc / len(sequence)
+    return gc_fraction_numba(sequence)
 
 
 def _revcomp_simple(seq: str) -> str:
@@ -67,17 +66,13 @@ def _map_rev_to_forward(
     rev_end_0_exclusive: int,
     original_len: int,
 ) -> tuple[int, int]:
-    """
-    Convert reverse-complement interval [rev_start_0, rev_end_0_exclusive)
-    into forward-strand 1-based inclusive coordinates.
-    """
     forward_start_0 = original_len - rev_end_0_exclusive
     forward_end_0_exclusive = original_len - rev_start_0
     return forward_start_0 + 1, forward_end_0_exclusive
 
 
 def _count_mismatches(seq1: str, seq2: str) -> int:
-    return sum(1 for a, b in zip(seq1, seq2) if a != b)
+    return hamming_distance_numba(seq1, seq2)
 
 
 def _calculate_score(
@@ -87,14 +82,6 @@ def _calculate_score(
     gc_fraction: float,
     poly_t_length: int,
 ) -> float:
-    """
-    Heuristic biological score:
-    - better with longer stem
-    - better with higher GC in stem
-    - better with longer poly-T tract
-    - worse with more mismatches
-    - slightly penalize loops far from ~4-5 nt
-    """
     loop_penalty = abs(loop_length - 4.5) * 0.8
     mismatch_penalty = mismatches * 4.0
 
@@ -175,10 +162,6 @@ def _build_hit(
 
 
 def _deduplicate_hits(hits: List[TerminatorHit]) -> List[TerminatorHit]:
-    """
-    Remove exact duplicates based on strand + coordinates.
-    Keep highest score if duplicate appears.
-    """
     best_by_key: Dict[Tuple, TerminatorHit] = {}
 
     for hit in hits:
@@ -203,9 +186,6 @@ def _overlap(a_start: int, a_end: int, b_start: int, b_end: int) -> bool:
 
 
 def _filter_redundant_overlaps(hits: List[TerminatorHit]) -> List[TerminatorHit]:
-    """
-    Keep best scoring hit among strongly overlapping candidates on same strand.
-    """
     sorted_hits = sorted(hits, key=lambda h: (-h.score, h.strand, h.poly_t_start))
     kept: List[TerminatorHit] = []
 
@@ -246,6 +226,16 @@ def _sort_terminators_biologically(hits: List[TerminatorHit]) -> List[Terminator
     )
 
 
+def _collect_poly_t(search_seq: str, start_0: int) -> tuple[int, str]:
+    n = len(search_seq)
+    end_0_exclusive = start_0
+
+    while end_0_exclusive < n and search_seq[end_0_exclusive] == "T":
+        end_0_exclusive += 1
+
+    return end_0_exclusive, search_seq[start_0:end_0_exclusive]
+
+
 def find_rho_independent_terminators_in_strand(
     sequence: str,
     strand: str = "+",
@@ -257,16 +247,6 @@ def find_rho_independent_terminators_in_strand(
     min_poly_t: int = 5,
     gc_threshold: float = 0.7,
 ) -> List[TerminatorHit]:
-    """
-    Search one strand for intrinsic (rho-independent) terminator-like motifs.
-
-    Biological model:
-    - GC-rich inverted repeat (hairpin stem)
-    - short loop
-    - downstream poly-T tract on DNA (corresponding to poly-U in RNA)
-
-    This is still a heuristic detector, but stricter than a simple motif finder.
-    """
     seq = _clean_sequence(sequence)
     if not seq or not _contains_only_dna(seq):
         return []
@@ -274,25 +254,34 @@ def find_rho_independent_terminators_in_strand(
     search_seq = seq if strand == "+" else reverse_complement(seq)
     n = len(search_seq)
 
+    min_total_len = (2 * stem_min) + loop_min + min_poly_t
+    if n < min_total_len:
+        return []
+
     hits: List[TerminatorHit] = []
 
-    for i in range(n):
+    max_left_start = n - min_total_len
+
+    for i in range(max_left_start + 1):
         for stem_len in range(stem_min, stem_max + 1):
             left_start_0 = i
             left_end_0_exclusive = i + stem_len
+
             if left_end_0_exclusive > n:
                 continue
 
             left = search_seq[left_start_0:left_end_0_exclusive]
-
             if "N" in left:
                 continue
             if not _is_gc_rich(left, threshold=gc_threshold):
                 continue
 
+            expected_right = _revcomp_simple(left)
+
             for loop_len in range(loop_min, loop_max + 1):
                 right_start_0 = left_end_0_exclusive + loop_len
                 right_end_0_exclusive = right_start_0 + stem_len
+
                 if right_end_0_exclusive > n:
                     continue
 
@@ -300,25 +289,14 @@ def find_rho_independent_terminators_in_strand(
                 if "N" in right:
                     continue
 
-                expected_right = _revcomp_simple(left)
                 mismatches = _count_mismatches(right, expected_right)
-
                 if mismatches > max_stem_mismatches:
                     continue
 
                 poly_start_0 = right_end_0_exclusive
-                poly_end_0_exclusive = poly_start_0
+                poly_end_0_exclusive, poly_t_seq = _collect_poly_t(search_seq, poly_start_0)
 
-                while (
-                    poly_end_0_exclusive < n
-                    and search_seq[poly_end_0_exclusive] == "T"
-                ):
-                    poly_end_0_exclusive += 1
-
-                poly_t_seq = search_seq[poly_start_0:poly_end_0_exclusive]
-                poly_t_len = len(poly_t_seq)
-
-                if poly_t_len < min_poly_t:
+                if len(poly_t_seq) < min_poly_t:
                     continue
 
                 loop_seq = search_seq[left_end_0_exclusive:right_start_0]
@@ -359,10 +337,6 @@ def find_rho_independent_terminators(
     min_poly_t: int = 5,
     gc_threshold: float = 0.7,
 ) -> List[TerminatorHit]:
-    """
-    Search both DNA strands (+ and -) for rho-independent terminator-like motifs.
-    Coordinates are returned on the original forward sequence.
-    """
     seq = _clean_sequence(sequence)
     if not seq or not _contains_only_dna(seq):
         return []

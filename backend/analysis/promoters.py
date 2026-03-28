@@ -3,12 +3,14 @@ from __future__ import annotations
 from dataclasses import dataclass, asdict
 from typing import List, Dict, Tuple
 
-from .utils import hamming_distance, reverse_complement
+from .utils import reverse_complement
+from .numba_helpers import hamming_distance_numba, at_fraction_numba
 
 
 BOX_35 = "TTGACA"
 BOX_10 = "TATAAT"
 VALID_DNA = {"A", "T", "C", "G", "N"}
+MOTIF_LEN = 6
 
 
 @dataclass
@@ -46,10 +48,6 @@ def _map_rev_to_forward(
     rev_end_0_exclusive: int,
     original_len: int,
 ) -> tuple[int, int]:
-    """
-    Map reverse-complement interval [rev_start_0, rev_end_0_exclusive)
-    to forward-strand 1-based inclusive coordinates.
-    """
     forward_start_0 = original_len - rev_end_0_exclusive
     forward_end_0_exclusive = original_len - rev_start_0
     return forward_start_0 + 1, forward_end_0_exclusive
@@ -58,8 +56,7 @@ def _map_rev_to_forward(
 def _at_fraction(sequence: str) -> float:
     if not sequence:
         return 0.0
-    at = sum(1 for nt in sequence if nt in {"A", "T"})
-    return at / len(sequence)
+    return at_fraction_numba(sequence)
 
 
 def _spacing_penalty(spacing: int, optimal: int = 17) -> float:
@@ -72,13 +69,9 @@ def _score_promoter(
     spacing: int,
     spacer_at_fraction: float,
 ) -> float:
-    """
-    Heuristic score for sigma70-like promoters.
-    Higher is better.
-    """
     score = 30.0
     score -= box35_mismatches * 5.0
-    score -= box10_mismatches * 6.0   # -10 is often more conserved functionally
+    score -= box10_mismatches * 6.0
     score -= _spacing_penalty(spacing, optimal=17)
     score += spacer_at_fraction * 4.0
     return round(score, 3)
@@ -146,6 +139,58 @@ def _sort_promoters_biologically(hits: List[PromoterHit]) -> List[PromoterHit]:
     )
 
 
+def _build_promoter_hit(
+    strand: str,
+    original_len: int,
+    i35: int,
+    seq35: str,
+    mm35: int,
+    i10: int,
+    seq10: str,
+    mm10: int,
+    spacing: int,
+    search_seq: str,
+) -> PromoterHit:
+    end35 = i35 + MOTIF_LEN
+    spacer_seq = search_seq[end35:i10]
+    spacer_at_fraction = _at_fraction(spacer_seq)
+    score = _score_promoter(
+        box35_mismatches=mm35,
+        box10_mismatches=mm10,
+        spacing=spacing,
+        spacer_at_fraction=spacer_at_fraction,
+    )
+
+    if strand == "+":
+        box35_start = i35 + 1
+        box35_end = i35 + MOTIF_LEN
+        box10_start = i10 + 1
+        box10_end = i10 + MOTIF_LEN
+    else:
+        box35_start, box35_end = _map_rev_to_forward(
+            i35, i35 + MOTIF_LEN, original_len
+        )
+        box10_start, box10_end = _map_rev_to_forward(
+            i10, i10 + MOTIF_LEN, original_len
+        )
+
+    return PromoterHit(
+        strand=strand,
+        box35_start=box35_start,
+        box35_end=box35_end,
+        box35_seq=seq35,
+        box35_mismatches=mm35,
+        box10_start=box10_start,
+        box10_end=box10_end,
+        box10_seq=seq10,
+        box10_mismatches=mm10,
+        spacing=spacing,
+        spacer_seq=spacer_seq,
+        spacer_at_fraction=round(spacer_at_fraction, 3),
+        score=score,
+    )
+
+
 def find_promoters_in_strand(
     sequence: str,
     strand: str = "+",
@@ -154,86 +199,62 @@ def find_promoters_in_strand(
     spacing_min: int = 16,
     spacing_max: int = 19,
 ) -> List[PromoterHit]:
-    """
-    Detect sigma70-like promoter regions in one strand.
-
-    spacing = number of nucleotides between the end of -35 box
-    and the start of -10 box.
-    """
     seq = _clean_sequence(sequence)
     if not seq or not _contains_only_dna(seq):
         return []
 
     search_seq = seq if strand == "+" else reverse_complement(seq)
     original_len = len(seq)
+    seq_len = len(search_seq)
+
+    if seq_len < (2 * MOTIF_LEN + spacing_min):
+        return []
 
     hits: List[PromoterHit] = []
-    motif_len = 6
 
-    box35_candidates = []
-    box10_candidates = []
+    last_box35_start = seq_len - MOTIF_LEN
+    last_box10_start = seq_len - MOTIF_LEN
 
-    for i in range(0, len(search_seq) - motif_len + 1):
-        win = search_seq[i:i + motif_len]
-        if "N" in win:
+    for i35 in range(last_box35_start + 1):
+        seq35 = search_seq[i35:i35 + MOTIF_LEN]
+
+        if "N" in seq35:
             continue
 
-        mm35 = hamming_distance(win, BOX_35)
-        mm10 = hamming_distance(win, BOX_10)
+        mm35 = hamming_distance_numba(seq35, BOX_35)
+        if mm35 > max_mismatches_box35:
+            continue
 
-        if mm35 <= max_mismatches_box35:
-            box35_candidates.append((i, win, mm35))
+        end35 = i35 + MOTIF_LEN
 
-        if mm10 <= max_mismatches_box10:
-            box10_candidates.append((i, win, mm10))
+        for spacing in range(spacing_min, spacing_max + 1):
+            i10 = end35 + spacing
 
-    for i35, seq35, mm35 in box35_candidates:
-        end35 = i35 + motif_len
-
-        for i10, seq10, mm10 in box10_candidates:
-            spacing = i10 - end35
-            if not (spacing_min <= spacing <= spacing_max):
+            if i10 > last_box10_start:
                 continue
 
-            spacer_seq = search_seq[end35:i10]
-            spacer_at_fraction = _at_fraction(spacer_seq)
-            score = _score_promoter(
-                box35_mismatches=mm35,
-                box10_mismatches=mm10,
+            seq10 = search_seq[i10:i10 + MOTIF_LEN]
+
+            if "N" in seq10:
+                continue
+
+            mm10 = hamming_distance_numba(seq10, BOX_10)
+            if mm10 > max_mismatches_box10:
+                continue
+
+            hit = _build_promoter_hit(
+                strand=strand,
+                original_len=original_len,
+                i35=i35,
+                seq35=seq35,
+                mm35=mm35,
+                i10=i10,
+                seq10=seq10,
+                mm10=mm10,
                 spacing=spacing,
-                spacer_at_fraction=spacer_at_fraction,
+                search_seq=search_seq,
             )
-
-            if strand == "+":
-                box35_start = i35 + 1
-                box35_end = i35 + motif_len
-                box10_start = i10 + 1
-                box10_end = i10 + motif_len
-            else:
-                box35_start, box35_end = _map_rev_to_forward(
-                    i35, i35 + motif_len, original_len
-                )
-                box10_start, box10_end = _map_rev_to_forward(
-                    i10, i10 + motif_len, original_len
-                )
-
-            hits.append(
-                PromoterHit(
-                    strand=strand,
-                    box35_start=box35_start,
-                    box35_end=box35_end,
-                    box35_seq=seq35,
-                    box35_mismatches=mm35,
-                    box10_start=box10_start,
-                    box10_end=box10_end,
-                    box10_seq=seq10,
-                    box10_mismatches=mm10,
-                    spacing=spacing,
-                    spacer_seq=spacer_seq,
-                    spacer_at_fraction=round(spacer_at_fraction, 3),
-                    score=score,
-                )
-            )
+            hits.append(hit)
 
     hits = _deduplicate_hits(hits)
     hits = _filter_redundant_hits(hits)
@@ -247,9 +268,6 @@ def find_promoters(
     spacing_min: int = 16,
     spacing_max: int = 19,
 ) -> List[PromoterHit]:
-    """
-    Detect sigma70-like promoter regions on both strands.
-    """
     hits_plus = find_promoters_in_strand(
         sequence=sequence,
         strand="+",
