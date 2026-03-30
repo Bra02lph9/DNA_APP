@@ -4,11 +4,28 @@ import SequenceViewer from "../components/SequenceViewer";
 import Results from "../components/Results";
 import Sidebar from "../components/Sidebar";
 import MobileActions from "../components/MobileActions";
-import { runAnalysis } from "../api";
+import {
+  createAnalysisTask,
+  getTaskStatus,
+} from "../api";
 import { formatResultsAsText } from "../utils/formatResults";
 import { downloadPdfFile } from "../utils/downloadResults";
 import bgImage from "../assets/bg2.jpg";
 import bgImage1 from "../assets/bgh.jpg";
+
+function normalizeAnalysisType(endpoint) {
+  const map = {
+    all: "all",
+    orfs: "orfs",
+    promoters: "promoters",
+    terminators: "terminators",
+    "shine-dalgarno": "shine_dalgarno",
+    "coding-orfs": "coding_orfs",
+    "ranked-coding-orfs": "ranked_coding_orfs",
+  };
+
+  return map[endpoint] || endpoint;
+}
 
 function computeSequenceMeta(sequence, fileName = "") {
   const clean = (sequence || "").replace(/[^ATGCN]/gi, "").toUpperCase();
@@ -142,6 +159,10 @@ function shiftResultsToGlobal(result, offset) {
   };
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export default function Home() {
   const [sequence, setSequence] = useState("");
   const [results, setResults] = useState(null);
@@ -153,6 +174,9 @@ export default function Home() {
   const [selectedHighlight, setSelectedHighlight] = useState([]);
   const [sequenceMeta, setSequenceMeta] = useState(null);
 
+  const [taskId, setTaskId] = useState(null);
+  const [taskStatus, setTaskStatus] = useState(null);
+
   const fullSequenceRef = useRef("");
   const latestWindowRequestIdRef = useRef(0);
 
@@ -163,6 +187,25 @@ export default function Home() {
     setSequenceMeta(computeSequenceMeta(clean, loadedFileName));
     setMode("single");
     setSelectedHighlight([]);
+  };
+
+  const pollTaskUntilDone = async (incomingTaskId) => {
+    while (true) {
+      const taskData = await getTaskStatus(incomingTaskId);
+      setTaskStatus(taskData.status);
+
+      if (taskData.status === "SUCCESS") {
+        const finalResult = taskData.result?.result || taskData.result;
+        return finalResult;
+      }
+
+      if (taskData.status === "FAILURE") {
+        console.error("Celery task failure payload:", taskData);
+        throw new Error(taskData.error || taskData.result || "Task failed");
+      }
+
+      await sleep(2000);
+    }
   };
 
   const handleRunAnalysis = async (endpoint) => {
@@ -183,17 +226,35 @@ export default function Home() {
         }
       }
 
+      const normalizedAnalysisType = normalizeAnalysisType(endpoint);
+
       setLoading(true);
       setResults(null);
       setSelectedHighlight([]);
       setActiveView(endpoint);
+      setTaskId(null);
+      setTaskStatus("QUEUED");
 
       const payload =
         mode === "folder" && folderFiles.length > 0
-          ? { mode: "folder", files: folderFiles }
-          : { mode: "single", sequence: cleanedSequence };
+          ? {
+              mode: "folder",
+              files: folderFiles,
+              analysis_type: normalizedAnalysisType,
+              min_aa: 30,
+            }
+          : {
+              mode: "single",
+              sequence: cleanedSequence,
+              analysis_type: normalizedAnalysisType,
+              min_aa: 30,
+            };
 
-      const data = await runAnalysis(endpoint, payload);
+      const task = await createAnalysisTask(payload);
+      setTaskId(task.task_id);
+      setTaskStatus(task.status || "QUEUED");
+
+      const data = await pollTaskUntilDone(task.task_id);
       setResults(data);
     } catch (error) {
       console.error(error);
@@ -208,19 +269,27 @@ export default function Home() {
     if (!windowSequence) return;
 
     const endpoint = activeView || "all";
+    const normalizedAnalysisType = normalizeAnalysisType(endpoint);
     const requestId = Date.now();
     latestWindowRequestIdRef.current = requestId;
 
     try {
       setLoading(true);
       setSelectedHighlight([]);
+      setTaskStatus("QUEUED");
 
       const payload = {
         mode: "single",
         sequence: windowSequence,
+        analysis_type: normalizedAnalysisType,
+        min_aa: 30,
       };
 
-      const data = await runAnalysis(endpoint, payload);
+      const task = await createAnalysisTask(payload);
+      setTaskId(task.task_id);
+      setTaskStatus(task.status || "QUEUED");
+
+      const data = await pollTaskUntilDone(task.task_id);
 
       if (latestWindowRequestIdRef.current !== requestId) {
         return;
@@ -278,6 +347,56 @@ export default function Home() {
     setMode("single");
     setActiveView("all");
     setSelectedHighlight([]);
+    setTaskId(null);
+    setTaskStatus(null);
+  };
+
+  const uploadProps = {
+    setSequence: (value) => {
+      setMode("single");
+      setSequence(value);
+      setSelectedHighlight([]);
+      setTaskId(null);
+      setTaskStatus(null);
+    },
+    setLoadedFileName: setLoadedFileName,
+    setFolderFiles: (files) => {
+      setFolderFiles(files);
+      setSelectedHighlight([]);
+      setTaskId(null);
+      setTaskStatus(null);
+    },
+    setMode: setMode,
+    setResults: (data) => {
+      setResults(data);
+      setSelectedHighlight([]);
+      setTaskId(null);
+      setTaskStatus(null);
+    },
+    setFullSequenceRef: (seq) => {
+      fullSequenceRef.current = seq;
+    },
+    setSequenceMeta: setSequenceMeta,
+  };
+
+  const viewerProps = {
+    sequence,
+    setSequence: setSingleSequenceState,
+    loadedFileName,
+    folderFiles,
+    mode,
+    highlights: selectedHighlight,
+    sequenceMeta,
+    fullSequenceRef,
+    onAnalyzeWindow: handleAnalyzeWindow,
+  };
+
+  const resultsProps = {
+    results,
+    loading,
+    mode,
+    activeView,
+    onSelectFeature: handleSelectFeature,
   };
 
   return (
@@ -311,55 +430,33 @@ export default function Home() {
                 backgroundPosition: "center",
               }}
             >
-              <UploadFile
-                setSequence={(value) => {
-                  setMode("single");
-                  setSequence(value);
-                  setSelectedHighlight([]);
-                }}
-                setLoadedFileName={setLoadedFileName}
-                setFolderFiles={(files) => {
-                  setFolderFiles(files);
-                  setSelectedHighlight([]);
-                }}
-                setMode={setMode}
-                setResults={(data) => {
-                  setResults(data);
-                  setSelectedHighlight([]);
-                }}
-                setFullSequenceRef={(seq) => {
-                  fullSequenceRef.current = seq;
-                }}
-                setSequenceMeta={setSequenceMeta}
-              />
+              <UploadFile {...uploadProps} />
             </div>
+
+            {loading && taskStatus && (
+              <div className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm">
+                <p className="text-sm text-slate-700">
+                  <span className="font-medium">Background task status:</span>{" "}
+                  {taskStatus}
+                </p>
+                {taskId && (
+                  <p className="mt-1 text-xs text-slate-500">
+                    Task ID: {taskId}
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="min-h-0 flex-1 overflow-hidden rounded-2xl">
               <div className="h-full overflow-y-auto pr-2">
-                <SequenceViewer
-                  sequence={sequence}
-                  setSequence={setSingleSequenceState}
-                  loadedFileName={loadedFileName}
-                  folderFiles={folderFiles}
-                  mode={mode}
-                  highlights={selectedHighlight}
-                  sequenceMeta={sequenceMeta}
-                  fullSequenceRef={fullSequenceRef}
-                  onAnalyzeWindow={handleAnalyzeWindow}
-                />
+                <SequenceViewer {...viewerProps} />
               </div>
             </div>
           </section>
 
           <section className="h-[calc(100vh-2rem)] min-h-0 overflow-hidden rounded-2xl">
             <div className="h-full overflow-y-auto pr-2">
-              <Results
-                results={results}
-                loading={loading}
-                mode={mode}
-                activeView={activeView}
-                onSelectFeature={handleSelectFeature}
-              />
+              <Results {...resultsProps} />
             </div>
           </section>
         </div>
@@ -373,48 +470,26 @@ export default function Home() {
               backgroundPosition: "center",
             }}
           >
-            <UploadFile
-              setSequence={(value) => {
-                setMode("single");
-                setSequence(value);
-                setSelectedHighlight([]);
-              }}
-              setLoadedFileName={setLoadedFileName}
-              setFolderFiles={(files) => {
-                setFolderFiles(files);
-                setSelectedHighlight([]);
-              }}
-              setMode={setMode}
-              setResults={(data) => {
-                setResults(data);
-                setSelectedHighlight([]);
-              }}
-              setFullSequenceRef={(seq) => {
-                fullSequenceRef.current = seq;
-              }}
-              setSequenceMeta={setSequenceMeta}
-            />
+            <UploadFile {...uploadProps} />
           </div>
 
-          <SequenceViewer
-            sequence={sequence}
-            setSequence={setSingleSequenceState}
-            loadedFileName={loadedFileName}
-            folderFiles={folderFiles}
-            mode={mode}
-            highlights={selectedHighlight}
-            sequenceMeta={sequenceMeta}
-            fullSequenceRef={fullSequenceRef}
-            onAnalyzeWindow={handleAnalyzeWindow}
-          />
+          {loading && taskStatus && (
+            <div className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm">
+              <p className="text-sm text-slate-700">
+                <span className="font-medium">Background task status:</span>{" "}
+                {taskStatus}
+              </p>
+              {taskId && (
+                <p className="mt-1 text-xs text-slate-500">
+                  Task ID: {taskId}
+                </p>
+              )}
+            </div>
+          )}
 
-          <Results
-            results={results}
-            loading={loading}
-            mode={mode}
-            activeView={activeView}
-            onSelectFeature={handleSelectFeature}
-          />
+          <SequenceViewer {...viewerProps} />
+
+          <Results {...resultsProps} />
 
           <MobileActions
             results={results}

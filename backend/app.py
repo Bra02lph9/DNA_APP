@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
@@ -12,6 +14,8 @@ from analysis.analysis_service import (
     analyze_folder_files,
 )
 from analysis.utils import load_fasta_folder
+from tasks.analysis_tasks import run_sequence_analysis, run_folder_analysis
+from tasks.celery_app import celery_app
 
 
 app = Flask(__name__)
@@ -39,21 +43,40 @@ def error_response(message: str, status_code: int = 400):
     return jsonify({"error": message}), status_code
 
 
+def get_min_aa(data: dict) -> int:
+    min_aa = data.get("min_aa", 30)
+    try:
+        min_aa = int(min_aa)
+    except (TypeError, ValueError):
+        raise ValueError("min_aa must be an integer")
+
+    if min_aa <= 0:
+        raise ValueError("min_aa must be > 0")
+
+    return min_aa
+
+
 def handle_single_or_folder(
     data: dict,
     single_handler,
     folder_analysis_type: str,
     single_response_transform=None,
     folder_response_transform=None,
+    supports_min_aa: bool = False,
 ):
     mode = data.get("mode", "single")
+    min_aa = get_min_aa(data) if supports_min_aa else None
 
     if mode == "folder":
         files = data.get("files", [])
         if not isinstance(files, list):
             return error_response("'files' must be a list")
 
-        results = analyze_folder_files(files, analysis_type=folder_analysis_type)
+        kwargs = {"analysis_type": folder_analysis_type}
+        if supports_min_aa:
+            kwargs["min_aa"] = min_aa
+
+        results = analyze_folder_files(files, **kwargs)
 
         if folder_response_transform:
             results = folder_response_transform(results)
@@ -61,7 +84,11 @@ def handle_single_or_folder(
         return jsonify(results)
 
     sequence = data.get("sequence", "")
-    result = single_handler(sequence)
+
+    if supports_min_aa:
+        result = single_handler(sequence, min_aa=min_aa)
+    else:
+        result = single_handler(sequence)
 
     if single_response_transform:
         result = single_response_transform(result)
@@ -73,16 +100,18 @@ def handle_single_or_folder(
 def analyze_folder_path_route():
     data = get_json_data()
     folder_path = data.get("folder_path", "").strip()
+    min_aa = data.get("min_aa", 30)
 
     if not folder_path:
         return error_response("folder_path is required")
 
     try:
+        min_aa = int(min_aa)
         folder_sequences = load_fasta_folder(folder_path)
         output = []
 
         for item in folder_sequences:
-            result = analyze_all(item["sequence"])
+            result = analyze_all(item["sequence"], min_aa=min_aa)
             result["file"] = item["file"]
             result["header"] = item["header"]
             output.append(result)
@@ -100,20 +129,29 @@ def coding_orfs_route():
     mode = data.get("mode", "single")
 
     try:
+        min_aa = get_min_aa(data)
+
         if mode == "folder":
             files = data.get("files", [])
             if not isinstance(files, list):
                 return error_response("'files' must be a list")
 
-            output = analyze_folder_files(files, analysis_type="coding_orfs")
+            output = analyze_folder_files(
+                files,
+                analysis_type="coding_orfs",
+                min_aa=min_aa,
+            )
             return jsonify(output)
 
         sequence = data.get("sequence", "")
-        result = analyze_coding_orfs(sequence, min_aa=30)
-        return jsonify({
-            "coding_orfs": result["coding_orfs"],
-            "best_coding_orf": result["best_coding_orf"],
-        })
+        result = analyze_coding_orfs(sequence, min_aa=min_aa)
+
+        return jsonify(
+            {
+                "coding_orfs": result["coding_orfs"],
+                "best_coding_orf": result["best_coding_orf"],
+            }
+        )
 
     except Exception as e:
         print("CODING ORFS ERROR:", e)
@@ -222,16 +260,22 @@ def analyze_ranked_coding_orfs_route():
     mode = data.get("mode", "single")
 
     try:
+        min_aa = get_min_aa(data)
+
         if mode == "folder":
             files = data.get("files", [])
             if not isinstance(files, list):
                 return error_response("'files' must be a list")
 
-            output = analyze_folder_files(files, analysis_type="ranked_coding_orfs")
+            output = analyze_folder_files(
+                files,
+                analysis_type="ranked_coding_orfs",
+                min_aa=min_aa,
+            )
             return jsonify(output)
 
         sequence = data.get("sequence", "")
-        result = analyze_ranked_coding_orfs(sequence)
+        result = analyze_ranked_coding_orfs(sequence, min_aa=min_aa)
         return jsonify(result)
 
     except Exception as e:
@@ -245,20 +289,91 @@ def analyze_all_route():
     mode = data.get("mode", "single")
 
     try:
+        min_aa = get_min_aa(data)
+
         if mode == "folder":
             files = data.get("files", [])
             if not isinstance(files, list):
                 return error_response("'files' must be a list")
 
-            output = analyze_folder_files(files, analysis_type="all")
+            output = analyze_folder_files(
+                files,
+                analysis_type="all",
+                min_aa=min_aa,
+            )
             return jsonify(output)
 
         sequence = data.get("sequence", "")
-        result = analyze_all(sequence)
+        result = analyze_all(sequence, min_aa=min_aa)
         return jsonify(result)
 
     except Exception as e:
         print("ALL ERROR:", e)
+        return error_response(str(e))
+
+
+@app.route("/tasks/analyze", methods=["POST"])
+def create_analysis_task():
+    data = get_json_data()
+    mode = data.get("mode", "single")
+    analysis_type = data.get("analysis_type", "all")
+
+    try:
+        min_aa = get_min_aa(data)
+
+        if mode == "folder":
+            files = data.get("files", [])
+            if not isinstance(files, list) or not files:
+                return error_response("'files' must be a non-empty list")
+
+            task = run_folder_analysis.delay(
+                files=files,
+                analysis_type=analysis_type,
+                min_aa=min_aa,
+            )
+        else:
+            sequence = data.get("sequence", "")
+            if not sequence:
+                return error_response("'sequence' is required")
+
+            task = run_sequence_analysis.delay(
+                sequence=sequence,
+                analysis_type=analysis_type,
+                min_aa=min_aa,
+            )
+
+        return jsonify(
+            {
+                "task_id": task.id,
+                "status": "queued",
+                "analysis_type": analysis_type,
+            }
+        ), 202
+
+    except Exception as e:
+        print("TASK CREATE ERROR:", e)
+        return error_response(str(e))
+
+
+@app.route("/tasks/<task_id>", methods=["GET"])
+def get_task_status(task_id):
+    try:
+        task_result = celery_app.AsyncResult(task_id)
+
+        response = {
+            "task_id": task_id,
+            "status": task_result.status,
+        }
+
+        if task_result.status == "SUCCESS":
+            response["result"] = task_result.result
+        elif task_result.status == "FAILURE":
+            response["error"] = str(task_result.result)
+
+        return jsonify(response)
+
+    except Exception as e:
+        print("TASK STATUS ERROR:", e)
         return error_response(str(e))
 
 
