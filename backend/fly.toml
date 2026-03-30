@@ -1,0 +1,16 @@
+app = 'backend-morning-fog-8587'
+primary_region = 'cdg'
+
+[build]
+
+[env]
+  PYTHONUNBUFFERED = "1"
+
+[processes]
+  worker = "celery -A tasks.celery_app.celery_app worker --loglevel=info --pool=solo"
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 1024
