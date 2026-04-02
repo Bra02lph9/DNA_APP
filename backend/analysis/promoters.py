@@ -6,6 +6,11 @@ from typing import List, Dict, Tuple
 from .utils import reverse_complement
 from .numba_helpers import hamming_distance_numba, at_fraction_numba
 
+try:
+    from ._promoters_cy import scan_promoter_positions_cy
+except ImportError:
+    scan_promoter_positions_cy = None
+
 
 BOX_35 = "TTGACA"
 BOX_10 = "TATAAT"
@@ -13,7 +18,7 @@ VALID_DNA = {"A", "T", "C", "G", "N"}
 MOTIF_LEN = 6
 
 
-@dataclass
+@dataclass(slots=True)
 class PromoterHit:
     strand: str
     box35_start: int
@@ -191,26 +196,15 @@ def _build_promoter_hit(
     )
 
 
-def find_promoters_in_strand(
-    sequence: str,
-    strand: str = "+",
-    max_mismatches_box35: int = 2,
-    max_mismatches_box10: int = 2,
-    spacing_min: int = 16,
-    spacing_max: int = 19,
-) -> List[PromoterHit]:
-    seq = _clean_sequence(sequence)
-    if not seq or not _contains_only_dna(seq):
-        return []
-
-    search_seq = seq if strand == "+" else reverse_complement(seq)
-    original_len = len(seq)
+def _scan_promoter_positions_python(
+    search_seq: str,
+    max_mismatches_box35: int,
+    max_mismatches_box10: int,
+    spacing_min: int,
+    spacing_max: int,
+) -> List[tuple[int, int, int, int, int]]:
     seq_len = len(search_seq)
-
-    if seq_len < (2 * MOTIF_LEN + spacing_min):
-        return []
-
-    hits: List[PromoterHit] = []
+    hits_raw: List[tuple[int, int, int, int, int]] = []
 
     last_box35_start = seq_len - MOTIF_LEN
     last_box10_start = seq_len - MOTIF_LEN
@@ -242,19 +236,84 @@ def find_promoters_in_strand(
             if mm10 > max_mismatches_box10:
                 continue
 
-            hit = _build_promoter_hit(
-                strand=strand,
-                original_len=original_len,
-                i35=i35,
-                seq35=seq35,
-                mm35=mm35,
-                i10=i10,
-                seq10=seq10,
-                mm10=mm10,
-                spacing=spacing,
-                search_seq=search_seq,
-            )
-            hits.append(hit)
+            hits_raw.append((i35, mm35, i10, mm10, spacing))
+
+    return hits_raw
+
+
+def _scan_promoter_positions(
+    search_seq: str,
+    max_mismatches_box35: int,
+    max_mismatches_box10: int,
+    spacing_min: int,
+    spacing_max: int,
+) -> List[tuple[int, int, int, int, int]]:
+    use_cython = (
+        scan_promoter_positions_cy is not None
+        and spacing_min <= spacing_max
+    )
+
+    if use_cython:
+        return scan_promoter_positions_cy(
+            search_seq,
+            max_mismatches_box35,
+            max_mismatches_box10,
+            spacing_min,
+            spacing_max,
+        )
+
+    return _scan_promoter_positions_python(
+        search_seq=search_seq,
+        max_mismatches_box35=max_mismatches_box35,
+        max_mismatches_box10=max_mismatches_box10,
+        spacing_min=spacing_min,
+        spacing_max=spacing_max,
+    )
+
+
+def find_promoters_in_strand(
+    sequence: str,
+    strand: str = "+",
+    max_mismatches_box35: int = 2,
+    max_mismatches_box10: int = 2,
+    spacing_min: int = 16,
+    spacing_max: int = 19,
+    already_clean: bool = False,
+) -> List[PromoterHit]:
+    seq = sequence if already_clean else _clean_sequence(sequence)
+    if not seq or not _contains_only_dna(seq):
+        return []
+
+    search_seq = seq if strand == "+" else reverse_complement(seq)
+    original_len = len(seq)
+    seq_len = len(search_seq)
+
+    if seq_len < (2 * MOTIF_LEN + spacing_min):
+        return []
+
+    raw_hits = _scan_promoter_positions(
+        search_seq=search_seq,
+        max_mismatches_box35=max_mismatches_box35,
+        max_mismatches_box10=max_mismatches_box10,
+        spacing_min=spacing_min,
+        spacing_max=spacing_max,
+    )
+
+    hits = [
+        _build_promoter_hit(
+            strand=strand,
+            original_len=original_len,
+            i35=i35,
+            seq35=search_seq[i35:i35 + MOTIF_LEN],
+            mm35=mm35,
+            i10=i10,
+            seq10=search_seq[i10:i10 + MOTIF_LEN],
+            mm10=mm10,
+            spacing=spacing,
+            search_seq=search_seq,
+        )
+        for i35, mm35, i10, mm10, spacing in raw_hits
+    ]
 
     hits = _deduplicate_hits(hits)
     hits = _filter_redundant_hits(hits)
@@ -268,22 +327,28 @@ def find_promoters(
     spacing_min: int = 16,
     spacing_max: int = 19,
 ) -> List[PromoterHit]:
+    seq = _clean_sequence(sequence)
+    if not seq or not _contains_only_dna(seq):
+        return []
+
     hits_plus = find_promoters_in_strand(
-        sequence=sequence,
+        sequence=seq,
         strand="+",
         max_mismatches_box35=max_mismatches_box35,
         max_mismatches_box10=max_mismatches_box10,
         spacing_min=spacing_min,
         spacing_max=spacing_max,
+        already_clean=True,
     )
 
     hits_minus = find_promoters_in_strand(
-        sequence=sequence,
+        sequence=seq,
         strand="-",
         max_mismatches_box35=max_mismatches_box35,
         max_mismatches_box10=max_mismatches_box10,
         spacing_min=spacing_min,
         spacing_max=spacing_max,
+        already_clean=True,
     )
 
     return _sort_promoters_biologically(hits_plus + hits_minus)

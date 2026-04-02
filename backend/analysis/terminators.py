@@ -6,11 +6,16 @@ from typing import List, Dict, Tuple
 from .utils import reverse_complement
 from .numba_helpers import gc_fraction_numba, hamming_distance_numba
 
+try:
+    from ._terminators_cy import scan_terminator_positions_cy
+except ImportError:
+    scan_terminator_positions_cy = None
+
 
 VALID_DNA = {"A", "T", "C", "G", "N"}
 
 
-@dataclass
+@dataclass(slots=True)
 class TerminatorHit:
     strand: str
     stem_left_start: int
@@ -236,30 +241,22 @@ def _collect_poly_t(search_seq: str, start_0: int) -> tuple[int, str]:
     return end_0_exclusive, search_seq[start_0:end_0_exclusive]
 
 
-def find_rho_independent_terminators_in_strand(
-    sequence: str,
-    strand: str = "+",
-    stem_min: int = 5,
-    stem_max: int = 10,
-    loop_min: int = 3,
-    loop_max: int = 7,
-    max_stem_mismatches: int = 1,
-    min_poly_t: int = 5,
-    gc_threshold: float = 0.7,
-) -> List[TerminatorHit]:
-    seq = _clean_sequence(sequence)
-    if not seq or not _contains_only_dna(seq):
-        return []
-
-    search_seq = seq if strand == "+" else reverse_complement(seq)
+def _scan_terminator_positions_python(
+    search_seq: str,
+    stem_min: int,
+    stem_max: int,
+    loop_min: int,
+    loop_max: int,
+    max_stem_mismatches: int,
+    min_poly_t: int,
+    gc_threshold: float,
+) -> List[tuple[int, int, int, int, int, int, int]]:
     n = len(search_seq)
-
     min_total_len = (2 * stem_min) + loop_min + min_poly_t
     if n < min_total_len:
         return []
 
-    hits: List[TerminatorHit] = []
-
+    hits_raw: List[tuple[int, int, int, int, int, int, int]] = []
     max_left_start = n - min_total_len
 
     for i in range(max_left_start + 1):
@@ -299,28 +296,123 @@ def find_rho_independent_terminators_in_strand(
                 if len(poly_t_seq) < min_poly_t:
                     continue
 
-                loop_seq = search_seq[left_end_0_exclusive:right_start_0]
-                if "N" in loop_seq:
-                    continue
-
-                hit = _build_hit(
-                    strand=strand,
-                    sequence_len=len(seq),
-                    left_start_0=left_start_0,
-                    left_end_0_exclusive=left_end_0_exclusive,
-                    left_seq=left,
-                    loop_seq=loop_seq,
-                    right_start_0=right_start_0,
-                    right_end_0_exclusive=right_end_0_exclusive,
-                    right_seq=right,
-                    poly_start_0=poly_start_0,
-                    poly_end_0_exclusive=poly_end_0_exclusive,
-                    poly_t_seq=poly_t_seq,
-                    stem_length=stem_len,
-                    loop_length=loop_len,
-                    mismatches=mismatches,
+                hits_raw.append(
+                    (
+                        left_start_0,
+                        left_end_0_exclusive,
+                        right_start_0,
+                        right_end_0_exclusive,
+                        poly_start_0,
+                        poly_end_0_exclusive,
+                        mismatches,
+                    )
                 )
-                hits.append(hit)
+
+    return hits_raw
+
+
+def _scan_terminator_positions(
+    search_seq: str,
+    stem_min: int,
+    stem_max: int,
+    loop_min: int,
+    loop_max: int,
+    max_stem_mismatches: int,
+    min_poly_t: int,
+    gc_threshold: float,
+) -> List[tuple[int, int, int, int, int, int, int]]:
+    if scan_terminator_positions_cy is not None:
+        return scan_terminator_positions_cy(
+            search_seq,
+            stem_min,
+            stem_max,
+            loop_min,
+            loop_max,
+            max_stem_mismatches,
+            min_poly_t,
+            gc_threshold,
+        )
+
+    return _scan_terminator_positions_python(
+        search_seq=search_seq,
+        stem_min=stem_min,
+        stem_max=stem_max,
+        loop_min=loop_min,
+        loop_max=loop_max,
+        max_stem_mismatches=max_stem_mismatches,
+        min_poly_t=min_poly_t,
+        gc_threshold=gc_threshold,
+    )
+
+
+def find_rho_independent_terminators_in_strand(
+    sequence: str,
+    strand: str = "+",
+    stem_min: int = 5,
+    stem_max: int = 10,
+    loop_min: int = 3,
+    loop_max: int = 7,
+    max_stem_mismatches: int = 1,
+    min_poly_t: int = 5,
+    gc_threshold: float = 0.7,
+    already_clean: bool = False,
+) -> List[TerminatorHit]:
+    seq = sequence if already_clean else _clean_sequence(sequence)
+    if not seq or not _contains_only_dna(seq):
+        return []
+
+    search_seq = seq if strand == "+" else reverse_complement(seq)
+    n = len(search_seq)
+
+    min_total_len = (2 * stem_min) + loop_min + min_poly_t
+    if n < min_total_len:
+        return []
+
+    raw_hits = _scan_terminator_positions(
+        search_seq=search_seq,
+        stem_min=stem_min,
+        stem_max=stem_max,
+        loop_min=loop_min,
+        loop_max=loop_max,
+        max_stem_mismatches=max_stem_mismatches,
+        min_poly_t=min_poly_t,
+        gc_threshold=gc_threshold,
+    )
+
+    hits: List[TerminatorHit] = []
+
+    for (
+        left_start_0,
+        left_end_0_exclusive,
+        right_start_0,
+        right_end_0_exclusive,
+        poly_start_0,
+        poly_end_0_exclusive,
+        mismatches,
+    ) in raw_hits:
+        left = search_seq[left_start_0:left_end_0_exclusive]
+        loop_seq = search_seq[left_end_0_exclusive:right_start_0]
+        right = search_seq[right_start_0:right_end_0_exclusive]
+        poly_t_seq = search_seq[poly_start_0:poly_end_0_exclusive]
+
+        hit = _build_hit(
+            strand=strand,
+            sequence_len=len(seq),
+            left_start_0=left_start_0,
+            left_end_0_exclusive=left_end_0_exclusive,
+            left_seq=left,
+            loop_seq=loop_seq,
+            right_start_0=right_start_0,
+            right_end_0_exclusive=right_end_0_exclusive,
+            right_seq=right,
+            poly_start_0=poly_start_0,
+            poly_end_0_exclusive=poly_end_0_exclusive,
+            poly_t_seq=poly_t_seq,
+            stem_length=left_end_0_exclusive - left_start_0,
+            loop_length=right_start_0 - left_end_0_exclusive,
+            mismatches=mismatches,
+        )
+        hits.append(hit)
 
     hits = _deduplicate_hits(hits)
     hits = _filter_redundant_overlaps(hits)
@@ -351,6 +443,7 @@ def find_rho_independent_terminators(
         max_stem_mismatches=max_stem_mismatches,
         min_poly_t=min_poly_t,
         gc_threshold=gc_threshold,
+        already_clean=True,
     )
 
     minus_hits = find_rho_independent_terminators_in_strand(
@@ -363,6 +456,7 @@ def find_rho_independent_terminators(
         max_stem_mismatches=max_stem_mismatches,
         min_poly_t=min_poly_t,
         gc_threshold=gc_threshold,
+        already_clean=True,
     )
 
     return _sort_terminators_biologically(plus_hits + minus_hits)

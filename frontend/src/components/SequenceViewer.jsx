@@ -6,6 +6,7 @@ const LEFT_INDEX_WIDTH = "w-14";
 const SIDE_LABEL_WIDTH = "w-6";
 const DEFAULT_WINDOW_SIZE = 3000;
 const MIN_MINIMAP_WINDOW = 200;
+const MAX_EDITABLE_LENGTH = 50000;
 
 function StatCard({ title, value, subtitle }) {
   return (
@@ -43,8 +44,8 @@ function buildHighlightLookup(highlights, visibleStart, visibleEnd) {
   for (const h of highlights) {
     if (h?.start == null || h?.end == null) continue;
 
-    const start = Math.max(h.start, visibleStart);
-    const end = Math.min(h.end, visibleEnd);
+    const start = Math.max(Math.min(h.start, h.end), visibleStart);
+    const end = Math.min(Math.max(h.start, h.end), visibleEnd);
 
     if (start > end) continue;
 
@@ -310,7 +311,11 @@ function GenomeMiniMap({
   onZoomOut,
   onResetZoom,
   onPanTo,
+  onPanLeft,
+  onPanRight,
 }) {
+  const [isDragging, setIsDragging] = useState(false);
+
   if (!sequenceLength) return null;
 
   const zoomEnd = Math.min(sequenceLength, zoomStart + zoomWindowSize - 1);
@@ -338,13 +343,31 @@ function GenomeMiniMap({
     return !(feature.end < zoomStart || feature.start > zoomEnd);
   });
 
-  const handleTrackClick = (e) => {
-    if (!onPanTo) return;
+  const getPositionFromClientX = (clientX, target) => {
+    const rect = target.getBoundingClientRect();
+    const ratio = (clientX - rect.left) / rect.width;
+    const clampedRatio = Math.max(0, Math.min(1, ratio));
+    return Math.round(zoomStart + clampedRatio * (zoomWindowSize - 1));
+  };
 
-    const rect = e.currentTarget.getBoundingClientRect();
-    const ratio = (e.clientX - rect.left) / rect.width;
-    const clickedPos = Math.round(zoomStart + ratio * (zoomWindowSize - 1));
+  const handleTrackClick = (e) => {
+    if (!onPanTo || isDragging) return;
+    const clickedPos = getPositionFromClientX(e.clientX, e.currentTarget);
     onPanTo(clickedPos);
+  };
+
+  const handleMouseDown = () => {
+    setIsDragging(true);
+  };
+
+  const handleMouseUp = () => {
+    setTimeout(() => setIsDragging(false), 0);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging || !onPanTo) return;
+    const hoveredPos = getPositionFromClientX(e.clientX, e.currentTarget);
+    onPanTo(hoveredPos);
   };
 
   return (
@@ -353,11 +376,27 @@ function GenomeMiniMap({
         <div>
           <h3 className="text-sm font-semibold text-slate-900">Genome Mini Map</h3>
           <p className="text-xs text-slate-500">
-            Zoomable overview of genomic features
+            Zoomable and scrollable overview of genomic features
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={onPanLeft}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-sm text-slate-700 hover:bg-slate-100"
+          >
+            ←
+          </button>
+
+          <button
+            type="button"
+            onClick={onPanRight}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-sm text-slate-700 hover:bg-slate-100"
+          >
+            →
+          </button>
+
           <button
             type="button"
             onClick={onZoomIn}
@@ -391,9 +430,13 @@ function GenomeMiniMap({
       </div>
 
       <div
-        className="relative h-6 cursor-pointer overflow-hidden rounded-full bg-slate-200/80 shadow-inner"
+        className="relative h-6 cursor-grab overflow-hidden rounded-full bg-slate-200/80 shadow-inner active:cursor-grabbing"
         onClick={handleTrackClick}
-        title="Click to pan inside the zoomed region"
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onMouseMove={handleMouseMove}
+        title="Click or drag to scroll inside the zoomed region"
       >
         {visibleFeatures.length === 0 ? (
           <div className="absolute inset-0 rounded-full border border-dashed border-slate-300" />
@@ -425,6 +468,10 @@ function GenomeMiniMap({
             );
           })
         )}
+      </div>
+
+      <div className="mt-2 text-xs text-slate-500">
+        Tip: drag inside the mini map or use ← → to move across the zoomed region.
       </div>
 
       <div className="mt-5 border-t border-slate-200 pt-4">
@@ -470,6 +517,7 @@ export default function SequenceViewer({
   );
 
   const totalLength = sequenceMeta?.length || cleanFullSequence.length;
+  const canEditDirectly = totalLength <= MAX_EDITABLE_LENGTH;
 
   useEffect(() => {
     setViewStart(1);
@@ -478,7 +526,8 @@ export default function SequenceViewer({
 
   useEffect(() => {
     if (totalLength > 0) {
-      setMiniMapWindowSize(Math.min(DEFAULT_WINDOW_SIZE, totalLength));
+      const initialWindow = Math.min(DEFAULT_WINDOW_SIZE, totalLength);
+      setMiniMapWindowSize(initialWindow);
       setMiniMapStart(1);
     }
   }, [totalLength, loadedFileName]);
@@ -508,17 +557,21 @@ export default function SequenceViewer({
     };
   }, [cleanFullSequence]);
 
+  const textareaSequence = useMemo(() => {
+    return canEditDirectly ? cleanFullSequence : visibleSequence;
+  }, [canEditDirectly, cleanFullSequence, visibleSequence]);
+
   const displaySequence = useMemo(() => {
-    return formatSequenceForDisplay(visibleSequence, LINE_LENGTH);
-  }, [visibleSequence]);
+    return formatSequenceForDisplay(textareaSequence, LINE_LENGTH);
+  }, [textareaSequence]);
 
   const miniMapFeatures = useMemo(() => {
     return highlights
       .filter((h) => h?.start != null && h?.end != null)
       .map((h, index) => ({
         id: `${h.type}-${index}`,
-        start: h.start,
-        end: h.end,
+        start: Math.min(h.start, h.end),
+        end: Math.max(h.start, h.end),
         type: h.type,
       }));
   }, [highlights]);
@@ -543,6 +596,21 @@ export default function SequenceViewer({
     if (!totalLength) return;
 
     const safePos = Math.min(Math.max(1, position), totalLength);
+
+    if (canEditDirectly) {
+      requestAnimationFrame(() => {
+        const el = document.getElementById(`base-${safePos}`);
+        if (el) {
+          el.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+            inline: "center",
+          });
+        }
+      });
+      return;
+    }
+
     const half = Math.floor(windowSize / 2);
     let newStart = safePos - half;
 
@@ -566,15 +634,63 @@ export default function SequenceViewer({
     });
   };
 
-  const handleJumpToFeature = (feature) => {
-    if (!feature?.start) return;
-    jumpToPosition(feature.start);
+  const zoomToFeature = (feature, padding = 200) => {
+    if (!feature?.start || !feature?.end || !totalLength) return;
+
+    const featureStart = Math.min(feature.start, feature.end);
+    const featureEnd = Math.max(feature.start, feature.end);
+    const featureSize = featureEnd - featureStart + 1;
+
+    const desiredWindow = Math.max(
+      MIN_MINIMAP_WINDOW,
+      Math.min(totalLength, featureSize + padding * 2)
+    );
+
+    const center = Math.floor((featureStart + featureEnd) / 2);
+
+    const newMiniMapWindow = clampMiniMapWindow(desiredWindow);
+    const newMiniMapStart = clampMiniMapStart(
+      center - Math.floor(newMiniMapWindow / 2),
+      newMiniMapWindow
+    );
+
+    setMiniMapWindowSize(newMiniMapWindow);
+    setMiniMapStart(newMiniMapStart);
+
+    if (!canEditDirectly) {
+      const viewWindow = Math.max(DEFAULT_WINDOW_SIZE, featureSize + padding * 2);
+      setWindowSize(viewWindow);
+    }
+
+    jumpToPosition(center);
   };
+
+  const handleJumpToFeature = (feature) => {
+    if (!feature?.start || !feature?.end) return;
+    zoomToFeature(feature);
+  };
+
+  useEffect(() => {
+    if (!highlights || !highlights.length) return;
+
+    const first = highlights[0];
+    if (first?.start != null && first?.end != null) {
+      zoomToFeature(first, 150);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [highlights]);
 
   const handleWindowSizeChange = (e) => {
     const newSize = Number(e.target.value);
     if (!Number.isFinite(newSize) || newSize <= 0) return;
     setWindowSize(newSize);
+  };
+
+  const handleSequenceEdit = (e) => {
+    if (!canEditDirectly || typeof setSequence !== "function") return;
+
+    const raw = e.target.value.replace(/[^ATGCN]/gi, "").toUpperCase();
+    setSequence(raw);
   };
 
   const zoomMiniMap = (factor) => {
@@ -599,6 +715,39 @@ export default function SequenceViewer({
     setMiniMapWindowSize(totalLength);
     setMiniMapStart(1);
   };
+
+  const panMiniMapTo = (position) => {
+    if (!totalLength) return;
+
+    const half = Math.floor(miniMapWindowSize / 2);
+    const newStart = clampMiniMapStart(position - half, miniMapWindowSize);
+
+    setMiniMapStart(newStart);
+
+    if (!canEditDirectly) {
+      setViewStart(newStart);
+    }
+  };
+
+  const panMiniMap = (direction) => {
+    if (!totalLength) return;
+
+    const step = Math.max(50, Math.floor(miniMapWindowSize * 0.25));
+    const delta = direction === "left" ? -step : step;
+    const newStart = clampMiniMapStart(miniMapStart + delta, miniMapWindowSize);
+
+    setMiniMapStart(newStart);
+
+    if (!canEditDirectly) {
+      setViewStart(newStart);
+    }
+  };
+
+  const panMiniMapLeft = () => panMiniMap("left");
+  const panMiniMapRight = () => panMiniMap("right");
+
+  const previewSequence = canEditDirectly ? cleanFullSequence : visibleSequence;
+  const previewStart = canEditDirectly ? 1 : viewStart;
 
   return (
     <section
@@ -636,48 +785,55 @@ export default function SequenceViewer({
         <StatCard title="AT%" value={stats.at} subtitle="AT content" />
       </div>
 
-      <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm font-medium text-slate-800">Visible window</p>
+      {!canEditDirectly && (
+        <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm font-medium text-slate-800">Visible window</p>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => jumpToPosition(Math.max(1, viewStart - windowSize))}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-sm text-slate-700 hover:bg-slate-100"
-            >
-              Prev
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => jumpToPosition(Math.max(1, viewStart - windowSize))}
+                className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-sm text-slate-700 hover:bg-slate-100"
+              >
+                Prev
+              </button>
 
-            <button
-              type="button"
-              onClick={() =>
-                jumpToPosition(Math.min(totalLength, viewStart + windowSize))
-              }
-              className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-sm text-slate-700 hover:bg-slate-100"
-            >
-              Next
-            </button>
+              <button
+                type="button"
+                onClick={() =>
+                  jumpToPosition(Math.min(totalLength, viewStart + windowSize))
+                }
+                className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-sm text-slate-700 hover:bg-slate-100"
+              >
+                Next
+              </button>
 
-            <select
-              value={windowSize}
-              onChange={handleWindowSizeChange}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-sm text-slate-700"
-            >
-              <option value={1000}>1000 nt</option>
-              <option value={3000}>3000 nt</option>
-              <option value={5000}>5000 nt</option>
-              <option value={10000}>10000 nt</option>
-              <option value={50000}>50000 nt</option>
-            </select>
+              <select
+                value={windowSize}
+                onChange={handleWindowSizeChange}
+                className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-sm text-slate-700"
+              >
+                <option value={1000}>1000 nt</option>
+                <option value={3000}>3000 nt</option>
+                <option value={5000}>5000 nt</option>
+                <option value={10000}>10000 nt</option>
+              </select>
+            </div>
           </div>
-        </div>
 
-        <p className="text-sm text-slate-600">
-          Showing positions <span className="font-medium">{viewStart.toLocaleString()}</span> to{" "}
-          <span className="font-medium">{visibleEnd.toLocaleString()}</span>
-        </p>
-      </div>
+          <p className="text-sm text-slate-600">
+            Showing positions <span className="font-medium">{viewStart.toLocaleString()}</span> to{" "}
+            <span className="font-medium">{visibleEnd.toLocaleString()}</span>
+          </p>
+        </div>
+      )}
+
+      {canEditDirectly && (
+        <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+          Full sequence editing is enabled for this sequence size. Clicking a motif still recenters the mini map on that region.
+        </div>
+      )}
 
       {totalLength > 0 && (
         <div className="mt-5">
@@ -690,36 +846,37 @@ export default function SequenceViewer({
             onZoomIn={zoomInMiniMap}
             onZoomOut={zoomOutMiniMap}
             onResetZoom={resetMiniMapZoom}
-            onPanTo={(position) => {
-              const half = Math.floor(miniMapWindowSize / 2);
-              const newStart = clampMiniMapStart(
-                position - half,
-                miniMapWindowSize
-              );
-              setMiniMapStart(newStart);
-              jumpToPosition(position);
-            }}
+            onPanTo={panMiniMapTo}
+            onPanLeft={panMiniMapLeft}
+            onPanRight={panMiniMapRight}
           />
         </div>
       )}
 
       <label className="mt-5 mb-2 block text-sm font-medium text-slate-900">
-        DNA Sequence Window
+        DNA Sequence {canEditDirectly ? "" : "Window"}
       </label>
 
       <textarea
         value={displaySequence}
-        readOnly
+        onChange={handleSequenceEdit}
+        readOnly={!canEditDirectly}
         rows={14}
         wrap="off"
         spellCheck={false}
-        className="w-full overflow-x-auto rounded-xl border border-slate-300 bg-slate-50 p-4 font-mono text-sm text-slate-900 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200"
-        placeholder="DNA sequence window..."
+        className="w-full overflow-x-auto rounded-xl border border-slate-300 bg-slate-50 p-4 font-mono text-sm text-slate-900 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 read-only:cursor-not-allowed read-only:bg-slate-100 read-only:text-slate-600"
+        placeholder="Paste DNA sequence here..."
       />
 
-      <p className="mt-2 text-xs text-slate-600">
-        This viewer is read-only. Use feature clicks and the mini map to navigate long sequences safely.
-      </p>
+      {canEditDirectly ? (
+        <p className="mt-2 text-xs text-slate-600">
+          You can paste and edit the full sequence here.
+        </p>
+      ) : (
+        <p className="mt-2 text-xs text-slate-600">
+          This viewer is read-only for large sequences. Use feature clicks and the mini map to navigate safely.
+        </p>
+      )}
 
       <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
         <div className="mb-2 flex items-center justify-between">
@@ -729,9 +886,9 @@ export default function SequenceViewer({
         </div>
 
         <DoubleStrandPreview
-          sequence={visibleSequence}
+          sequence={previewSequence}
           highlights={highlights}
-          globalStart={viewStart}
+          globalStart={previewStart}
         />
       </div>
     </section>

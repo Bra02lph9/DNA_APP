@@ -5,13 +5,18 @@ from typing import List, Optional
 
 from .utils import reverse_complement
 
+try:
+    from ._coding_orfs_cy import scan_orf_positions_in_strand_cy
+except ImportError:
+    scan_orf_positions_in_strand_cy = None
+
 
 START_CODONS = {"ATG", "GTG", "TTG"}
 STOP_CODONS = {"TAA", "TAG", "TGA"}
 CODON_SIZE = 3
 
 
-@dataclass
+@dataclass(slots=True)
 class CodingORF:
     strand: str
     frame: int
@@ -64,7 +69,7 @@ def _build_orf(
 ) -> CodingORF:
     end_0_exclusive = stop_0 + CODON_SIZE
     orf_seq = scanned_seq[start_0:end_0_exclusive]
-    length_nt = len(orf_seq)
+    length_nt = end_0_exclusive - start_0
 
     if strand == "+":
         start = start_0 + 1
@@ -104,9 +109,72 @@ def _sort_orfs_biologically(orfs: List[CodingORF]) -> List[CodingORF]:
     )
 
 
-def _iter_frame_codons(sequence: str, frame_offset: int):
-    for i in range(frame_offset, len(sequence) - 2, CODON_SIZE):
-        yield i, sequence[i:i + CODON_SIZE]
+def _scan_orf_positions_in_strand_python(
+    scanned_seq: str,
+    min_aa: int,
+    start_codons: set[str],
+    stop_codons: set[str],
+    longest_only_per_stop: bool,
+) -> List[tuple[int, int, int]]:
+    n = len(scanned_seq)
+    found_positions: List[tuple[int, int, int]] = []
+
+    for frame_offset in range(CODON_SIZE):
+        starts_in_frame: List[int] = []
+
+        for i in range(frame_offset, n - 2, CODON_SIZE):
+            codon = scanned_seq[i:i + CODON_SIZE]
+
+            if codon in start_codons:
+                starts_in_frame.append(i)
+
+            if codon in stop_codons:
+                if starts_in_frame:
+                    if longest_only_per_stop:
+                        start_0 = starts_in_frame[0]
+                        length_nt = (i + CODON_SIZE) - start_0
+                        peptide_len = _peptide_length_from_nt(length_nt)
+                        if peptide_len >= min_aa:
+                            found_positions.append((frame_offset, start_0, i))
+                    else:
+                        for start_0 in starts_in_frame:
+                            length_nt = (i + CODON_SIZE) - start_0
+                            peptide_len = _peptide_length_from_nt(length_nt)
+                            if peptide_len >= min_aa:
+                                found_positions.append((frame_offset, start_0, i))
+
+                starts_in_frame = []
+
+    return found_positions
+
+
+def _scan_orf_positions_in_strand(
+    scanned_seq: str,
+    min_aa: int,
+    start_codons: set[str],
+    stop_codons: set[str],
+    longest_only_per_stop: bool,
+) -> List[tuple[int, int, int]]:
+    use_cython = (
+        scan_orf_positions_in_strand_cy is not None
+        and start_codons == START_CODONS
+        and stop_codons == STOP_CODONS
+    )
+
+    if use_cython:
+        return scan_orf_positions_in_strand_cy(
+            scanned_seq,
+            min_aa,
+            longest_only_per_stop,
+        )
+
+    return _scan_orf_positions_in_strand_python(
+        scanned_seq=scanned_seq,
+        min_aa=min_aa,
+        start_codons=start_codons,
+        stop_codons=stop_codons,
+        longest_only_per_stop=longest_only_per_stop,
+    )
 
 
 def find_coding_orfs_in_strand(
@@ -116,8 +184,9 @@ def find_coding_orfs_in_strand(
     start_codons: Optional[set[str]] = None,
     stop_codons: Optional[set[str]] = None,
     longest_only_per_stop: bool = False,
+    already_clean: bool = False,
 ) -> List[CodingORF]:
-    seq = _clean_sequence(sequence)
+    seq = sequence if already_clean else _clean_sequence(sequence)
     if not seq:
         return []
 
@@ -130,46 +199,25 @@ def find_coding_orfs_in_strand(
     if len(scanned_seq) < CODON_SIZE * 2:
         return []
 
-    found: List[CodingORF] = []
+    raw_positions = _scan_orf_positions_in_strand(
+        scanned_seq=scanned_seq,
+        min_aa=min_aa,
+        start_codons=start_codons,
+        stop_codons=stop_codons,
+        longest_only_per_stop=longest_only_per_stop,
+    )
 
-    for frame_offset in range(CODON_SIZE):
-        starts_in_frame: List[int] = []
-
-        for i, codon in _iter_frame_codons(scanned_seq, frame_offset):
-            if codon in start_codons:
-                starts_in_frame.append(i)
-
-            if codon not in stop_codons:
-                continue
-
-            if starts_in_frame:
-                candidate_starts = (
-                    [starts_in_frame[0]]
-                    if longest_only_per_stop
-                    else starts_in_frame[:]
-                )
-
-                for start_0 in candidate_starts:
-                    length_nt = (i + CODON_SIZE) - start_0
-                    peptide_len = _peptide_length_from_nt(length_nt)
-
-                    if peptide_len < min_aa:
-                        continue
-
-                    found.append(
-                        _build_orf(
-                            scanned_seq=scanned_seq,
-                            original_seq_len=original_len,
-                            strand=strand,
-                            frame_offset=frame_offset,
-                            start_0=start_0,
-                            stop_0=i,
-                        )
-                    )
-
-            starts_in_frame = []
-
-    return found
+    return [
+        _build_orf(
+            scanned_seq=scanned_seq,
+            original_seq_len=original_len,
+            strand=strand,
+            frame_offset=frame_offset,
+            start_0=start_0,
+            stop_0=stop_0,
+        )
+        for frame_offset, start_0, stop_0 in raw_positions
+    ]
 
 
 def find_coding_orfs(
@@ -190,6 +238,7 @@ def find_coding_orfs(
         start_codons=start_codons,
         stop_codons=stop_codons,
         longest_only_per_stop=longest_only_per_stop,
+        already_clean=True,
     )
 
     minus_orfs = find_coding_orfs_in_strand(
@@ -199,6 +248,7 @@ def find_coding_orfs(
         start_codons=start_codons,
         stop_codons=stop_codons,
         longest_only_per_stop=longest_only_per_stop,
+        already_clean=True,
     )
 
     return _sort_orfs_biologically(plus_orfs + minus_orfs)

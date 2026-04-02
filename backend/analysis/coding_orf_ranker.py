@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import List, Optional, Dict, Any
+from bisect import bisect_left, bisect_right
+from typing import List, Optional, Dict, Any, Tuple
 
 from .coding_orfs import (
     find_coding_orfs,
@@ -138,6 +139,71 @@ def _group_by_strand(items) -> Dict[str, list]:
     return grouped
 
 
+def _sd_sort_key(site: ShineDalgarnoSite) -> tuple:
+    return (
+        -site.score,
+        site.mismatches,
+        abs((site.distance_to_start or 999) - 7),
+        site.start,
+    )
+
+
+def _promoter_sort_key(p: PromoterHit, distance: int) -> tuple:
+    return (distance, -p.score, p.box10_start, p.box35_start)
+
+
+def _terminator_sort_key(t: TerminatorHit, distance: int) -> tuple:
+    return (distance, -t.score, t.stem_left_start, t.poly_t_start)
+
+
+def _index_sd_sites(
+    sd_sites: List[ShineDalgarnoSite],
+) -> Dict[str, Dict[int, ShineDalgarnoSite]]:
+    indexed: Dict[str, Dict[int, ShineDalgarnoSite]] = {"+": {}, "-": {}}
+
+    for site in sd_sites:
+        if site.strand not in indexed:
+            continue
+        if site.linked_start_position is None:
+            continue
+
+        current = indexed[site.strand].get(site.linked_start_position)
+        if current is None or _sd_sort_key(site) < _sd_sort_key(current):
+            indexed[site.strand][site.linked_start_position] = site
+
+    return indexed
+
+
+def _index_promoters_by_strand(
+    promoters: List[PromoterHit],
+) -> Dict[str, Tuple[List[int], List[PromoterHit]]]:
+    grouped = _group_by_strand(promoters)
+    indexed: Dict[str, Tuple[List[int], List[PromoterHit]]] = {}
+
+    plus_items = sorted(grouped["+"], key=lambda p: p.box10_end)
+    minus_items = sorted(grouped["-"], key=lambda p: p.box10_start)
+
+    indexed["+"] = ([p.box10_end for p in plus_items], plus_items)
+    indexed["-"] = ([p.box10_start for p in minus_items], minus_items)
+
+    return indexed
+
+
+def _index_terminators_by_strand(
+    terminators: List[TerminatorHit],
+) -> Dict[str, Tuple[List[int], List[TerminatorHit]]]:
+    grouped = _group_by_strand(terminators)
+    indexed: Dict[str, Tuple[List[int], List[TerminatorHit]]] = {}
+
+    plus_items = sorted(grouped["+"], key=lambda t: t.stem_left_start)
+    minus_items = sorted(grouped["-"], key=lambda t: t.stem_right_end)
+
+    indexed["+"] = ([t.stem_left_start for t in plus_items], plus_items)
+    indexed["-"] = ([t.stem_right_end for t in minus_items], minus_items)
+
+    return indexed
+
+
 def find_best_sd_for_orf(
     orf: CodingORF,
     sd_sites: List[ShineDalgarnoSite],
@@ -153,12 +219,7 @@ def find_best_sd_for_orf(
         if site.linked_start_position != orf.start:
             continue
 
-        key = (
-            -site.score,
-            site.mismatches,
-            abs((site.distance_to_start or 999) - 7),
-            site.start,
-        )
+        key = _sd_sort_key(site)
 
         if best is None or key < best_key:
             best = site
@@ -182,7 +243,7 @@ def find_best_promoter_for_orf(
         if distance > max_distance:
             continue
 
-        key = (distance, -p.score)
+        key = _promoter_sort_key(p, distance)
 
         if best is None or key < best_key:
             best = p
@@ -206,11 +267,120 @@ def find_best_terminator_for_orf(
         if distance > max_distance:
             continue
 
-        key = (distance, -t.score)
+        key = _terminator_sort_key(t, distance)
 
         if best is None or key < best_key:
             best = t
             best_key = key
+
+    return best
+
+
+def _find_best_sd_for_orf_indexed(
+    orf: CodingORF,
+    sd_index: Dict[str, Dict[int, ShineDalgarnoSite]],
+) -> Optional[ShineDalgarnoSite]:
+    return sd_index.get(orf.strand, {}).get(orf.start)
+
+
+def _find_best_promoter_for_orf_indexed(
+    orf: CodingORF,
+    promoter_index: Dict[str, Tuple[List[int], List[PromoterHit]]],
+    max_distance: int = 300,
+) -> Optional[PromoterHit]:
+    positions, items = promoter_index.get(orf.strand, ([], []))
+    if not items:
+        return None
+
+    best: Optional[PromoterHit] = None
+    best_key = None
+
+    if orf.strand == "+":
+        left_bound = orf.start - max_distance
+        right_bound = orf.start - 1
+
+        lo = bisect_left(positions, left_bound)
+        hi = bisect_right(positions, right_bound)
+
+        for i in range(lo, hi):
+            p = items[i]
+            distance = orf.start - p.box10_end
+            if distance < 1 or distance > max_distance:
+                continue
+
+            key = _promoter_sort_key(p, distance)
+            if best is None or key < best_key:
+                best = p
+                best_key = key
+
+    else:
+        left_bound = orf.end + 1
+        right_bound = orf.end + max_distance
+
+        lo = bisect_left(positions, left_bound)
+        hi = bisect_right(positions, right_bound)
+
+        for i in range(lo, hi):
+            p = items[i]
+            distance = p.box10_start - orf.end
+            if distance < 1 or distance > max_distance:
+                continue
+
+            key = _promoter_sort_key(p, distance)
+            if best is None or key < best_key:
+                best = p
+                best_key = key
+
+    return best
+
+
+def _find_best_terminator_for_orf_indexed(
+    orf: CodingORF,
+    terminator_index: Dict[str, Tuple[List[int], List[TerminatorHit]]],
+    max_distance: int = 300,
+) -> Optional[TerminatorHit]:
+    positions, items = terminator_index.get(orf.strand, ([], []))
+    if not items:
+        return None
+
+    best: Optional[TerminatorHit] = None
+    best_key = None
+
+    if orf.strand == "+":
+        left_bound = orf.end + 1
+        right_bound = orf.end + max_distance
+
+        lo = bisect_left(positions, left_bound)
+        hi = bisect_right(positions, right_bound)
+
+        for i in range(lo, hi):
+            t = items[i]
+            distance = t.stem_left_start - orf.end
+            if distance < 1 or distance > max_distance:
+                continue
+
+            key = _terminator_sort_key(t, distance)
+            if best is None or key < best_key:
+                best = t
+                best_key = key
+
+    else:
+        left_bound = orf.start - max_distance
+        right_bound = orf.start - 1
+
+        lo = bisect_left(positions, left_bound)
+        hi = bisect_right(positions, right_bound)
+
+        for i in range(lo, hi):
+            t = items[i]
+            distance = orf.start - t.stem_right_end
+            if distance < 1 or distance > max_distance:
+                continue
+
+            key = _terminator_sort_key(t, distance)
+            if best is None or key < best_key:
+                best = t
+                best_key = key
 
     return best
 
@@ -262,22 +432,20 @@ def rank_coding_orfs_from_features(
 ) -> List[Dict[str, Any]]:
     ranked: List[Dict[str, Any]] = []
 
-    promoters_by_strand = _group_by_strand(promoters)
-    sd_by_strand = _group_by_strand(sd_sites)
-    terminators_by_strand = _group_by_strand(terminators)
+    sd_index = _index_sd_sites(sd_sites)
+    promoter_index = _index_promoters_by_strand(promoters)
+    terminator_index = _index_terminators_by_strand(terminators)
 
     for orf in coding_orfs:
-        strand = orf.strand
-
-        best_sd = find_best_sd_for_orf(orf, sd_by_strand.get(strand, []))
-        best_promoter = find_best_promoter_for_orf(
+        best_sd = _find_best_sd_for_orf_indexed(orf, sd_index)
+        best_promoter = _find_best_promoter_for_orf_indexed(
             orf,
-            promoters_by_strand.get(strand, []),
+            promoter_index,
             max_distance=max_promoter_distance,
         )
-        best_terminator = find_best_terminator_for_orf(
+        best_terminator = _find_best_terminator_for_orf_indexed(
             orf,
-            terminators_by_strand.get(strand, []),
+            terminator_index,
             max_distance=max_terminator_distance,
         )
 

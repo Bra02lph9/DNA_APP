@@ -42,20 +42,64 @@ function paginateItems(items, currentPage, itemsPerPage = ITEMS_PER_PAGE) {
   return items.slice(startIndex, endIndex);
 }
 
+function getVisiblePages(currentPage, totalPages, maxVisiblePages = 7) {
+  if (totalPages <= maxVisiblePages) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+
+  const pages = [];
+  const sideCount = Math.floor((maxVisiblePages - 3) / 2);
+
+  let start = currentPage - sideCount;
+  let end = currentPage + sideCount;
+
+  if (start <= 2) {
+    start = 2;
+    end = start + (maxVisiblePages - 3);
+  }
+
+  if (end >= totalPages - 1) {
+    end = totalPages - 1;
+    start = end - (maxVisiblePages - 3);
+  }
+
+  pages.push(1);
+
+  if (start > 2) {
+    pages.push("left-ellipsis");
+  }
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+
+  if (end < totalPages - 1) {
+    pages.push("right-ellipsis");
+  }
+
+  pages.push(totalPages);
+
+  return pages;
+}
+
 function Pagination({
   currentPage,
   totalItems,
   itemsPerPage = ITEMS_PER_PAGE,
   onPageChange,
+  maxVisiblePages = 7,
 }) {
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   if (totalPages <= 1) return null;
 
-  const pages = [];
-  for (let i = 1; i <= totalPages; i++) {
-    pages.push(i);
-  }
+  const pages = getVisiblePages(currentPage, totalPages, maxVisiblePages);
+
+  const goToPage = (page) => {
+    if (typeof page !== "number") return;
+    if (page < 1 || page > totalPages) return;
+    onPageChange(page);
+  };
 
   return (
     <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
@@ -66,29 +110,38 @@ function Pagination({
 
       <div className="flex flex-wrap items-center gap-2">
         <button
-          onClick={() => onPageChange(currentPage - 1)}
+          onClick={() => goToPage(currentPage - 1)}
           disabled={currentPage === 1}
           className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Previous
         </button>
 
-        {pages.map((page) => (
-          <button
-            key={page}
-            onClick={() => onPageChange(page)}
-            className={`rounded-lg px-3 py-2 text-sm font-medium shadow-sm transition ${
-              currentPage === page
-                ? "border border-cyan-500 bg-cyan-500 text-white"
-                : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-            }`}
-          >
-            {page}
-          </button>
-        ))}
+        {pages.map((page, index) =>
+          typeof page === "number" ? (
+            <button
+              key={page}
+              onClick={() => goToPage(page)}
+              className={`rounded-lg px-3 py-2 text-sm font-medium shadow-sm transition ${
+                currentPage === page
+                  ? "border border-cyan-500 bg-cyan-500 text-white"
+                  : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              {page}
+            </button>
+          ) : (
+            <span
+              key={`${page}-${index}`}
+              className="px-2 py-2 text-sm font-medium text-slate-500"
+            >
+              ...
+            </span>
+          )
+        )}
 
         <button
-          onClick={() => onPageChange(currentPage + 1)}
+          onClick={() => goToPage(currentPage + 1)}
           disabled={currentPage === totalPages}
           className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
@@ -233,6 +286,7 @@ function ORFTable({ items = [], onSelectFeature }) {
         currentPage={currentPage}
         totalItems={items.length}
         onPageChange={setCurrentPage}
+        maxVisiblePages={7}
       />
     </>
   );
@@ -362,6 +416,7 @@ function PromoterList({ items = [], onSelectFeature }) {
         currentPage={currentPage}
         totalItems={items.length}
         onPageChange={setCurrentPage}
+        maxVisiblePages={7}
       />
     </>
   );
@@ -505,6 +560,7 @@ function TerminatorList({ items = [], onSelectFeature }) {
         currentPage={currentPage}
         totalItems={items.length}
         onPageChange={setCurrentPage}
+        maxVisiblePages={7}
       />
     </>
   );
@@ -618,6 +674,7 @@ function ShineDalgarnoList({ items = [], onSelectFeature }) {
         currentPage={currentPage}
         totalItems={items.length}
         onPageChange={setCurrentPage}
+        maxVisiblePages={7}
       />
     </>
   );
@@ -669,6 +726,7 @@ function FolderResults({ files = [] }) {
         currentPage={currentPage}
         totalItems={files.length}
         onPageChange={setCurrentPage}
+        maxVisiblePages={7}
       />
     </>
   );
@@ -688,87 +746,86 @@ function RankedCodingORFList({ items = [], onSelectFeature }) {
   const paginatedItems = paginateItems(items, currentPage);
 
   const handleClickRankedOrf = (item) => {
-  if (!onSelectFeature) return;
+    if (!onSelectFeature) return;
 
-  const orf = item.orf;
-  if (!orf) return;
+    const orf = item.orf;
+    if (!orf) return;
 
-  const highlights = [];
+    const highlights = [];
 
-  if (orf.strand === "+") {
+    if (orf.strand === "+") {
+      highlights.push({
+        start: orf.start,
+        end: orf.start + 2,
+        type: "startCodon",
+        strand: orf.strand,
+      });
+    } else {
+      highlights.push({
+        start: orf.end - 2,
+        end: orf.end,
+        type: "startCodon",
+        strand: orf.strand,
+      });
+    }
+
     highlights.push({
       start: orf.start,
-      end: orf.start + 2,
-      type: "startCodon",
-      strand: orf.strand,
-    });
-  } else {
-    highlights.push({
-      start: orf.end - 2,
       end: orf.end,
-      type: "startCodon",
+      type: "orf",
       strand: orf.strand,
     });
-  }
 
-  highlights.push({
-    start: orf.start,
-    end: orf.end,
-    type: "orf",
-    strand: orf.strand,
-  });
+    if (item.best_shine_dalgarno) {
+      highlights.push({
+        start: item.best_shine_dalgarno.start,
+        end: item.best_shine_dalgarno.end,
+        type: "shineDalgarno",
+        strand: item.best_shine_dalgarno.strand,
+      });
+    }
 
-  // 3) SD lié
-  if (item.best_shine_dalgarno) {
-    highlights.push({
-      start: item.best_shine_dalgarno.start,
-      end: item.best_shine_dalgarno.end,
-      type: "shineDalgarno",
-      strand: item.best_shine_dalgarno.strand,
-    });
-  }
+    if (item.best_promoter) {
+      highlights.push({
+        start: item.best_promoter.box35_start,
+        end: item.best_promoter.box35_end,
+        type: "promoter35",
+        strand: item.best_promoter.strand,
+      });
 
-  if (item.best_promoter) {
-    highlights.push({
-      start: item.best_promoter.box35_start,
-      end: item.best_promoter.box35_end,
-      type: "promoter35",
-      strand: item.best_promoter.strand,
-    });
+      highlights.push({
+        start: item.best_promoter.box10_start,
+        end: item.best_promoter.box10_end,
+        type: "promoter10",
+        strand: item.best_promoter.strand,
+      });
+    }
 
-    highlights.push({
-      start: item.best_promoter.box10_start,
-      end: item.best_promoter.box10_end,
-      type: "promoter10",
-      strand: item.best_promoter.strand,
-    });
-  }
+    if (item.best_terminator) {
+      highlights.push({
+        start: item.best_terminator.stem_left_start,
+        end: item.best_terminator.stem_left_end,
+        type: "terminatorLeft",
+        strand: item.best_terminator.strand,
+      });
 
-  if (item.best_terminator) {
-    highlights.push({
-      start: item.best_terminator.stem_left_start,
-      end: item.best_terminator.stem_left_end,
-      type: "terminatorLeft",
-      strand: item.best_terminator.strand,
-    });
+      highlights.push({
+        start: item.best_terminator.stem_right_start,
+        end: item.best_terminator.stem_right_end,
+        type: "terminatorRight",
+        strand: item.best_terminator.strand,
+      });
 
-    highlights.push({
-      start: item.best_terminator.stem_right_start,
-      end: item.best_terminator.stem_right_end,
-      type: "terminatorRight",
-      strand: item.best_terminator.strand,
-    });
+      highlights.push({
+        start: item.best_terminator.poly_t_start,
+        end: item.best_terminator.poly_t_end,
+        type: "polyT",
+        strand: item.best_terminator.strand,
+      });
+    }
 
-    highlights.push({
-      start: item.best_terminator.poly_t_start,
-      end: item.best_terminator.poly_t_end,
-      type: "polyT",
-      strand: item.best_terminator.strand,
-    });
-  }
-
-  onSelectFeature(highlights);
-};
+    onSelectFeature(highlights);
+  };
 
   return (
     <>
@@ -883,6 +940,7 @@ function RankedCodingORFList({ items = [], onSelectFeature }) {
         currentPage={currentPage}
         totalItems={items.length}
         onPageChange={setCurrentPage}
+        maxVisiblePages={7}
       />
     </>
   );
@@ -1029,10 +1087,7 @@ export default function Results({
     return (
       <ResultsContainer>
         <SectionCard title="Terminator Results" count={items.length}>
-          <TerminatorList
-            items={items}
-            onSelectFeature={onSelectFeature}
-          />
+          <TerminatorList items={items} onSelectFeature={onSelectFeature} />
         </SectionCard>
       </ResultsContainer>
     );

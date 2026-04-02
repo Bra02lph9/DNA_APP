@@ -10,13 +10,22 @@ from analysis.analysis_service import (
     analyze_terminators,
     analyze_shine_dalgarno,
     analyze_coding_orfs,
-    analyze_ranked_coding_orfs,
     analyze_folder_files,
     analyze_sequence_by_type_adaptive,
 )
 from analysis.utils import load_fasta_folder
-from tasks.analysis_tasks import run_sequence_analysis, run_folder_analysis
+from tasks.analysis_tasks import (
+    run_sequence_analysis,
+    run_folder_analysis
+)
 from tasks.celery_app import celery_app
+
+from db.mongo import ensure_indexes
+from db.analysis_repository import (
+    get_analysis,
+    fetch_module_results,
+    count_module_results,
+)
 
 
 app = Flask(__name__)
@@ -33,6 +42,8 @@ CORS(
         }
     },
 )
+
+ensure_indexes()
 
 
 def get_json_data() -> dict:
@@ -55,6 +66,58 @@ def get_min_aa(data: dict) -> int:
         raise ValueError("min_aa must be > 0")
 
     return min_aa
+
+
+def get_positive_int(value, default: int, field_name: str) -> int:
+    if value is None:
+        return default
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"{field_name} must be an integer")
+    if parsed < 0:
+        raise ValueError(f"{field_name} must be >= 0")
+    return parsed
+
+
+def get_limit(value, default: int = 20, max_limit: int = 200) -> int:
+    limit = get_positive_int(value, default, "limit")
+    if limit == 0:
+        return default
+    return min(limit, max_limit)
+
+
+def get_sort_direction(value: str | None) -> int:
+    if not value:
+        return 1
+    value = value.lower().strip()
+    if value in {"asc", "1", "up"}:
+        return 1
+    if value in {"desc", "-1", "down"}:
+        return -1
+    raise ValueError("sort_direction must be 'asc' or 'desc'")
+
+
+def normalize_result_module(module: str) -> str:
+    mapping = {
+        "coding_orfs": "coding_orfs",
+        "promoters": "promoters",
+        "shine_dalgarno": "shine_dalgarno",
+        "shine_dalgarno_sites": "shine_dalgarno",
+        "sd": "shine_dalgarno",
+        "terminators": "terminators",
+        "ranked_coding_orfs": "ranked_coding_orfs",
+    }
+    normalized = mapping.get(module)
+    if not normalized:
+        raise ValueError(
+            "module must be one of: coding_orfs, promoters, shine_dalgarno, terminators, ranked_coding_orfs"
+        )
+    return normalized
+
+
+def iso_or_none(value):
+    return value.isoformat() if value else None
 
 
 def handle_single_or_folder(
@@ -344,11 +407,6 @@ def create_analysis_task():
             sequence = data.get("sequence", "")
             if not sequence:
                 return error_response("'sequence' is required")
-
-            # IMPORTANT:
-            # Ici on garde le pipeline Celery classique.
-            # On n'appelle PAS analyze_sequence_by_type_adaptive ici,
-            # pour éviter de lancer des sous-tâches Celery depuis une tâche Celery.
             task = run_sequence_analysis.delay(
                 sequence=sequence,
                 analysis_type=analysis_type,
@@ -390,10 +448,106 @@ def get_task_status(task_id):
         return error_response(str(e))
 
 
+@app.route("/analyses/<analysis_id>", methods=["GET"])
+def get_analysis_route(analysis_id):
+    try:
+        analysis = get_analysis(analysis_id)
+        if not analysis:
+            return error_response("analysis not found", 404)
+
+        analysis["_id"] = str(analysis["_id"])
+        if "created_at" in analysis:
+            analysis["created_at"] = iso_or_none(analysis.get("created_at"))
+        if "updated_at" in analysis:
+            analysis["updated_at"] = iso_or_none(analysis.get("updated_at"))
+
+        return jsonify(analysis)
+
+    except Exception as e:
+        print("GET ANALYSIS ERROR:", e)
+        return error_response(str(e), 500)
+
+
+@app.route("/analyses/<analysis_id>/summary", methods=["GET"])
+def get_analysis_summary_route(analysis_id):
+    try:
+        analysis = get_analysis(analysis_id)
+        if not analysis:
+            return error_response("analysis not found", 404)
+
+        return jsonify(
+            {
+                "analysis_id": analysis_id,
+                "status": analysis.get("status"),
+                "pipeline": analysis.get("pipeline"),
+                "sequence_length": analysis.get("sequence_length"),
+                "modules": analysis.get("modules", {}),
+                "summary": analysis.get("summary", {}),
+                "errors": analysis.get("errors", []),
+                "created_at": iso_or_none(analysis.get("created_at")),
+                "updated_at": iso_or_none(analysis.get("updated_at")),
+            }
+        )
+
+    except Exception as e:
+        print("GET ANALYSIS SUMMARY ERROR:", e)
+        return error_response(str(e), 500)
+
+
+@app.route("/analyses/<analysis_id>/results", methods=["GET"])
+def get_analysis_results_route(analysis_id):
+    try:
+        analysis = get_analysis(analysis_id)
+        if not analysis:
+            return error_response("analysis not found", 404)
+
+        module = normalize_result_module(request.args.get("module", "").strip())
+        kind = request.args.get("kind", "final").strip() or "final"
+        limit = get_limit(request.args.get("limit"), default=20, max_limit=200)
+        skip = get_positive_int(request.args.get("skip"), 0, "skip")
+        sort_field = request.args.get("sort_field")
+        sort_direction = get_sort_direction(request.args.get("sort_direction"))
+
+        results = fetch_module_results(
+            analysis_id=analysis_id,
+            module=module,
+            kind=kind,
+            sort_field=sort_field,
+            sort_direction=sort_direction,
+            limit=limit,
+            skip=skip,
+        )
+
+        total = count_module_results(
+            analysis_id=analysis_id,
+            module=module,
+            kind=kind,
+        )
+
+        return jsonify(
+            {
+                "analysis_id": analysis_id,
+                "module": module,
+                "kind": kind,
+                "total": total,
+                "skip": skip,
+                "limit": limit,
+                "returned": len(results),
+                "results": results,
+            }
+        )
+
+    except ValueError as e:
+        return error_response(str(e), 400)
+    except Exception as e:
+        print("GET ANALYSIS RESULTS ERROR:", e)
+        return error_response(str(e), 500)
+
+
 @app.route("/health", methods=["GET"])
 def health_check():
     return jsonify({"status": "ok", "message": "DNA backend is running"}), 200
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(debug=True, use_reloader=False, port=5000)

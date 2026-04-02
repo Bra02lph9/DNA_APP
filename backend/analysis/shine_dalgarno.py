@@ -6,6 +6,15 @@ from typing import List, Optional, Dict, Tuple
 from .utils import reverse_complement
 from .numba_helpers import hamming_distance_numba
 
+try:
+    from ._shine_dalgarno_cy import (
+        find_start_codons_cy,
+        best_sd_for_start_cy,
+    )
+except ImportError:
+    find_start_codons_cy = None
+    best_sd_for_start_cy = None
+
 
 SD_CONSENSUS = "AGGAGG"
 START_CODONS = {"ATG", "GTG", "TTG"}
@@ -16,7 +25,7 @@ MAX_SD_DISTANCE = 12
 SD_LEN = len(SD_CONSENSUS)
 
 
-@dataclass
+@dataclass(slots=True)
 class ShineDalgarnoSite:
     strand: str
     start: int
@@ -94,7 +103,7 @@ def _calculate_sd_score(
     return round(score, 3)
 
 
-def _find_start_codons(search_seq: str) -> List[Tuple[int, str]]:
+def _find_start_codons_python(search_seq: str) -> List[Tuple[int, str]]:
     starts: List[Tuple[int, str]] = []
     seq_len = len(search_seq)
 
@@ -104,6 +113,12 @@ def _find_start_codons(search_seq: str) -> List[Tuple[int, str]]:
             starts.append((i, codon))
 
     return starts
+
+
+def _find_start_codons(search_seq: str) -> List[Tuple[int, str]]:
+    if find_start_codons_cy is not None:
+        return find_start_codons_cy(search_seq)
+    return _find_start_codons_python(search_seq)
 
 
 def _evaluate_sd_window(
@@ -146,7 +161,7 @@ def _evaluate_sd_window(
     )
 
 
-def _best_sd_for_start(
+def _best_sd_for_start_python(
     search_seq: str,
     start_pos_0: int,
     start_codon: str,
@@ -181,6 +196,40 @@ def _best_sd_for_start(
         )
     )
     return candidates[0]
+
+
+def _best_sd_for_start(
+    search_seq: str,
+    start_pos_0: int,
+    start_codon: str,
+    max_mismatches: int,
+) -> Optional[Tuple[int, int, str, int, int, float]]:
+    if best_sd_for_start_cy is not None:
+        result = best_sd_for_start_cy(
+            search_seq,
+            start_pos_0,
+            start_codon,
+            max_mismatches,
+        )
+        if result is not None:
+            site_start_0, site_end_0_exclusive, mm, distance, score = result
+            window = search_seq[site_start_0:site_end_0_exclusive]
+            return (
+                site_start_0,
+                site_end_0_exclusive,
+                window,
+                mm,
+                distance,
+                score,
+            )
+        return None
+
+    return _best_sd_for_start_python(
+        search_seq=search_seq,
+        start_pos_0=start_pos_0,
+        start_codon=start_codon,
+        max_mismatches=max_mismatches,
+    )
 
 
 def _build_sd_hit(
@@ -260,8 +309,9 @@ def find_shine_dalgarno_sites_in_strand(
     sequence: str,
     strand: str = "+",
     max_mismatches: int = 2,
+    already_clean: bool = False,
 ) -> List[ShineDalgarnoSite]:
-    seq = _clean_sequence(sequence)
+    seq = sequence if already_clean else _clean_sequence(sequence)
     if not seq or not _contains_only_dna(seq):
         return []
 
@@ -317,12 +367,14 @@ def find_shine_dalgarno_sites(
         sequence=seq,
         strand="+",
         max_mismatches=max_mismatches,
+        already_clean=True,
     )
 
     minus_hits = find_shine_dalgarno_sites_in_strand(
         sequence=seq,
         strand="-",
         max_mismatches=max_mismatches,
+        already_clean=True,
     )
 
     return _sort_sites_biologically(plus_hits + minus_hits)
