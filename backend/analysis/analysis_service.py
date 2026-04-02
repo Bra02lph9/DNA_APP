@@ -14,13 +14,13 @@ from analysis.shine_dalgarno import (
 )
 from analysis.coding_orfs import (
     find_coding_orfs,
-    choose_best_coding_orf,
+    choose_best_coding_orf_from_list,
     coding_orfs_to_dicts,
     coding_orf_to_dict,
 )
 from analysis.coding_orf_ranker import (
-    rank_coding_orfs,
-    choose_best_ranked_coding_orf,
+    rank_coding_orfs_from_features,
+    choose_best_ranked_coding_orf_from_ranked,
 )
 from analysis.utils import validate_dna
 
@@ -140,7 +140,7 @@ def analyze_shine_dalgarno(sequence: str) -> dict[str, Any]:
 def analyze_coding_orfs(sequence: str, min_aa: int = 30) -> dict[str, Any]:
     seq = prepare_sequence(sequence)
     coding_orfs = find_coding_orfs(seq, min_aa=min_aa)
-    best_orf = choose_best_coding_orf(seq, min_aa=min_aa)
+    best_orf = choose_best_coding_orf_from_list(coding_orfs)
 
     return {
         "length": len(seq),
@@ -151,8 +151,19 @@ def analyze_coding_orfs(sequence: str, min_aa: int = 30) -> dict[str, Any]:
 
 def analyze_ranked_coding_orfs(sequence: str, min_aa: int = 30) -> dict[str, Any]:
     seq = prepare_sequence(sequence)
-    ranked = rank_coding_orfs(seq, min_aa=min_aa)
-    best = choose_best_ranked_coding_orf(seq, min_aa=min_aa)
+
+    coding_orfs = find_coding_orfs(seq, min_aa=min_aa)
+    promoters = find_promoters(seq)
+    terminators = find_rho_independent_terminators(seq)
+    sd_sites = find_shine_dalgarno_sites(seq)
+
+    ranked = rank_coding_orfs_from_features(
+        coding_orfs=coding_orfs,
+        promoters=promoters,
+        sd_sites=sd_sites,
+        terminators=terminators,
+    )
+    best = choose_best_ranked_coding_orf_from_ranked(ranked)
 
     return {
         "length": len(seq),
@@ -170,10 +181,17 @@ def analyze_all(sequence: str, min_aa: int = 30) -> dict[str, Any]:
     sd_sites = find_shine_dalgarno_sites(seq)
 
     coding_orfs = find_coding_orfs(seq, min_aa=min_aa)
-    best_coding_orf = choose_best_coding_orf(seq, min_aa=min_aa)
+    best_coding_orf = choose_best_coding_orf_from_list(coding_orfs)
 
-    ranked_coding_orfs = rank_coding_orfs(seq, min_aa=min_aa)
-    best_ranked_coding_orf = choose_best_ranked_coding_orf(seq, min_aa=min_aa)
+    ranked_coding_orfs = rank_coding_orfs_from_features(
+        coding_orfs=coding_orfs,
+        promoters=promoters,
+        sd_sites=sd_sites,
+        terminators=terminators,
+    )
+    best_ranked_coding_orf = choose_best_ranked_coding_orf_from_ranked(
+        ranked_coding_orfs
+    )
 
     return {
         "length": len(seq),
@@ -255,3 +273,86 @@ def analyze_folder_files(
         output.append(result)
 
     return output
+
+
+def _normalize_large_pipeline_all_result(
+    sequence: str,
+    large_result: dict[str, Any],
+) -> dict[str, Any]:
+    coding_orfs = large_result.get("coding_orfs", [])
+    ranked_coding_orfs = large_result.get("ranked_coding_orfs", [])
+
+    best_coding_orf = coding_orfs[0] if coding_orfs else None
+    best_ranked_coding_orf = ranked_coding_orfs[0] if ranked_coding_orfs else None
+
+    return {
+        "length": len(sequence),
+        "orfs": large_result.get("orfs", []),
+        "promoters": large_result.get("promoters", []),
+        "terminators": large_result.get("terminators", []),
+        "shine_dalgarno": large_result.get("shine_dalgarno_sites", []),
+        "coding_orfs": coding_orfs,
+        "best_coding_orf": best_coding_orf,
+        "ranked_coding_orfs": ranked_coding_orfs,
+        "best_ranked_coding_orf": best_ranked_coding_orf,
+        "summary": large_result.get("summary", {}),
+        "pipeline": large_result.get("pipeline", {}),
+    }
+
+
+def _normalize_large_pipeline_ranked_result(
+    sequence: str,
+    large_result: dict[str, Any],
+) -> dict[str, Any]:
+    ranked_coding_orfs = large_result.get("ranked_coding_orfs", [])
+    best_ranked_coding_orf = ranked_coding_orfs[0] if ranked_coding_orfs else None
+
+    return {
+        "length": len(sequence),
+        "ranked_coding_orfs": ranked_coding_orfs,
+        "best_ranked_coding_orf": best_ranked_coding_orf,
+        "summary": large_result.get("summary", {}),
+        "pipeline": large_result.get("pipeline", {}),
+    }
+
+
+def analyze_sequence_by_type_adaptive(
+    sequence: str,
+    analysis_type: str = "all",
+    min_aa: int = 30,
+    large_sequence_threshold: int = 10_000,
+) -> dict[str, Any]:
+    """
+    Version adaptive pour la couche Flask / service principal.
+
+    IMPORTANT :
+    À utiliser depuis le endpoint Flask ou service web principal,
+    pas depuis une tâche Celery déjà en cours.
+    """
+    from analysis.large_sequence_service import (
+        run_large_sequence_analysis,
+        should_use_large_sequence_pipeline,
+    )
+
+    seq = prepare_sequence(sequence)
+
+    if (
+        analysis_type in {"all", "ranked_coding_orfs"}
+        and should_use_large_sequence_pipeline(seq, threshold=large_sequence_threshold)
+    ):
+        large_result = run_large_sequence_analysis(
+            sequence=seq,
+            min_aa=min_aa,
+            include_general_orfs=(analysis_type == "all"),
+        )
+
+        if analysis_type == "all":
+            return _normalize_large_pipeline_all_result(seq, large_result)
+
+        return _normalize_large_pipeline_ranked_result(seq, large_result)
+
+    return analyze_sequence_by_type(
+        sequence=seq,
+        analysis_type=analysis_type,
+        min_aa=min_aa,
+    )

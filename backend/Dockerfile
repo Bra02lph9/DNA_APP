@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1
-
 ARG PYTHON_VERSION=3.13.5
 
 FROM python:${PYTHON_VERSION}-slim

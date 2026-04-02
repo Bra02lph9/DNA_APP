@@ -12,6 +12,7 @@ from analysis.analysis_service import (
     analyze_coding_orfs,
     analyze_ranked_coding_orfs,
     analyze_folder_files,
+    analyze_sequence_by_type_adaptive,
 )
 from analysis.utils import load_fasta_folder
 from tasks.analysis_tasks import run_sequence_analysis, run_folder_analysis
@@ -275,7 +276,11 @@ def analyze_ranked_coding_orfs_route():
             return jsonify(output)
 
         sequence = data.get("sequence", "")
-        result = analyze_ranked_coding_orfs(sequence, min_aa=min_aa)
+        result = analyze_sequence_by_type_adaptive(
+            sequence=sequence,
+            analysis_type="ranked_coding_orfs",
+            min_aa=min_aa,
+        )
         return jsonify(result)
 
     except Exception as e:
@@ -304,7 +309,11 @@ def analyze_all_route():
             return jsonify(output)
 
         sequence = data.get("sequence", "")
-        result = analyze_all(sequence, min_aa=min_aa)
+        result = analyze_sequence_by_type_adaptive(
+            sequence=sequence,
+            analysis_type="all",
+            min_aa=min_aa,
+        )
         return jsonify(result)
 
     except Exception as e:
@@ -336,6 +345,10 @@ def create_analysis_task():
             if not sequence:
                 return error_response("'sequence' is required")
 
+            # IMPORTANT:
+            # Ici on garde le pipeline Celery classique.
+            # On n'appelle PAS analyze_sequence_by_type_adaptive ici,
+            # pour éviter de lancer des sous-tâches Celery depuis une tâche Celery.
             task = run_sequence_analysis.delay(
                 sequence=sequence,
                 analysis_type=analysis_type,

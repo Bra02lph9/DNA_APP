@@ -169,7 +169,7 @@ def find_coding_orfs_in_strand(
 
             starts_in_frame = []
 
-    return _sort_orfs_biologically(found)
+    return found
 
 
 def find_coding_orfs(
@@ -204,6 +204,10 @@ def find_coding_orfs(
     return _sort_orfs_biologically(plus_orfs + minus_orfs)
 
 
+def choose_best_coding_orf_from_list(orfs: List[CodingORF]) -> Optional[CodingORF]:
+    return orfs[0] if orfs else None
+
+
 def choose_best_coding_orf(
     sequence: str,
     min_aa: int = 30,
@@ -217,7 +221,7 @@ def choose_best_coding_orf(
         stop_codons=stop_codons,
         longest_only_per_stop=False,
     )
-    return orfs[0] if orfs else None
+    return choose_best_coding_orf_from_list(orfs)
 
 
 def coding_orf_to_dict(orf: CodingORF) -> dict:

@@ -129,30 +129,42 @@ def score_terminator(hit: Optional[TerminatorHit], orf: CodingORF) -> float:
     return round(min(base, 30.0), 3)
 
 
+def _group_by_strand(items) -> Dict[str, list]:
+    grouped = {"+": [], "-": []}
+    for item in items:
+        strand = getattr(item, "strand", None)
+        if strand in grouped:
+            grouped[strand].append(item)
+    return grouped
+
+
 def find_best_sd_for_orf(
     orf: CodingORF,
     sd_sites: List[ShineDalgarnoSite],
 ) -> Optional[ShineDalgarnoSite]:
-    candidates = [
-        site
-        for site in sd_sites
-        if site.strand == orf.strand
-        and site.linked_start_position is not None
-        and site.linked_start_position == orf.start
-    ]
+    best: Optional[ShineDalgarnoSite] = None
+    best_key = None
 
-    if not candidates:
-        return None
+    for site in sd_sites:
+        if site.strand != orf.strand:
+            continue
+        if site.linked_start_position is None:
+            continue
+        if site.linked_start_position != orf.start:
+            continue
 
-    candidates.sort(
-        key=lambda s: (
-            -s.score,
-            s.mismatches,
-            abs((s.distance_to_start or 999) - 7),
-            s.start,
+        key = (
+            -site.score,
+            site.mismatches,
+            abs((site.distance_to_start or 999) - 7),
+            site.start,
         )
-    )
-    return candidates[0]
+
+        if best is None or key < best_key:
+            best = site
+            best_key = key
+
+    return best
 
 
 def find_best_promoter_for_orf(
@@ -160,20 +172,23 @@ def find_best_promoter_for_orf(
     promoters: List[PromoterHit],
     max_distance: int = 300,
 ) -> Optional[PromoterHit]:
-    candidates: List[tuple[int, PromoterHit]] = []
+    best: Optional[PromoterHit] = None
+    best_key = None
 
     for p in promoters:
         distance = _promoter_distance_to_orf(p, orf)
         if distance is None:
             continue
-        if distance <= max_distance:
-            candidates.append((distance, p))
+        if distance > max_distance:
+            continue
 
-    if not candidates:
-        return None
+        key = (distance, -p.score)
 
-    candidates.sort(key=lambda x: (x[0], -x[1].score))
-    return candidates[0][1]
+        if best is None or key < best_key:
+            best = p
+            best_key = key
+
+    return best
 
 
 def find_best_terminator_for_orf(
@@ -181,20 +196,23 @@ def find_best_terminator_for_orf(
     terminators: List[TerminatorHit],
     max_distance: int = 300,
 ) -> Optional[TerminatorHit]:
-    candidates: List[tuple[int, TerminatorHit]] = []
+    best: Optional[TerminatorHit] = None
+    best_key = None
 
     for t in terminators:
         distance = _terminator_distance_to_orf(t, orf)
         if distance is None:
             continue
-        if distance <= max_distance:
-            candidates.append((distance, t))
+        if distance > max_distance:
+            continue
 
-    if not candidates:
-        return None
+        key = (distance, -t.score)
 
-    candidates.sort(key=lambda x: (x[0], -x[1].score))
-    return candidates[0][1]
+        if best is None or key < best_key:
+            best = t
+            best_key = key
+
+    return best
 
 
 def _build_ranked_orf_entry(
@@ -234,29 +252,32 @@ def _build_ranked_orf_entry(
     }
 
 
-def rank_coding_orfs(
-    sequence: str,
-    min_aa: int = 30,
+def rank_coding_orfs_from_features(
+    coding_orfs: List[CodingORF],
+    promoters: List[PromoterHit],
+    sd_sites: List[ShineDalgarnoSite],
+    terminators: List[TerminatorHit],
     max_promoter_distance: int = 300,
     max_terminator_distance: int = 300,
 ) -> List[Dict[str, Any]]:
-    coding_orfs = find_coding_orfs(sequence=sequence, min_aa=min_aa)
-    promoters = find_promoters(sequence)
-    sd_sites = find_shine_dalgarno_sites(sequence)
-    terminators = find_rho_independent_terminators(sequence)
-
     ranked: List[Dict[str, Any]] = []
 
+    promoters_by_strand = _group_by_strand(promoters)
+    sd_by_strand = _group_by_strand(sd_sites)
+    terminators_by_strand = _group_by_strand(terminators)
+
     for orf in coding_orfs:
-        best_sd = find_best_sd_for_orf(orf, sd_sites)
+        strand = orf.strand
+
+        best_sd = find_best_sd_for_orf(orf, sd_by_strand.get(strand, []))
         best_promoter = find_best_promoter_for_orf(
             orf,
-            promoters,
+            promoters_by_strand.get(strand, []),
             max_distance=max_promoter_distance,
         )
         best_terminator = find_best_terminator_for_orf(
             orf,
-            terminators,
+            terminators_by_strand.get(strand, []),
             max_distance=max_terminator_distance,
         )
 
@@ -284,6 +305,33 @@ def rank_coding_orfs(
     return ranked
 
 
+def rank_coding_orfs(
+    sequence: str,
+    min_aa: int = 30,
+    max_promoter_distance: int = 300,
+    max_terminator_distance: int = 300,
+) -> List[Dict[str, Any]]:
+    coding_orfs = find_coding_orfs(sequence=sequence, min_aa=min_aa)
+    promoters = find_promoters(sequence)
+    sd_sites = find_shine_dalgarno_sites(sequence)
+    terminators = find_rho_independent_terminators(sequence)
+
+    return rank_coding_orfs_from_features(
+        coding_orfs=coding_orfs,
+        promoters=promoters,
+        sd_sites=sd_sites,
+        terminators=terminators,
+        max_promoter_distance=max_promoter_distance,
+        max_terminator_distance=max_terminator_distance,
+    )
+
+
+def choose_best_ranked_coding_orf_from_ranked(
+    ranked: List[Dict[str, Any]],
+) -> Optional[Dict[str, Any]]:
+    return ranked[0] if ranked else None
+
+
 def choose_best_ranked_coding_orf(
     sequence: str,
     min_aa: int = 30,
@@ -296,4 +344,4 @@ def choose_best_ranked_coding_orf(
         max_promoter_distance=max_promoter_distance,
         max_terminator_distance=max_terminator_distance,
     )
-    return ranked[0] if ranked else None
+    return choose_best_ranked_coding_orf_from_ranked(ranked)

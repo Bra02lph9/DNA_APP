@@ -5,7 +5,7 @@ const LINE_LENGTH = 60;
 const LEFT_INDEX_WIDTH = "w-14";
 const SIDE_LABEL_WIDTH = "w-6";
 const DEFAULT_WINDOW_SIZE = 3000;
-const MAX_EDITABLE_LENGTH = 50000;
+const MIN_MINIMAP_WINDOW = 200;
 
 function StatCard({ title, value, subtitle }) {
   return (
@@ -41,6 +41,8 @@ function buildHighlightLookup(highlights, visibleStart, visibleEnd) {
   const lookup = new Map();
 
   for (const h of highlights) {
+    if (h?.start == null || h?.end == null) continue;
+
     const start = Math.max(h.start, visibleStart);
     const end = Math.min(h.end, visibleEnd);
 
@@ -207,98 +209,23 @@ function renderComplementLine(line, startPos, highlightLookup) {
   return { rendered, nextPos: currentPos };
 }
 
-function GenomeMiniMap({ sequenceLength, features = [], onJumpToFeature }) {
-  if (!sequenceLength) return null;
-
-  const trackConfig = [
-    { key: "orf", label: "ORF", color: "bg-cyan-400" },
-    { key: "promoter35", label: "Promoter -35", color: "bg-yellow-400" },
-    { key: "promoter10", label: "Promoter -10", color: "bg-orange-400" },
-    { key: "terminatorLeft", label: "Terminator L", color: "bg-pink-400" },
-    { key: "terminatorRight", label: "Terminator R", color: "bg-fuchsia-400" },
-    { key: "polyT", label: "Poly-T", color: "bg-red-400" },
-    { key: "shineDalgarno", label: "Shine-Dalgarno", color: "bg-lime-400" },
-    { key: "startCodon", label: "Start codon", color: "bg-emerald-400" },
-  ];
-
-  const colorByType = Object.fromEntries(trackConfig.map((item) => [item.key, item.color]));
-  const labelByType = Object.fromEntries(trackConfig.map((item) => [item.key, item.label]));
-
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm backdrop-blur-sm">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h3 className="text-sm font-semibold text-slate-900">Genome Mini Map</h3>
-          <p className="text-xs text-slate-500">Interactive overview of selected genomic features</p>
-        </div>
-
-        <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-          {sequenceLength.toLocaleString()} nt
-        </div>
-      </div>
-
-      <div className="mb-3 flex items-center justify-between text-xs text-slate-500">
-        <span>1</span>
-        <span>{Math.floor(sequenceLength / 2).toLocaleString()}</span>
-        <span>{sequenceLength.toLocaleString()}</span>
-      </div>
-
-      <div className="relative h-6 overflow-hidden rounded-full bg-slate-200/80 shadow-inner">
-        {features.length === 0 ? (
-          <div className="absolute inset-0 rounded-full border border-dashed border-slate-300" />
-        ) : (
-          features.map((feature, index) => {
-            const start = Math.max(1, feature.start);
-            const end = Math.max(start, feature.end);
-            const left = ((start - 1) / sequenceLength) * 100;
-            const width = Math.max(((end - start + 1) / sequenceLength) * 100, 0.15);
-
-            return (
-              <button
-                key={`${feature.type}-${feature.start}-${feature.end}-${index}`}
-                type="button"
-                title={`${labelByType[feature.type] || feature.type}: ${feature.start}-${feature.end}`}
-                onClick={() => onJumpToFeature?.(feature)}
-                className={`absolute top-0 h-6 ${colorByType[feature.type] || "bg-sky-400"} ring-1 ring-black/10 transition hover:scale-y-110 hover:shadow-md`}
-                style={{ left: `${left}%`, width: `${width}%` }}
-              />
-            );
-          })
-        )}
-      </div>
-
-      <div className="mt-5 border-t border-slate-200 pt-4">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-          Legend
-        </p>
-
-        <div className="flex flex-wrap gap-2">
-          {trackConfig.map((track) => (
-            <div
-              key={track.key}
-              className="flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1 text-xs text-slate-700"
-            >
-              <span className={`h-3 w-3 rounded-full ${track.color}`} />
-              <span>{track.label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function SequenceRow({ leftLabel, leftTag, content, rightTag }) {
   return (
     <div className="flex min-w-max items-center whitespace-nowrap">
-      <span className={`mr-3 inline-block ${LEFT_INDEX_WIDTH} text-right text-slate-500`}>
+      <span
+        className={`mr-3 inline-block ${LEFT_INDEX_WIDTH} text-right text-slate-500`}
+      >
         {leftLabel}
       </span>
-      <span className={`mr-2 inline-block ${SIDE_LABEL_WIDTH} text-slate-500`}>
+      <span
+        className={`mr-2 inline-block ${SIDE_LABEL_WIDTH} text-slate-500`}
+      >
         {leftTag || ""}
       </span>
       <div className="inline-block">{content}</div>
-      <span className={`ml-2 inline-block ${SIDE_LABEL_WIDTH} text-slate-500`}>
+      <span
+        className={`ml-2 inline-block ${SIDE_LABEL_WIDTH} text-slate-500`}
+      >
         {rightTag || ""}
       </span>
     </div>
@@ -311,7 +238,6 @@ function DoubleStrandPreview({
   globalStart = 1,
 }) {
   const cleanSequence = sequence.replace(/[^ATGCN]/gi, "").toUpperCase();
-
   const visibleEnd = globalStart + cleanSequence.length - 1;
 
   const highlightLookup = useMemo(
@@ -374,6 +300,154 @@ function DoubleStrandPreview({
   );
 }
 
+function GenomeMiniMap({
+  sequenceLength,
+  features = [],
+  onJumpToFeature,
+  zoomStart,
+  zoomWindowSize,
+  onZoomIn,
+  onZoomOut,
+  onResetZoom,
+  onPanTo,
+}) {
+  if (!sequenceLength) return null;
+
+  const zoomEnd = Math.min(sequenceLength, zoomStart + zoomWindowSize - 1);
+
+  const trackConfig = [
+    { key: "orf", label: "ORF", color: "bg-cyan-400" },
+    { key: "promoter35", label: "Promoter -35", color: "bg-yellow-400" },
+    { key: "promoter10", label: "Promoter -10", color: "bg-orange-400" },
+    { key: "terminatorLeft", label: "Terminator L", color: "bg-pink-400" },
+    { key: "terminatorRight", label: "Terminator R", color: "bg-fuchsia-400" },
+    { key: "polyT", label: "Poly-T", color: "bg-red-400" },
+    { key: "shineDalgarno", label: "Shine-Dalgarno", color: "bg-lime-400" },
+    { key: "startCodon", label: "Start codon", color: "bg-emerald-400" },
+  ];
+
+  const colorByType = Object.fromEntries(
+    trackConfig.map((item) => [item.key, item.color])
+  );
+  const labelByType = Object.fromEntries(
+    trackConfig.map((item) => [item.key, item.label])
+  );
+
+  const visibleFeatures = features.filter((feature) => {
+    if (feature?.start == null || feature?.end == null) return false;
+    return !(feature.end < zoomStart || feature.start > zoomEnd);
+  });
+
+  const handleTrackClick = (e) => {
+    if (!onPanTo) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const ratio = (e.clientX - rect.left) / rect.width;
+    const clickedPos = Math.round(zoomStart + ratio * (zoomWindowSize - 1));
+    onPanTo(clickedPos);
+  };
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm backdrop-blur-sm">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-900">Genome Mini Map</h3>
+          <p className="text-xs text-slate-500">
+            Zoomable overview of genomic features
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={onZoomIn}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-sm text-slate-700 hover:bg-slate-100"
+          >
+            Zoom +
+          </button>
+
+          <button
+            type="button"
+            onClick={onZoomOut}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-sm text-slate-700 hover:bg-slate-100"
+          >
+            Zoom -
+          </button>
+
+          <button
+            type="button"
+            onClick={onResetZoom}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-sm text-slate-700 hover:bg-slate-100"
+          >
+            Reset
+          </button>
+        </div>
+      </div>
+
+      <div className="mb-3 flex items-center justify-between text-xs text-slate-500">
+        <span>{zoomStart.toLocaleString()}</span>
+        <span>Window: {zoomWindowSize.toLocaleString()} nt</span>
+        <span>{zoomEnd.toLocaleString()}</span>
+      </div>
+
+      <div
+        className="relative h-6 cursor-pointer overflow-hidden rounded-full bg-slate-200/80 shadow-inner"
+        onClick={handleTrackClick}
+        title="Click to pan inside the zoomed region"
+      >
+        {visibleFeatures.length === 0 ? (
+          <div className="absolute inset-0 rounded-full border border-dashed border-slate-300" />
+        ) : (
+          visibleFeatures.map((feature, index) => {
+            const localStart = Math.max(feature.start, zoomStart);
+            const localEnd = Math.min(feature.end, zoomEnd);
+
+            const left = ((localStart - zoomStart) / zoomWindowSize) * 100;
+            const width = Math.max(
+              ((localEnd - localStart + 1) / zoomWindowSize) * 100,
+              0.3
+            );
+
+            return (
+              <button
+                key={`${feature.type}-${feature.start}-${feature.end}-${index}`}
+                type="button"
+                title={`${labelByType[feature.type] || feature.type}: ${feature.start}-${feature.end}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onJumpToFeature?.(feature);
+                }}
+                className={`absolute top-0 h-6 ${
+                  colorByType[feature.type] || "bg-sky-400"
+                } ring-1 ring-black/10 transition hover:scale-y-110 hover:shadow-md`}
+                style={{ left: `${left}%`, width: `${width}%` }}
+              />
+            );
+          })
+        )}
+      </div>
+
+      <div className="mt-5 border-t border-slate-200 pt-4">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Legend
+        </p>
+
+        <div className="flex flex-wrap gap-2">
+          {trackConfig.map((track) => (
+            <div
+              key={track.key}
+              className="flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1 text-xs text-slate-700"
+            >
+              <span className={`h-3 w-3 rounded-full ${track.color}`} />
+              <span>{track.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SequenceViewer({
   sequence,
   setSequence,
@@ -386,6 +460,8 @@ export default function SequenceViewer({
 }) {
   const [viewStart, setViewStart] = useState(1);
   const [windowSize, setWindowSize] = useState(DEFAULT_WINDOW_SIZE);
+  const [miniMapStart, setMiniMapStart] = useState(1);
+  const [miniMapWindowSize, setMiniMapWindowSize] = useState(DEFAULT_WINDOW_SIZE);
 
   const fullSequence = fullSequenceRef?.current || sequence || "";
   const cleanFullSequence = useMemo(
@@ -397,7 +473,15 @@ export default function SequenceViewer({
 
   useEffect(() => {
     setViewStart(1);
+    setMiniMapStart(1);
   }, [loadedFileName]);
+
+  useEffect(() => {
+    if (totalLength > 0) {
+      setMiniMapWindowSize(Math.min(DEFAULT_WINDOW_SIZE, totalLength));
+      setMiniMapStart(1);
+    }
+  }, [totalLength, loadedFileName]);
 
   const visibleSequence = useMemo(() => {
     if (!cleanFullSequence) return "";
@@ -429,15 +513,31 @@ export default function SequenceViewer({
   }, [visibleSequence]);
 
   const miniMapFeatures = useMemo(() => {
-    return highlights.map((h, index) => ({
-      id: `${h.type}-${index}`,
-      start: h.start,
-      end: h.end,
-      type: h.type,
-    }));
+    return highlights
+      .filter((h) => h?.start != null && h?.end != null)
+      .map((h, index) => ({
+        id: `${h.type}-${index}`,
+        start: h.start,
+        end: h.end,
+        type: h.type,
+      }));
   }, [highlights]);
 
-  const canEditDirectly = totalLength <= MAX_EDITABLE_LENGTH;
+  const clampMiniMapWindow = (size) => {
+    if (!totalLength) return DEFAULT_WINDOW_SIZE;
+    return Math.max(MIN_MINIMAP_WINDOW, Math.min(size, totalLength));
+  };
+
+  const clampMiniMapStart = (start, currentWindowSize) => {
+    if (!totalLength) return 1;
+    const maxStart = Math.max(1, totalLength - currentWindowSize + 1);
+    return Math.max(1, Math.min(start, maxStart));
+  };
+
+  const syncMiniMapToView = (startPos, currentWindowSize = miniMapWindowSize) => {
+    const newStart = clampMiniMapStart(startPos, currentWindowSize);
+    setMiniMapStart(newStart);
+  };
 
   const jumpToPosition = (position) => {
     if (!totalLength) return;
@@ -452,6 +552,7 @@ export default function SequenceViewer({
     }
 
     setViewStart(newStart);
+    syncMiniMapToView(newStart);
 
     requestAnimationFrame(() => {
       const el = document.getElementById(`base-${safePos}`);
@@ -466,14 +567,37 @@ export default function SequenceViewer({
   };
 
   const handleJumpToFeature = (feature) => {
+    if (!feature?.start) return;
     jumpToPosition(feature.start);
   };
 
-  const handleVisibleSequenceEdit = (e) => {
-    if (!canEditDirectly) return;
+  const handleWindowSizeChange = (e) => {
+    const newSize = Number(e.target.value);
+    if (!Number.isFinite(newSize) || newSize <= 0) return;
+    setWindowSize(newSize);
+  };
 
-    const raw = e.target.value.replace(/[^ATGCN]/gi, "").toUpperCase();
-    setSequence(raw);
+  const zoomMiniMap = (factor) => {
+    if (!totalLength) return;
+
+    const center = miniMapStart + Math.floor(miniMapWindowSize / 2);
+    const newWindow = clampMiniMapWindow(Math.round(miniMapWindowSize * factor));
+    const newStart = clampMiniMapStart(
+      center - Math.floor(newWindow / 2),
+      newWindow
+    );
+
+    setMiniMapWindowSize(newWindow);
+    setMiniMapStart(newStart);
+  };
+
+  const zoomInMiniMap = () => zoomMiniMap(0.5);
+  const zoomOutMiniMap = () => zoomMiniMap(2);
+
+  const resetMiniMapZoom = () => {
+    if (!totalLength) return;
+    setMiniMapWindowSize(totalLength);
+    setMiniMapStart(1);
   };
 
   return (
@@ -503,7 +627,11 @@ export default function SequenceViewer({
       )}
 
       <div className="mb-4 grid gap-4 sm:grid-cols-3">
-        <StatCard title="Length" value={stats.length.toLocaleString()} subtitle="nucleotides" />
+        <StatCard
+          title="Length"
+          value={stats.length.toLocaleString()}
+          subtitle="nucleotides"
+        />
         <StatCard title="GC%" value={stats.gc} subtitle="GC content" />
         <StatCard title="AT%" value={stats.at} subtitle="AT content" />
       </div>
@@ -523,7 +651,9 @@ export default function SequenceViewer({
 
             <button
               type="button"
-              onClick={() => jumpToPosition(Math.min(totalLength, viewStart + windowSize))}
+              onClick={() =>
+                jumpToPosition(Math.min(totalLength, viewStart + windowSize))
+              }
               className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-sm text-slate-700 hover:bg-slate-100"
             >
               Next
@@ -531,13 +661,14 @@ export default function SequenceViewer({
 
             <select
               value={windowSize}
-              onChange={(e) => setWindowSize(Number(e.target.value))}
+              onChange={handleWindowSizeChange}
               className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-sm text-slate-700"
             >
               <option value={1000}>1000 nt</option>
               <option value={3000}>3000 nt</option>
               <option value={5000}>5000 nt</option>
               <option value={10000}>10000 nt</option>
+              <option value={50000}>50000 nt</option>
             </select>
           </div>
         </div>
@@ -554,6 +685,20 @@ export default function SequenceViewer({
             sequenceLength={totalLength}
             features={miniMapFeatures}
             onJumpToFeature={handleJumpToFeature}
+            zoomStart={miniMapStart}
+            zoomWindowSize={miniMapWindowSize}
+            onZoomIn={zoomInMiniMap}
+            onZoomOut={zoomOutMiniMap}
+            onResetZoom={resetMiniMapZoom}
+            onPanTo={(position) => {
+              const half = Math.floor(miniMapWindowSize / 2);
+              const newStart = clampMiniMapStart(
+                position - half,
+                miniMapWindowSize
+              );
+              setMiniMapStart(newStart);
+              jumpToPosition(position);
+            }}
           />
         </div>
       )}
@@ -564,20 +709,17 @@ export default function SequenceViewer({
 
       <textarea
         value={displaySequence}
-        onChange={handleVisibleSequenceEdit}
+        readOnly
         rows={14}
         wrap="off"
         spellCheck={false}
-        disabled={!canEditDirectly}
-        className="w-full overflow-x-auto rounded-xl border border-slate-300 bg-slate-50 p-4 font-mono text-sm text-slate-900 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
-        placeholder="Paste DNA sequence here..."
+        className="w-full overflow-x-auto rounded-xl border border-slate-300 bg-slate-50 p-4 font-mono text-sm text-slate-900 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200"
+        placeholder="DNA sequence window..."
       />
 
-      {!canEditDirectly && (
-        <p className="mt-2 text-xs text-amber-700">
-          Direct full-sequence editing is disabled for very large sequences. Use navigation and feature jumps instead.
-        </p>
-      )}
+      <p className="mt-2 text-xs text-slate-600">
+        This viewer is read-only. Use feature clicks and the mini map to navigate long sequences safely.
+      </p>
 
       <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
         <div className="mb-2 flex items-center justify-between">
