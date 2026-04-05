@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
+from pymongo import InsertOne
 from db.mongo import get_database
 
 
@@ -18,6 +19,7 @@ def create_analysis(
 ) -> str:
     db = get_database()
     analysis_id = str(uuid4())
+    now = utc_now()
 
     doc = {
         "_id": analysis_id,
@@ -25,8 +27,8 @@ def create_analysis(
         "pipeline": pipeline,
         "sequence_length": sequence_length,
         "parameters": parameters,
-        "created_at": utc_now(),
-        "updated_at": utc_now(),
+        "created_at": now,
+        "updated_at": now,
         "modules": {
             "coding_orfs": "pending",
             "promoters": "pending",
@@ -51,12 +53,7 @@ def update_analysis_status(analysis_id: str, status: str) -> None:
     db = get_database()
     db["analyses"].update_one(
         {"_id": analysis_id},
-        {
-            "$set": {
-                "status": status,
-                "updated_at": utc_now(),
-            }
-        },
+        {"$set": {"status": status, "updated_at": utc_now()}},
     )
 
 
@@ -68,12 +65,7 @@ def update_module_status(
     db = get_database()
     db["analyses"].update_one(
         {"_id": analysis_id},
-        {
-            "$set": {
-                f"modules.{module}": status,
-                "updated_at": utc_now(),
-            }
-        },
+        {"$set": {f"modules.{module}": status, "updated_at": utc_now()}},
     )
 
 
@@ -83,6 +75,8 @@ def append_analysis_error(
     message: str,
 ) -> None:
     db = get_database()
+    now = utc_now()
+
     db["analyses"].update_one(
         {"_id": analysis_id},
         {
@@ -90,10 +84,10 @@ def append_analysis_error(
                 "errors": {
                     "module": module,
                     "message": message,
-                    "timestamp": utc_now(),
+                    "timestamp": now,
                 }
             },
-            "$set": {"updated_at": utc_now()},
+            "$set": {"updated_at": now},
         },
     )
 
@@ -122,19 +116,22 @@ def replace_module_results(
     if not results:
         return 0
 
-    docs = []
-    for item in results:
-        doc = {
-            "analysis_id": analysis_id,
-            "module": module,
-            "kind": kind,
-            "chunk_index": chunk_index,
-            "created_at": utc_now(),
-            **item,
-        }
-        docs.append(doc)
+    now = utc_now()
+    docs = [
+        InsertOne(
+            {
+                "analysis_id": analysis_id,
+                "module": module,
+                "kind": kind,
+                "chunk_index": chunk_index,
+                "created_at": now,
+                **item,
+            }
+        )
+        for item in results
+    ]
 
-    collection.insert_many(docs)
+    collection.bulk_write(docs, ordered=False)
     return len(docs)
 
 
@@ -148,6 +145,7 @@ def fetch_module_results(
     skip: int = 0,
 ) -> List[Dict[str, Any]]:
     db = get_database()
+
     cursor = db["analysis_results"].find(
         {
             "analysis_id": analysis_id,
@@ -191,10 +189,19 @@ def update_analysis_summary(
     db = get_database()
     db["analyses"].update_one(
         {"_id": analysis_id},
-        {
-            "$set": {
-                "summary": summary,
-                "updated_at": utc_now(),
-            }
-        },
+        {"$set": {"summary": summary, "updated_at": utc_now()}},
+    )
+
+
+def create_indexes() -> None:
+    db = get_database()
+
+    db["analyses"].create_index("status")
+    db["analyses"].create_index("created_at")
+
+    db["analysis_results"].create_index(
+        [("analysis_id", 1), ("module", 1), ("kind", 1)]
+    )
+    db["analysis_results"].create_index(
+        [("analysis_id", 1), ("module", 1), ("kind", 1), ("chunk_index", 1)]
     )

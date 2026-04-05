@@ -172,6 +172,7 @@ def analyze_ranked_coding_orfs(sequence: str, min_aa: int = 30) -> dict[str, Any
     }
 
 
+# Msah hadi
 def analyze_all(sequence: str, min_aa: int = 30) -> dict[str, Any]:
     seq = prepare_sequence(sequence)
 

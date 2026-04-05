@@ -14,14 +14,21 @@ from analysis.analysis_service import (
     analyze_sequence_by_type_adaptive,
 )
 from analysis.utils import load_fasta_folder
+
 from tasks.analysis_tasks import (
     run_sequence_analysis,
-    run_folder_analysis
+    run_folder_analysis,
+    run_global_coding_orfs_store,
+    run_chunked_promoters_store,
+    run_chunked_sd_store,
+    run_chunked_terminators_store,
+    assemble_and_rank_from_storage,
 )
 from tasks.celery_app import celery_app
 
 from db.mongo import ensure_indexes
 from db.analysis_repository import (
+    create_analysis,
     get_analysis,
     fetch_module_results,
     count_module_results,
@@ -407,6 +414,7 @@ def create_analysis_task():
             sequence = data.get("sequence", "")
             if not sequence:
                 return error_response("'sequence' is required")
+
             task = run_sequence_analysis.delay(
                 sequence=sequence,
                 analysis_type=analysis_type,
@@ -446,6 +454,109 @@ def get_task_status(task_id):
     except Exception as e:
         print("TASK STATUS ERROR:", e)
         return error_response(str(e))
+
+
+# Nouveau pipeline Mongo stocké
+@app.route("/analyses/run", methods=["POST"])
+def run_stored_analysis_route():
+    data = get_json_data()
+
+    try:
+        sequence = data.get("sequence", "")
+        if not sequence:
+            return error_response("'sequence' is required")
+
+        min_aa = get_min_aa(data)
+        chunk_size = get_positive_int(data.get("chunk_size"), 50_000, "chunk_size")
+        overlap = get_positive_int(data.get("overlap"), 1_000, "overlap")
+
+        if chunk_size <= 0:
+            return error_response("chunk_size must be > 0")
+
+        analysis_id = create_analysis(
+            sequence_length=len(sequence),
+            pipeline="stored_chunked_ranking",
+            parameters={
+                "min_aa": min_aa,
+                "chunk_size": chunk_size,
+                "overlap": overlap,
+            },
+        )
+
+        coding_task = run_global_coding_orfs_store.delay(
+            analysis_id=analysis_id,
+            sequence=sequence,
+            min_aa=min_aa,
+        )
+        promoters_task = run_chunked_promoters_store.delay(
+            analysis_id=analysis_id,
+            sequence=sequence,
+            chunk_size=chunk_size,
+            overlap=overlap,
+        )
+        sd_task = run_chunked_sd_store.delay(
+            analysis_id=analysis_id,
+            sequence=sequence,
+            chunk_size=chunk_size,
+            overlap=overlap,
+        )
+        terminators_task = run_chunked_terminators_store.delay(
+            analysis_id=analysis_id,
+            sequence=sequence,
+            chunk_size=chunk_size,
+            overlap=overlap,
+        )
+
+        return jsonify(
+            {
+                "analysis_id": analysis_id,
+                "status": "running",
+                "message": "Stored analysis started",
+                "tasks": {
+                    "coding_orfs": coding_task.id,
+                    "promoters": promoters_task.id,
+                    "shine_dalgarno": sd_task.id,
+                    "terminators": terminators_task.id,
+                },
+            }
+        ), 202
+
+    except Exception as e:
+        print("RUN STORED ANALYSIS ERROR:", e)
+        return error_response(str(e), 500)
+
+
+@app.route("/analyses/<analysis_id>/assemble", methods=["POST"])
+def assemble_analysis_route(analysis_id):
+    try:
+        analysis = get_analysis(analysis_id)
+        if not analysis:
+            return error_response("analysis not found", 404)
+
+        modules = analysis.get("modules", {})
+        required = ["coding_orfs", "promoters", "shine_dalgarno", "terminators"]
+        not_ready = [name for name in required if modules.get(name) != "done"]
+
+        if not_ready:
+            return error_response(
+                f"Cannot assemble yet. Modules not finished: {', '.join(not_ready)}",
+                409,
+            )
+
+        task = assemble_and_rank_from_storage.delay(analysis_id=analysis_id)
+
+        return jsonify(
+            {
+                "analysis_id": analysis_id,
+                "status": "queued",
+                "task_id": task.id,
+                "message": "Ranking assembly started",
+            }
+        ), 202
+
+    except Exception as e:
+        print("ASSEMBLE ANALYSIS ERROR:", e)
+        return error_response(str(e), 500)
 
 
 @app.route("/analyses/<analysis_id>", methods=["GET"])

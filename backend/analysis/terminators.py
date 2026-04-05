@@ -4,7 +4,7 @@ from dataclasses import dataclass, asdict
 from typing import List, Dict, Tuple
 
 from .utils import reverse_complement
-from .numba_helpers import gc_fraction_numba, hamming_distance_numba
+from .numba_helpers import gc_fraction_numba
 
 try:
     from ._terminators_cy import scan_terminator_positions_cy
@@ -49,21 +49,10 @@ def _contains_only_dna(sequence: str) -> bool:
     return all(base in VALID_DNA for base in sequence)
 
 
-def _is_gc_rich(sequence: str, threshold: float = 0.7) -> bool:
-    if not sequence:
-        return False
-    return gc_fraction_numba(sequence) >= threshold
-
-
 def _gc_fraction(sequence: str) -> float:
     if not sequence:
         return 0.0
     return gc_fraction_numba(sequence)
-
-
-def _revcomp_simple(seq: str) -> str:
-    trans = str.maketrans("ATCGN", "TAGCN")
-    return seq.translate(trans)[::-1]
 
 
 def _map_rev_to_forward(
@@ -74,10 +63,6 @@ def _map_rev_to_forward(
     forward_start_0 = original_len - rev_end_0_exclusive
     forward_end_0_exclusive = original_len - rev_start_0
     return forward_start_0 + 1, forward_end_0_exclusive
-
-
-def _count_mismatches(seq1: str, seq2: str) -> int:
-    return hamming_distance_numba(seq1, seq2)
 
 
 def _calculate_score(
@@ -231,14 +216,56 @@ def _sort_terminators_biologically(hits: List[TerminatorHit]) -> List[Terminator
     )
 
 
-def _collect_poly_t(search_seq: str, start_0: int) -> tuple[int, str]:
-    n = len(search_seq)
-    end_0_exclusive = start_0
+def _build_gc_prefix(seq: str) -> list[int]:
+    prefix = [0] * (len(seq) + 1)
+    for i, ch in enumerate(seq):
+        prefix[i + 1] = prefix[i] + (1 if ch in {"G", "C"} else 0)
+    return prefix
 
-    while end_0_exclusive < n and search_seq[end_0_exclusive] == "T":
-        end_0_exclusive += 1
 
-    return end_0_exclusive, search_seq[start_0:end_0_exclusive]
+def _build_t_runs(seq: str) -> list[int]:
+    n = len(seq)
+    t_runs = [0] * (n + 1)
+    for i in range(n - 1, -1, -1):
+        if seq[i] == "T":
+            t_runs[i] = t_runs[i + 1] + 1
+    return t_runs
+
+
+def _complement(base: str) -> str:
+    if base == "A":
+        return "T"
+    if base == "T":
+        return "A"
+    if base == "C":
+        return "G"
+    if base == "G":
+        return "C"
+    return "N"
+
+
+def _count_stem_mismatches_direct(
+    seq: str,
+    left_start_0: int,
+    right_start_0: int,
+    stem_len: int,
+    max_stem_mismatches: int,
+) -> int:
+    mismatches = 0
+
+    for k in range(stem_len):
+        left_ch = seq[left_start_0 + k]
+        right_ch = seq[right_start_0 + stem_len - 1 - k]
+
+        if left_ch == "N" or right_ch == "N":
+            return max_stem_mismatches + 1
+
+        if left_ch != _complement(right_ch):
+            mismatches += 1
+            if mismatches > max_stem_mismatches:
+                return mismatches
+
+    return mismatches
 
 
 def _scan_terminator_positions_python(
@@ -256,44 +283,43 @@ def _scan_terminator_positions_python(
     if n < min_total_len:
         return []
 
+    gc_prefix = _build_gc_prefix(search_seq)
+    t_runs = _build_t_runs(search_seq)
+
     hits_raw: List[tuple[int, int, int, int, int, int, int]] = []
-    max_left_start = n - min_total_len
 
-    for i in range(max_left_start + 1):
+    for poly_start_0 in range(n - min_poly_t + 1):
+        poly_len = t_runs[poly_start_0]
+        if poly_len < min_poly_t:
+            continue
+
+        poly_end_0_exclusive = poly_start_0 + poly_len
+        right_end_0_exclusive = poly_start_0
+
         for stem_len in range(stem_min, stem_max + 1):
-            left_start_0 = i
-            left_end_0_exclusive = i + stem_len
-
-            if left_end_0_exclusive > n:
+            right_start_0 = right_end_0_exclusive - stem_len
+            if right_start_0 < 0:
                 continue
-
-            left = search_seq[left_start_0:left_end_0_exclusive]
-            if "N" in left:
-                continue
-            if not _is_gc_rich(left, threshold=gc_threshold):
-                continue
-
-            expected_right = _revcomp_simple(left)
 
             for loop_len in range(loop_min, loop_max + 1):
-                right_start_0 = left_end_0_exclusive + loop_len
-                right_end_0_exclusive = right_start_0 + stem_len
-
-                if right_end_0_exclusive > n:
+                left_end_0_exclusive = right_start_0 - loop_len
+                left_start_0 = left_end_0_exclusive - stem_len
+                if left_start_0 < 0:
                     continue
 
-                right = search_seq[right_start_0:right_end_0_exclusive]
-                if "N" in right:
+                gc_count = gc_prefix[left_end_0_exclusive] - gc_prefix[left_start_0]
+                gc_fraction = gc_count / stem_len
+                if gc_fraction < gc_threshold:
                     continue
 
-                mismatches = _count_mismatches(right, expected_right)
+                mismatches = _count_stem_mismatches_direct(
+                    search_seq,
+                    left_start_0,
+                    right_start_0,
+                    stem_len,
+                    max_stem_mismatches,
+                )
                 if mismatches > max_stem_mismatches:
-                    continue
-
-                poly_start_0 = right_end_0_exclusive
-                poly_end_0_exclusive, poly_t_seq = _collect_poly_t(search_seq, poly_start_0)
-
-                if len(poly_t_seq) < min_poly_t:
                     continue
 
                 hits_raw.append(

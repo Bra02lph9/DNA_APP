@@ -39,16 +39,11 @@ class ShineDalgarnoSite:
 
 
 def _clean_sequence(sequence: str) -> str:
-    return (
-        sequence.replace("\n", "")
-        .replace("\r", "")
-        .replace(" ", "")
-        .upper()
-    )
+    return sequence.replace("\n", "").replace("\r", "").replace(" ", "").upper()
 
 
 def _contains_only_dna(sequence: str) -> bool:
-    return all(base in VALID_DNA for base in sequence)
+    return set(sequence).issubset(VALID_DNA)
 
 
 def _map_rev_to_forward(
@@ -72,8 +67,7 @@ def _start_codon_priority(codon: str) -> int:
 
 
 def _distance_score(distance: int) -> float:
-    ideal = 7
-    return max(0.0, 10.0 - abs(distance - ideal) * 2.0)
+    return max(0.0, 10.0 - abs(distance - 7) * 2.0)
 
 
 def _codon_score(codon: str) -> float:
@@ -105,12 +99,13 @@ def _calculate_sd_score(
 
 def _find_start_codons_python(search_seq: str) -> List[Tuple[int, str]]:
     starts: List[Tuple[int, str]] = []
+    append_start = starts.append
     seq_len = len(search_seq)
 
     for i in range(seq_len - 2):
         codon = search_seq[i:i + 3]
         if codon in START_CODONS:
-            starts.append((i, codon))
+            append_start((i, codon))
 
     return starts
 
@@ -130,14 +125,10 @@ def _evaluate_sd_window(
 ) -> Optional[Tuple[int, int, str, int, int, float]]:
     site_end_0_exclusive = site_start_0 + SD_LEN
 
-    if site_start_0 < 0:
-        return None
-    if site_end_0_exclusive > len(search_seq):
+    if site_start_0 < 0 or site_end_0_exclusive > len(search_seq):
         return None
 
     window = search_seq[site_start_0:site_end_0_exclusive]
-    if len(window) != SD_LEN:
-        return None
     if "N" in window:
         return None
 
@@ -167,7 +158,8 @@ def _best_sd_for_start_python(
     start_codon: str,
     max_mismatches: int,
 ) -> Optional[Tuple[int, int, str, int, int, float]]:
-    candidates: List[Tuple[int, int, str, int, int, float]] = []
+    best: Optional[Tuple[int, int, str, int, int, float]] = None
+    best_key = None
 
     for distance in range(MIN_SD_DISTANCE, MAX_SD_DISTANCE + 1):
         site_end_0_exclusive = start_pos_0 - distance
@@ -181,21 +173,21 @@ def _best_sd_for_start_python(
             max_mismatches=max_mismatches,
         )
 
-        if candidate is not None:
-            candidates.append(candidate)
+        if candidate is None:
+            continue
 
-    if not candidates:
-        return None
-
-    candidates.sort(
-        key=lambda x: (
-            -x[5],
-            x[3],
-            abs(x[4] - 7),
-            x[0],
+        key = (
+            -candidate[5],             # score desc
+            candidate[3],             # mismatches asc
+            abs(candidate[4] - 7),    # distance to ideal
+            candidate[0],             # earlier site
         )
-    )
-    return candidates[0]
+
+        if best is None or key < best_key:
+            best = candidate
+            best_key = key
+
+    return best
 
 
 def _best_sd_for_start(
@@ -297,7 +289,7 @@ def _sort_sites_biologically(sites: List[ShineDalgarnoSite]) -> List[ShineDalgar
         key=lambda s: (
             -s.score,
             s.mismatches,
-            abs((s.distance_to_start or 999) - 7),
+            abs((s.distance_to_start if s.distance_to_start is not None else 999) - 7),
             _start_codon_priority(s.linked_start_codon or ""),
             0 if s.strand == "+" else 1,
             s.start,
@@ -321,8 +313,12 @@ def find_shine_dalgarno_sites_in_strand(
     if len(search_seq) < SD_LEN + MIN_SD_DISTANCE + 3:
         return []
 
-    hits: List[ShineDalgarnoSite] = []
     start_codons = _find_start_codons(search_seq)
+    if not start_codons:
+        return []
+
+    hits: List[ShineDalgarnoSite] = []
+    append_hit = hits.append
 
     for start_pos_0, start_codon in start_codons:
         best_sd = _best_sd_for_start(
@@ -337,19 +333,23 @@ def find_shine_dalgarno_sites_in_strand(
 
         site_start_0, site_end_0_exclusive, window, mm, distance, score = best_sd
 
-        hit = _build_sd_hit(
-            strand=strand,
-            original_len=original_len,
-            site_start_0=site_start_0,
-            site_end_0_exclusive=site_end_0_exclusive,
-            window=window,
-            mismatches=mm,
-            start_pos_0=start_pos_0,
-            start_codon=start_codon,
-            distance=distance,
-            score=score,
+        append_hit(
+            _build_sd_hit(
+                strand=strand,
+                original_len=original_len,
+                site_start_0=site_start_0,
+                site_end_0_exclusive=site_end_0_exclusive,
+                window=window,
+                mismatches=mm,
+                start_pos_0=start_pos_0,
+                start_codon=start_codon,
+                distance=distance,
+                score=score,
+            )
         )
-        hits.append(hit)
+
+    if not hits:
+        return []
 
     hits = _deduplicate_sites(hits)
     return _sort_sites_biologically(hits)
@@ -376,6 +376,11 @@ def find_shine_dalgarno_sites(
         max_mismatches=max_mismatches,
         already_clean=True,
     )
+
+    if not plus_hits:
+        return minus_hits
+    if not minus_hits:
+        return plus_hits
 
     return _sort_sites_biologically(plus_hits + minus_hits)
 

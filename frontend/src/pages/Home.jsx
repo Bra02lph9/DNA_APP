@@ -7,6 +7,7 @@ import MobileActions from "../components/MobileActions";
 import {
   createAnalysisTask,
   getTaskStatus,
+  runStoredAnalysis,
 } from "../api";
 import { formatResultsAsText } from "../utils/formatResults";
 import { downloadPdfFile } from "../utils/downloadResults";
@@ -25,6 +26,11 @@ function normalizeAnalysisType(endpoint) {
   };
 
   return map[endpoint] || endpoint;
+}
+
+function shouldStoreAnalysis(endpoint, mode) {
+  if (mode !== "single") return false;
+  return endpoint === "all" || endpoint === "ranked-coding-orfs";
 }
 
 function computeSequenceMeta(sequence, fileName = "") {
@@ -177,6 +183,8 @@ export default function Home() {
   const [taskId, setTaskId] = useState(null);
   const [taskStatus, setTaskStatus] = useState(null);
 
+  const [storedAnalysisId, setStoredAnalysisId] = useState(null);
+
   const fullSequenceRef = useRef("");
   const latestWindowRequestIdRef = useRef(0);
 
@@ -205,6 +213,27 @@ export default function Home() {
       }
 
       await sleep(2000);
+    }
+  };
+
+  const startStoredAnalysisInBackground = async ({
+    endpoint,
+    cleanedSequence,
+  }) => {
+    if (!shouldStoreAnalysis(endpoint, mode)) return;
+
+    try {
+      const stored = await runStoredAnalysis({
+        sequence: cleanedSequence,
+        min_aa: 30,
+        chunk_size: 50000,
+        overlap: 1000,
+      });
+
+      setStoredAnalysisId(stored.analysis_id);
+      console.log("Stored analysis started:", stored.analysis_id);
+    } catch (error) {
+      console.error("Stored analysis failed:", error);
     }
   };
 
@@ -256,6 +285,12 @@ export default function Home() {
 
       const data = await pollTaskUntilDone(task.task_id);
       setResults(data);
+
+      // Enregistrement Mongo en arrière-plan, sans changer l'UI
+      startStoredAnalysisInBackground({
+        endpoint,
+        cleanedSequence,
+      });
     } catch (error) {
       console.error(error);
       alert(error.message || "Error during analysis");
@@ -349,6 +384,7 @@ export default function Home() {
     setSelectedHighlight([]);
     setTaskId(null);
     setTaskStatus(null);
+    setStoredAnalysisId(null);
   };
 
   const uploadProps = {
@@ -358,6 +394,7 @@ export default function Home() {
       setSelectedHighlight([]);
       setTaskId(null);
       setTaskStatus(null);
+      setStoredAnalysisId(null);
     },
     setLoadedFileName: setLoadedFileName,
     setFolderFiles: (files) => {
@@ -365,6 +402,7 @@ export default function Home() {
       setSelectedHighlight([]);
       setTaskId(null);
       setTaskStatus(null);
+      setStoredAnalysisId(null);
     },
     setMode: setMode,
     setResults: (data) => {
@@ -447,6 +485,15 @@ export default function Home() {
               </div>
             )}
 
+            {!loading && storedAnalysisId && (
+              <div className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm">
+                <p className="text-sm text-slate-700">
+                  <span className="font-medium">Stored analysis ID:</span>{" "}
+                  {storedAnalysisId}
+                </p>
+              </div>
+            )}
+
             <div className="min-h-0 flex-1 overflow-hidden rounded-2xl">
               <div className="h-full overflow-y-auto pr-2">
                 <SequenceViewer {...viewerProps} />
@@ -484,6 +531,15 @@ export default function Home() {
                   Task ID: {taskId}
                 </p>
               )}
+            </div>
+          )}
+
+          {!loading && storedAnalysisId && (
+            <div className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm">
+              <p className="text-sm text-slate-700">
+                <span className="font-medium">Stored analysis ID:</span>{" "}
+                {storedAnalysisId}
+              </p>
             </div>
           )}
 

@@ -54,14 +54,15 @@ def score_sd(site: Optional[ShineDalgarnoSite]) -> float:
         return 0.0
 
     base = float(site.score)
+    distance = site.distance_to_start
 
-    if site.distance_to_start is not None:
-        if 6 <= site.distance_to_start <= 9:
+    if distance is not None:
+        if 6 <= distance <= 9:
             base += 3.0
-        elif 4 <= site.distance_to_start <= 12:
+        elif 4 <= distance <= 12:
             base += 1.0
 
-    return round(min(base, 35.0), 3)
+    return min(base, 35.0)
 
 
 def _promoter_distance_to_orf(hit: PromoterHit, orf: CodingORF) -> Optional[int]:
@@ -86,7 +87,7 @@ def score_promoter(hit: Optional[PromoterHit], orf: CodingORF) -> float:
     upstream_distance = _promoter_distance_to_orf(hit, orf)
 
     if upstream_distance is None:
-        return round(min(base, 40.0), 3)
+        return min(base, 40.0)
 
     if 1 <= upstream_distance <= 80:
         base += 6.0
@@ -95,7 +96,7 @@ def score_promoter(hit: Optional[PromoterHit], orf: CodingORF) -> float:
     elif 151 <= upstream_distance <= 300:
         base += 1.0
 
-    return round(min(base, 40.0), 3)
+    return min(base, 40.0)
 
 
 def _terminator_distance_to_orf(hit: TerminatorHit, orf: CodingORF) -> Optional[int]:
@@ -120,30 +121,37 @@ def score_terminator(hit: Optional[TerminatorHit], orf: CodingORF) -> float:
     downstream_distance = _terminator_distance_to_orf(hit, orf)
 
     if downstream_distance is None:
-        return round(min(base, 30.0), 3)
+        return min(base, 30.0)
 
     if 1 <= downstream_distance <= 100:
         base += 5.0
     elif 101 <= downstream_distance <= 250:
         base += 2.0
 
-    return round(min(base, 30.0), 3)
+    return min(base, 30.0)
 
 
 def _group_by_strand(items) -> Dict[str, list]:
     grouped = {"+": [], "-": []}
+    plus_items = grouped["+"]
+    minus_items = grouped["-"]
+
     for item in items:
         strand = getattr(item, "strand", None)
-        if strand in grouped:
-            grouped[strand].append(item)
+        if strand == "+":
+            plus_items.append(item)
+        elif strand == "-":
+            minus_items.append(item)
+
     return grouped
 
 
 def _sd_sort_key(site: ShineDalgarnoSite) -> tuple:
+    distance = site.distance_to_start
     return (
         -site.score,
         site.mismatches,
-        abs((site.distance_to_start or 999) - 7),
+        abs((distance if distance is not None else 999) - 7),
         site.start,
     )
 
@@ -162,14 +170,15 @@ def _index_sd_sites(
     indexed: Dict[str, Dict[int, ShineDalgarnoSite]] = {"+": {}, "-": {}}
 
     for site in sd_sites:
-        if site.strand not in indexed:
-            continue
-        if site.linked_start_position is None:
+        strand = site.strand
+        linked_start = site.linked_start_position
+
+        if strand not in indexed or linked_start is None:
             continue
 
-        current = indexed[site.strand].get(site.linked_start_position)
+        current = indexed[strand].get(linked_start)
         if current is None or _sd_sort_key(site) < _sd_sort_key(current):
-            indexed[site.strand][site.linked_start_position] = site
+            indexed[strand][linked_start] = site
 
     return indexed
 
@@ -178,30 +187,28 @@ def _index_promoters_by_strand(
     promoters: List[PromoterHit],
 ) -> Dict[str, Tuple[List[int], List[PromoterHit]]]:
     grouped = _group_by_strand(promoters)
-    indexed: Dict[str, Tuple[List[int], List[PromoterHit]]] = {}
 
     plus_items = sorted(grouped["+"], key=lambda p: p.box10_end)
     minus_items = sorted(grouped["-"], key=lambda p: p.box10_start)
 
-    indexed["+"] = ([p.box10_end for p in plus_items], plus_items)
-    indexed["-"] = ([p.box10_start for p in minus_items], minus_items)
-
-    return indexed
+    return {
+        "+": ([p.box10_end for p in plus_items], plus_items),
+        "-": ([p.box10_start for p in minus_items], minus_items),
+    }
 
 
 def _index_terminators_by_strand(
     terminators: List[TerminatorHit],
 ) -> Dict[str, Tuple[List[int], List[TerminatorHit]]]:
     grouped = _group_by_strand(terminators)
-    indexed: Dict[str, Tuple[List[int], List[TerminatorHit]]] = {}
 
     plus_items = sorted(grouped["+"], key=lambda t: t.stem_left_start)
     minus_items = sorted(grouped["-"], key=lambda t: t.stem_right_end)
 
-    indexed["+"] = ([t.stem_left_start for t in plus_items], plus_items)
-    indexed["-"] = ([t.stem_right_end for t in minus_items], minus_items)
-
-    return indexed
+    return {
+        "+": ([t.stem_left_start for t in plus_items], plus_items),
+        "-": ([t.stem_right_end for t in minus_items], minus_items),
+    }
 
 
 def find_best_sd_for_orf(
@@ -220,7 +227,6 @@ def find_best_sd_for_orf(
             continue
 
         key = _sd_sort_key(site)
-
         if best is None or key < best_key:
             best = site
             best_key = key
@@ -238,13 +244,10 @@ def find_best_promoter_for_orf(
 
     for p in promoters:
         distance = _promoter_distance_to_orf(p, orf)
-        if distance is None:
-            continue
-        if distance > max_distance:
+        if distance is None or distance > max_distance:
             continue
 
         key = _promoter_sort_key(p, distance)
-
         if best is None or key < best_key:
             best = p
             best_key = key
@@ -262,13 +265,10 @@ def find_best_terminator_for_orf(
 
     for t in terminators:
         distance = _terminator_distance_to_orf(t, orf)
-        if distance is None:
-            continue
-        if distance > max_distance:
+        if distance is None or distance > max_distance:
             continue
 
         key = _terminator_sort_key(t, distance)
-
         if best is None or key < best_key:
             best = t
             best_key = key
@@ -397,18 +397,19 @@ def _build_ranked_orf_entry(
     promoter_score = score_promoter(best_promoter, orf)
     terminator_score = score_terminator(best_terminator, orf)
 
-    total_score = round(
+    total_score = (
         length_score
         + start_score
         + sd_score
         + promoter_score
-        + terminator_score,
-        3,
+        + terminator_score
     )
 
-    return {
-        "orf": coding_orf_to_dict(orf),
-        "total_score": total_score,
+    orf_dict = coding_orf_to_dict(orf)
+
+    entry = {
+        "orf": orf_dict,
+        "total_score": round(total_score, 3),
         "score_breakdown": {
             "length_score": round(length_score, 3),
             "start_codon_score": round(start_score, 3),
@@ -420,6 +421,18 @@ def _build_ranked_orf_entry(
         "best_shine_dalgarno": shine_dalgarno_to_dict(best_sd) if best_sd else None,
         "best_terminator": terminator_to_dict(best_terminator) if best_terminator else None,
     }
+
+    entry["_sort_key"] = (
+        -entry["total_score"],
+        -entry["score_breakdown"]["shine_dalgarno_score"],
+        -entry["score_breakdown"]["promoter_score"],
+        -entry["score_breakdown"]["terminator_score"],
+        -entry["score_breakdown"]["length_score"],
+        0 if orf_dict["strand"] == "+" else 1,
+        orf_dict["start"],
+    )
+
+    return entry
 
 
 def rank_coding_orfs_from_features(
@@ -436,6 +449,8 @@ def rank_coding_orfs_from_features(
     promoter_index = _index_promoters_by_strand(promoters)
     terminator_index = _index_terminators_by_strand(terminators)
 
+    append_ranked = ranked.append
+
     for orf in coding_orfs:
         best_sd = _find_best_sd_for_orf_indexed(orf, sd_index)
         best_promoter = _find_best_promoter_for_orf_indexed(
@@ -449,7 +464,7 @@ def rank_coding_orfs_from_features(
             max_distance=max_terminator_distance,
         )
 
-        ranked.append(
+        append_ranked(
             _build_ranked_orf_entry(
                 orf=orf,
                 best_sd=best_sd,
@@ -458,17 +473,10 @@ def rank_coding_orfs_from_features(
             )
         )
 
-    ranked.sort(
-        key=lambda x: (
-            -x["total_score"],
-            -x["score_breakdown"]["shine_dalgarno_score"],
-            -x["score_breakdown"]["promoter_score"],
-            -x["score_breakdown"]["terminator_score"],
-            -x["score_breakdown"]["length_score"],
-            0 if x["orf"]["strand"] == "+" else 1,
-            x["orf"]["start"],
-        )
-    )
+    ranked.sort(key=lambda x: x["_sort_key"])
+
+    for entry in ranked:
+        entry.pop("_sort_key", None)
 
     return ranked
 
@@ -500,16 +508,41 @@ def choose_best_ranked_coding_orf_from_ranked(
     return ranked[0] if ranked else None
 
 
+def choose_best_ranked_coding_orf_from_features(
+    coding_orfs: List[CodingORF],
+    promoters: List[PromoterHit],
+    sd_sites: List[ShineDalgarnoSite],
+    terminators: List[TerminatorHit],
+    max_promoter_distance: int = 300,
+    max_terminator_distance: int = 300,
+) -> Optional[Dict[str, Any]]:
+    ranked = rank_coding_orfs_from_features(
+        coding_orfs=coding_orfs,
+        promoters=promoters,
+        sd_sites=sd_sites,
+        terminators=terminators,
+        max_promoter_distance=max_promoter_distance,
+        max_terminator_distance=max_terminator_distance,
+    )
+    return ranked[0] if ranked else None
+
+
 def choose_best_ranked_coding_orf(
     sequence: str,
     min_aa: int = 30,
     max_promoter_distance: int = 300,
     max_terminator_distance: int = 300,
 ) -> Optional[Dict[str, Any]]:
-    ranked = rank_coding_orfs(
-        sequence=sequence,
-        min_aa=min_aa,
+    coding_orfs = find_coding_orfs(sequence=sequence, min_aa=min_aa)
+    promoters = find_promoters(sequence)
+    sd_sites = find_shine_dalgarno_sites(sequence)
+    terminators = find_rho_independent_terminators(sequence)
+
+    return choose_best_ranked_coding_orf_from_features(
+        coding_orfs=coding_orfs,
+        promoters=promoters,
+        sd_sites=sd_sites,
+        terminators=terminators,
         max_promoter_distance=max_promoter_distance,
         max_terminator_distance=max_terminator_distance,
     )
-    return choose_best_ranked_coding_orf_from_ranked(ranked)

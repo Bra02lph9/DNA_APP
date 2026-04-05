@@ -4,6 +4,7 @@ from dataclasses import asdict
 from typing import Any, Dict, List
 
 from celery import group
+from celery.result import allow_join_result
 
 from tasks.celery_app import celery_app
 from analysis.analysis_service import (
@@ -12,7 +13,6 @@ from analysis.analysis_service import (
 )
 
 from analysis.coding_orfs import find_coding_orfs, CodingORF
-from analysis.orf_finder import find_all_orfs
 from analysis.promoters import find_promoters
 from analysis.shine_dalgarno import find_shine_dalgarno_sites
 from analysis.terminators import find_rho_independent_terminators
@@ -41,6 +41,7 @@ from db.analysis_repository import (
     fetch_module_results,
     count_module_results,
     update_analysis_summary,
+    update_analysis_status,
 )
 
 
@@ -92,44 +93,40 @@ def _coding_orfs_from_dicts(items: List[dict]) -> List[CodingORF]:
     return [_coding_orf_from_dict(x) for x in items]
 
 
-@celery_app.task(name="tasks.run_global_coding_orfs_store")
-def run_global_coding_orfs_store(
-    analysis_id: str,
-    sequence: str,
-    min_aa: int = 30,
-    longest_only_per_stop: bool = False,
-) -> Dict[str, Any]:
-    module = "coding_orfs"
-    update_module_status(analysis_id, module, "running")
-
-    try:
-        coding_orfs = find_coding_orfs(
-            sequence=sequence,
-            min_aa=min_aa,
-            longest_only_per_stop=longest_only_per_stop,
-        )
-        serialized = [asdict(x) for x in coding_orfs]
-        count = replace_module_results(
-            analysis_id=analysis_id,
-            module=module,
-            results=serialized,
-            kind="final",
-        )
-        update_module_status(analysis_id, module, "done")
-        return {
-            "analysis_id": analysis_id,
-            "module": module,
-            "count": count,
-            "status": "done",
-        }
-    except Exception as exc:
-        update_module_status(analysis_id, module, "failed")
-        append_analysis_error(analysis_id, module, str(exc))
-        raise
+def _store_empty_final_results(analysis_id: str, module: str) -> Dict[str, Any]:
+    replace_module_results(
+        analysis_id=analysis_id,
+        module=module,
+        results=[],
+        kind="final",
+    )
+    update_module_status(analysis_id, module, "done")
+    return {
+        "analysis_id": analysis_id,
+        "module": module,
+        "count": 0,
+        "status": "done",
+    }
 
 
-@celery_app.task(name="tasks.run_promoter_chunk_store")
-def run_promoter_chunk_store(
+def _run_chunk_group_and_wait(task_signatures) -> List[dict]:
+    """
+    Lance un group Celery et attend les résultats.
+    Permet la jointure sync depuis une task Celery proprement.
+    """
+    if not task_signatures:
+        return []
+
+    job = group(task_signatures).apply_async()
+
+    with allow_join_result():
+        results = job.get(disable_sync_subtasks=False)
+
+    return results
+
+
+@celery_app.task(name="tasks.process_promoter_chunk")
+def process_promoter_chunk(
     analysis_id: str,
     chunk: Dict[str, Any],
     chunk_index: int,
@@ -166,8 +163,8 @@ def run_promoter_chunk_store(
     }
 
 
-@celery_app.task(name="tasks.run_sd_chunk_store")
-def run_sd_chunk_store(
+@celery_app.task(name="tasks.process_sd_chunk")
+def process_sd_chunk(
     analysis_id: str,
     chunk: Dict[str, Any],
     chunk_index: int,
@@ -198,8 +195,8 @@ def run_sd_chunk_store(
     }
 
 
-@celery_app.task(name="tasks.run_terminator_chunk_store")
-def run_terminator_chunk_store(
+@celery_app.task(name="tasks.process_terminator_chunk")
+def process_terminator_chunk(
     analysis_id: str,
     chunk: Dict[str, Any],
     chunk_index: int,
@@ -242,6 +239,45 @@ def run_terminator_chunk_store(
     }
 
 
+@celery_app.task(name="tasks.run_global_coding_orfs_store")
+def run_global_coding_orfs_store(
+    analysis_id: str,
+    sequence: str,
+    min_aa: int = 30,
+    longest_only_per_stop: bool = False,
+) -> Dict[str, Any]:
+    module = "coding_orfs"
+    update_module_status(analysis_id, module, "running")
+
+    try:
+        coding_orfs = find_coding_orfs(
+            sequence=sequence,
+            min_aa=min_aa,
+            longest_only_per_stop=longest_only_per_stop,
+        )
+        serialized = [asdict(x) for x in coding_orfs]
+
+        count = replace_module_results(
+            analysis_id=analysis_id,
+            module=module,
+            results=serialized,
+            kind="final",
+        )
+
+        update_module_status(analysis_id, module, "done")
+        return {
+            "analysis_id": analysis_id,
+            "module": module,
+            "count": count,
+            "status": "done",
+        }
+
+    except Exception as exc:
+        update_module_status(analysis_id, module, "failed")
+        append_analysis_error(analysis_id, module, str(exc))
+        raise
+
+
 @celery_app.task(name="tasks.run_chunked_promoters_store")
 def run_chunked_promoters_store(
     analysis_id: str,
@@ -259,20 +295,23 @@ def run_chunked_promoters_store(
     try:
         chunks = chunk_sequence(sequence, chunk_size=chunk_size, overlap=overlap)
 
-        job = group(
-            run_promoter_chunk_store.s(
-                analysis_id,
-                chunk,
-                idx,
-                max_mismatches_box35,
-                max_mismatches_box10,
-                spacing_min,
-                spacing_max,
+        if not chunks:
+            return _store_empty_final_results(analysis_id, module)
+
+        task_signatures = [
+            process_promoter_chunk.s(
+                analysis_id=analysis_id,
+                chunk=chunk,
+                chunk_index=idx,
+                max_mismatches_box35=max_mismatches_box35,
+                max_mismatches_box10=max_mismatches_box10,
+                spacing_min=spacing_min,
+                spacing_max=spacing_max,
             )
             for idx, chunk in enumerate(chunks)
-        )
+        ]
 
-        job.apply_async().get()
+        _run_chunk_group_and_wait(task_signatures)
 
         raw_hits = fetch_module_results(
             analysis_id=analysis_id,
@@ -318,17 +357,20 @@ def run_chunked_sd_store(
     try:
         chunks = chunk_sequence(sequence, chunk_size=chunk_size, overlap=overlap)
 
-        job = group(
-            run_sd_chunk_store.s(
-                analysis_id,
-                chunk,
-                idx,
-                max_mismatches,
+        if not chunks:
+            return _store_empty_final_results(analysis_id, module)
+
+        task_signatures = [
+            process_sd_chunk.s(
+                analysis_id=analysis_id,
+                chunk=chunk,
+                chunk_index=idx,
+                max_mismatches=max_mismatches,
             )
             for idx, chunk in enumerate(chunks)
-        )
+        ]
 
-        job.apply_async().get()
+        _run_chunk_group_and_wait(task_signatures)
 
         raw_hits = fetch_module_results(
             analysis_id=analysis_id,
@@ -380,23 +422,26 @@ def run_chunked_terminators_store(
     try:
         chunks = chunk_sequence(sequence, chunk_size=chunk_size, overlap=overlap)
 
-        job = group(
-            run_terminator_chunk_store.s(
-                analysis_id,
-                chunk,
-                idx,
-                stem_min,
-                stem_max,
-                loop_min,
-                loop_max,
-                max_stem_mismatches,
-                min_poly_t,
-                gc_threshold,
+        if not chunks:
+            return _store_empty_final_results(analysis_id, module)
+
+        task_signatures = [
+            process_terminator_chunk.s(
+                analysis_id=analysis_id,
+                chunk=chunk,
+                chunk_index=idx,
+                stem_min=stem_min,
+                stem_max=stem_max,
+                loop_min=loop_min,
+                loop_max=loop_max,
+                max_stem_mismatches=max_stem_mismatches,
+                min_poly_t=min_poly_t,
+                gc_threshold=gc_threshold,
             )
             for idx, chunk in enumerate(chunks)
-        )
+        ]
 
-        job.apply_async().get()
+        _run_chunk_group_and_wait(task_signatures)
 
         raw_hits = fetch_module_results(
             analysis_id=analysis_id,
@@ -492,6 +537,7 @@ def assemble_and_rank_from_storage(
 
         update_analysis_summary(analysis_id, summary)
         update_module_status(analysis_id, module, "done")
+        update_analysis_status(analysis_id, "completed")
 
         return {
             "analysis_id": analysis_id,
@@ -501,6 +547,7 @@ def assemble_and_rank_from_storage(
 
     except Exception as exc:
         update_module_status(analysis_id, module, "failed")
+        update_analysis_status(analysis_id, "failed")
         append_analysis_error(analysis_id, module, str(exc))
         raise
 
@@ -516,4 +563,3 @@ def run_large_sequence_analysis_task(
         sequence=sequence,
         min_aa=min_aa,
     )
-

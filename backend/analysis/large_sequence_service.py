@@ -8,9 +8,30 @@ from db.analysis_repository import (
 )
 
 
-DEFAULT_CHUNK_SIZE = 50_000
-DEFAULT_OVERLAP = 1_000
-DEFAULT_LARGE_SEQUENCE_THRESHOLD = 10_000
+DEFAULT_CHUNK_SIZE = 100_000
+DEFAULT_OVERLAP = 500
+DEFAULT_LARGE_SEQUENCE_THRESHOLD = 20_000
+
+
+def _empty_summary() -> Dict[str, int]:
+    return {
+        "coding_orf_count": 0,
+        "promoter_count": 0,
+        "shine_dalgarno_count": 0,
+        "terminator_count": 0,
+        "ranked_coding_orf_count": 0,
+    }
+
+
+def _validate_chunk_params(chunk_size: int, overlap: int) -> None:
+    if chunk_size <= 0:
+        raise ValueError("chunk_size must be > 0")
+
+    if overlap < 0:
+        raise ValueError("overlap must be >= 0")
+
+    if overlap >= chunk_size:
+        raise ValueError("overlap must be strictly less than chunk_size")
 
 
 def run_large_sequence_analysis(
@@ -50,39 +71,38 @@ def run_large_sequence_analysis(
         return {
             "status": "empty_sequence",
             "analysis_id": None,
-            "summary": {
-                "coding_orf_count": 0,
-                "promoter_count": 0,
-                "shine_dalgarno_count": 0,
-                "terminator_count": 0,
-                "ranked_coding_orf_count": 0,
-            },
+            "summary": _empty_summary(),
+            "pipeline": None,
         }
+
+    _validate_chunk_params(chunk_size, overlap)
+
+    parameters = {
+        "chunk_size": chunk_size,
+        "overlap": overlap,
+        "min_aa": min_aa,
+        "longest_only_per_stop": longest_only_per_stop,
+        "include_general_orfs": include_general_orfs,
+        "promoter_max_mismatches_box35": promoter_max_mismatches_box35,
+        "promoter_max_mismatches_box10": promoter_max_mismatches_box10,
+        "promoter_spacing_min": promoter_spacing_min,
+        "promoter_spacing_max": promoter_spacing_max,
+        "sd_max_mismatches": sd_max_mismatches,
+        "terminator_stem_min": terminator_stem_min,
+        "terminator_stem_max": terminator_stem_max,
+        "terminator_loop_min": terminator_loop_min,
+        "terminator_loop_max": terminator_loop_max,
+        "terminator_max_stem_mismatches": terminator_max_stem_mismatches,
+        "terminator_min_poly_t": terminator_min_poly_t,
+        "terminator_gc_threshold": terminator_gc_threshold,
+        "max_promoter_distance": max_promoter_distance,
+        "max_terminator_distance": max_terminator_distance,
+    }
 
     analysis_id = create_analysis(
         sequence_length=len(seq),
         pipeline="hybrid_celery_large_sequence",
-        parameters={
-            "chunk_size": chunk_size,
-            "overlap": overlap,
-            "min_aa": min_aa,
-            "longest_only_per_stop": longest_only_per_stop,
-            "include_general_orfs": include_general_orfs,
-            "promoter_max_mismatches_box35": promoter_max_mismatches_box35,
-            "promoter_max_mismatches_box10": promoter_max_mismatches_box10,
-            "promoter_spacing_min": promoter_spacing_min,
-            "promoter_spacing_max": promoter_spacing_max,
-            "sd_max_mismatches": sd_max_mismatches,
-            "terminator_stem_min": terminator_stem_min,
-            "terminator_stem_max": terminator_stem_max,
-            "terminator_loop_min": terminator_loop_min,
-            "terminator_loop_max": terminator_loop_max,
-            "terminator_max_stem_mismatches": terminator_max_stem_mismatches,
-            "terminator_min_poly_t": terminator_min_poly_t,
-            "terminator_gc_threshold": terminator_gc_threshold,
-            "max_promoter_distance": max_promoter_distance,
-            "max_terminator_distance": max_terminator_distance,
-        },
+        parameters=parameters,
     )
 
     try:
@@ -126,6 +146,7 @@ def run_large_sequence_analysis(
             gc_threshold=terminator_gc_threshold,
         )
 
+        # Wait for all module-level tasks to finish.
         coding_task.get(timeout=timeout)
         promoter_task.get(timeout=timeout)
         sd_task.get(timeout=timeout)
@@ -143,18 +164,20 @@ def run_large_sequence_analysis(
         return {
             "status": "completed",
             "analysis_id": analysis_id,
-            "summary": final_result.get("summary", {}),
+            "summary": final_result.get("summary", _empty_summary()),
             "pipeline": {
                 "mode": "hybrid_celery_large_sequence",
                 "chunk_size": chunk_size,
                 "overlap": overlap,
                 "storage": "mongodb",
+                "module_parallelism": True,
+                "chunk_parallelism": True,
             },
         }
 
-    except Exception as exc:
+    except Exception:
         update_analysis_status(analysis_id, "failed")
-        raise exc
+        raise
 
 
 def should_use_large_sequence_pipeline(

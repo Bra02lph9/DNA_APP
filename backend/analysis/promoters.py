@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from bisect import bisect_left
 from dataclasses import dataclass, asdict
 from typing import List, Dict, Tuple
 
@@ -36,16 +37,11 @@ class PromoterHit:
 
 
 def _clean_sequence(sequence: str) -> str:
-    return (
-        sequence.replace("\n", "")
-        .replace("\r", "")
-        .replace(" ", "")
-        .upper()
-    )
+    return sequence.replace("\n", "").replace("\r", "").replace(" ", "").upper()
 
 
 def _contains_only_dna(sequence: str) -> bool:
-    return all(base in VALID_DNA for base in sequence)
+    return set(sequence).issubset(VALID_DNA)
 
 
 def _map_rev_to_forward(
@@ -64,10 +60,6 @@ def _at_fraction(sequence: str) -> float:
     return at_fraction_numba(sequence)
 
 
-def _spacing_penalty(spacing: int, optimal: int = 17) -> float:
-    return abs(spacing - optimal) * 1.5
-
-
 def _score_promoter(
     box35_mismatches: int,
     box10_mismatches: int,
@@ -77,7 +69,7 @@ def _score_promoter(
     score = 30.0
     score -= box35_mismatches * 5.0
     score -= box10_mismatches * 6.0
-    score -= _spacing_penalty(spacing, optimal=17)
+    score -= abs(spacing - 17) * 1.5
     score += spacer_at_fraction * 4.0
     return round(score, 3)
 
@@ -100,32 +92,77 @@ def _deduplicate_hits(hits: List[PromoterHit]) -> List[PromoterHit]:
     return list(best_by_key.values())
 
 
-def _overlap(a_start: int, a_end: int, b_start: int, b_end: int) -> bool:
-    return not (a_end < b_start or b_end < a_start)
+def _interval_of_hit(hit: PromoterHit) -> tuple[int, int]:
+    return (
+        min(hit.box35_start, hit.box10_start),
+        max(hit.box35_end, hit.box10_end),
+    )
+
+
+def _has_overlap_sorted(
+    starts: List[int],
+    intervals: List[tuple[int, int]],
+    start: int,
+    end: int,
+) -> bool:
+    if not intervals:
+        return False
+
+    i = bisect_left(starts, start)
+
+    j = i - 1
+    while j >= 0 and intervals[j][1] >= start:
+        if intervals[j][0] <= end:
+            return True
+        j -= 1
+
+    k = i
+    n = len(intervals)
+    while k < n and intervals[k][0] <= end:
+        if intervals[k][1] >= start:
+            return True
+        k += 1
+
+    return False
+
+
+def _insert_interval_sorted(
+    starts: List[int],
+    intervals: List[tuple[int, int]],
+    start: int,
+    end: int,
+) -> None:
+    idx = bisect_left(starts, start)
+    starts.insert(idx, start)
+    intervals.insert(idx, (start, end))
 
 
 def _filter_redundant_hits(hits: List[PromoterHit]) -> List[PromoterHit]:
     sorted_hits = sorted(hits, key=lambda h: (-h.score, h.strand, h.box35_start))
+
     kept: List[PromoterHit] = []
 
+    plus_starts: List[int] = []
+    plus_intervals: List[tuple[int, int]] = []
+
+    minus_starts: List[int] = []
+    minus_intervals: List[tuple[int, int]] = []
+
+    append_kept = kept.append
+
     for hit in sorted_hits:
-        hit_start = min(hit.box35_start, hit.box10_start)
-        hit_end = max(hit.box35_end, hit.box10_end)
+        hit_start, hit_end = _interval_of_hit(hit)
 
-        redundant = False
-        for prev in kept:
-            if hit.strand != prev.strand:
-                continue
-
-            prev_start = min(prev.box35_start, prev.box10_start)
-            prev_end = max(prev.box35_end, prev.box10_end)
-
-            if _overlap(hit_start, hit_end, prev_start, prev_end):
-                redundant = True
-                break
-
-        if not redundant:
-            kept.append(hit)
+        if hit.strand == "+":
+            redundant = _has_overlap_sorted(plus_starts, plus_intervals, hit_start, hit_end)
+            if not redundant:
+                append_kept(hit)
+                _insert_interval_sorted(plus_starts, plus_intervals, hit_start, hit_end)
+        else:
+            redundant = _has_overlap_sorted(minus_starts, minus_intervals, hit_start, hit_end)
+            if not redundant:
+                append_kept(hit)
+                _insert_interval_sorted(minus_starts, minus_intervals, hit_start, hit_end)
 
     return kept
 
@@ -172,12 +209,8 @@ def _build_promoter_hit(
         box10_start = i10 + 1
         box10_end = i10 + MOTIF_LEN
     else:
-        box35_start, box35_end = _map_rev_to_forward(
-            i35, i35 + MOTIF_LEN, original_len
-        )
-        box10_start, box10_end = _map_rev_to_forward(
-            i10, i10 + MOTIF_LEN, original_len
-        )
+        box35_start, box35_end = _map_rev_to_forward(i35, i35 + MOTIF_LEN, original_len)
+        box10_start, box10_end = _map_rev_to_forward(i10, i10 + MOTIF_LEN, original_len)
 
     return PromoterHit(
         strand=strand,
@@ -206,37 +239,41 @@ def _scan_promoter_positions_python(
     seq_len = len(search_seq)
     hits_raw: List[tuple[int, int, int, int, int]] = []
 
-    last_box35_start = seq_len - MOTIF_LEN
-    last_box10_start = seq_len - MOTIF_LEN
+    motif_len = MOTIF_LEN
+    box35_motif = BOX_35
+    box10_motif = BOX_10
+    hamming = hamming_distance_numba
+    append_hit = hits_raw.append
+
+    last_box35_start = seq_len - motif_len
+    last_box10_start = seq_len - motif_len
 
     for i35 in range(last_box35_start + 1):
-        seq35 = search_seq[i35:i35 + MOTIF_LEN]
+        seq35 = search_seq[i35:i35 + motif_len]
 
         if "N" in seq35:
             continue
 
-        mm35 = hamming_distance_numba(seq35, BOX_35)
+        mm35 = hamming(seq35, box35_motif)
         if mm35 > max_mismatches_box35:
             continue
 
-        end35 = i35 + MOTIF_LEN
+        end35 = i35 + motif_len
 
         for spacing in range(spacing_min, spacing_max + 1):
             i10 = end35 + spacing
-
             if i10 > last_box10_start:
                 continue
 
-            seq10 = search_seq[i10:i10 + MOTIF_LEN]
-
+            seq10 = search_seq[i10:i10 + motif_len]
             if "N" in seq10:
                 continue
 
-            mm10 = hamming_distance_numba(seq10, BOX_10)
+            mm10 = hamming(seq10, box10_motif)
             if mm10 > max_mismatches_box10:
                 continue
 
-            hits_raw.append((i35, mm35, i10, mm10, spacing))
+            append_hit((i35, mm35, i10, mm10, spacing))
 
     return hits_raw
 
@@ -286,9 +323,8 @@ def find_promoters_in_strand(
 
     search_seq = seq if strand == "+" else reverse_complement(seq)
     original_len = len(seq)
-    seq_len = len(search_seq)
 
-    if seq_len < (2 * MOTIF_LEN + spacing_min):
+    if len(search_seq) < (2 * MOTIF_LEN + spacing_min):
         return []
 
     raw_hits = _scan_promoter_positions(
@@ -299,21 +335,28 @@ def find_promoters_in_strand(
         spacing_max=spacing_max,
     )
 
-    hits = [
-        _build_promoter_hit(
-            strand=strand,
-            original_len=original_len,
-            i35=i35,
-            seq35=search_seq[i35:i35 + MOTIF_LEN],
-            mm35=mm35,
-            i10=i10,
-            seq10=search_seq[i10:i10 + MOTIF_LEN],
-            mm10=mm10,
-            spacing=spacing,
-            search_seq=search_seq,
+    if not raw_hits:
+        return []
+
+    hits: List[PromoterHit] = []
+    append_hit = hits.append
+    motif_len = MOTIF_LEN
+
+    for i35, mm35, i10, mm10, spacing in raw_hits:
+        append_hit(
+            _build_promoter_hit(
+                strand=strand,
+                original_len=original_len,
+                i35=i35,
+                seq35=search_seq[i35:i35 + motif_len],
+                mm35=mm35,
+                i10=i10,
+                seq10=search_seq[i10:i10 + motif_len],
+                mm10=mm10,
+                spacing=spacing,
+                search_seq=search_seq,
+            )
         )
-        for i35, mm35, i10, mm10, spacing in raw_hits
-    ]
 
     hits = _deduplicate_hits(hits)
     hits = _filter_redundant_hits(hits)
@@ -350,6 +393,11 @@ def find_promoters(
         spacing_max=spacing_max,
         already_clean=True,
     )
+
+    if not hits_plus:
+        return hits_minus
+    if not hits_minus:
+        return hits_plus
 
     return _sort_promoters_biologically(hits_plus + hits_minus)
 

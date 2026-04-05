@@ -2,62 +2,50 @@
 # cython: boundscheck=False
 # cython: wraparound=False
 # cython: initializedcheck=False
+# cython: cdivision=True
 
-cdef inline double gc_fraction_local(str seq):
-    cdef Py_ssize_t i, n = len(seq)
-    cdef int gc = 0
-    if n == 0:
-        return 0.0
-    for i in range(n):
-        if seq[i] == 'G' or seq[i] == 'C':
-            gc += 1
-    return gc / n
+cdef inline bint is_gc_char(str ch):
+    return ch == 'G' or ch == 'C'
 
 
-cdef inline bint is_gc_rich_local(str seq, double threshold):
-    return gc_fraction_local(seq) >= threshold
+cdef inline str complement_char(str ch):
+    if ch == 'A':
+        return 'T'
+    elif ch == 'T':
+        return 'A'
+    elif ch == 'C':
+        return 'G'
+    elif ch == 'G':
+        return 'C'
+    return 'N'
 
 
-cdef inline str revcomp_simple_local(str seq):
-    cdef list out = []
-    cdef Py_ssize_t i
-    cdef str ch
-    for i in range(len(seq) - 1, -1, -1):
-        ch = seq[i]
-        if ch == 'A':
-            out.append('T')
-        elif ch == 'T':
-            out.append('A')
-        elif ch == 'C':
-            out.append('G')
-        elif ch == 'G':
-            out.append('C')
-        else:
-            out.append('N')
-    return ''.join(out)
+cdef inline int count_stem_mismatches_direct(
+    str seq,
+    int left_start,
+    int right_start,
+    int stem_len,
+    int max_stem_mismatches,
+) except -1:
+    cdef int k
+    cdef int mismatches = 0
+    cdef str left_ch
+    cdef str right_ch
 
+    for k in range(stem_len):
+        left_ch = seq[left_start + k]
+        right_ch = seq[right_start + stem_len - 1 - k]
 
-cdef inline int hamming_local(str a, str b):
-    cdef Py_ssize_t i, n = len(a)
-    cdef int d = 0
-    for i in range(n):
-        if a[i] != b[i]:
-            d += 1
-    return d
+        # Reject ambiguous bases in either arm
+        if left_ch == 'N' or right_ch == 'N':
+            return max_stem_mismatches + 1
 
+        if left_ch != complement_char(right_ch):
+            mismatches += 1
+            if mismatches > max_stem_mismatches:
+                return mismatches
 
-cdef inline bint contains_N(str seq):
-    return 'N' in seq
-
-
-cdef inline int collect_poly_t_end(str search_seq, int start_0):
-    cdef int n = len(search_seq)
-    cdef int end_0_exclusive = start_0
-
-    while end_0_exclusive < n and search_seq[end_0_exclusive] == 'T':
-        end_0_exclusive += 1
-
-    return end_0_exclusive
+    return mismatches
 
 
 cpdef list scan_terminator_positions_cy(
@@ -72,62 +60,80 @@ cpdef list scan_terminator_positions_cy(
 ):
     cdef int n = len(search_seq)
     cdef int min_total_len = (2 * stem_min) + loop_min + min_poly_t
-    cdef int max_left_start
+
     cdef int i
     cdef int stem_len
     cdef int loop_len
-    cdef int left_start_0
-    cdef int left_end_0_exclusive
-    cdef int right_start_0
-    cdef int right_end_0_exclusive
     cdef int poly_start_0
+    cdef int poly_len
     cdef int poly_end_0_exclusive
+    cdef int right_end_0_exclusive
+    cdef int right_start_0
+    cdef int left_end_0_exclusive
+    cdef int left_start_0
     cdef int mismatches
-    cdef str left
-    cdef str right
-    cdef str expected_right
+
+    cdef int gc_count
+    cdef double gc_fraction
+
     cdef list hits_raw = []
+
+    # Prefix GC counts: gc_prefix[i] = number of GC in seq[0:i]
+    cdef list gc_prefix = [0] * (n + 1)
+
+    # T-run lengths: t_run[i] = consecutive T count starting at i
+    cdef list t_run = [0] * (n + 1)
 
     if n < min_total_len:
         return hits_raw
 
-    max_left_start = n - min_total_len
+    # Build GC prefix
+    for i in range(n):
+        gc_prefix[i + 1] = gc_prefix[i] + (1 if is_gc_char(search_seq[i]) else 0)
 
-    for i in range(max_left_start + 1):
+    # Build T-run lengths from right to left
+    for i in range(n - 1, -1, -1):
+        if search_seq[i] == 'T':
+            t_run[i] = t_run[i + 1] + 1
+        else:
+            t_run[i] = 0
+
+    # Biological strategy:
+    # Start from poly-T starts, then search upstream for compatible hairpins.
+    for poly_start_0 in range(n - min_poly_t + 1):
+        poly_len = t_run[poly_start_0]
+        if poly_len < min_poly_t:
+            continue
+
+        poly_end_0_exclusive = poly_start_0 + poly_len
+        right_end_0_exclusive = poly_start_0
+
         for stem_len in range(stem_min, stem_max + 1):
-            left_start_0 = i
-            left_end_0_exclusive = i + stem_len
-
-            if left_end_0_exclusive > n:
+            right_start_0 = right_end_0_exclusive - stem_len
+            if right_start_0 < 0:
                 continue
-
-            left = search_seq[left_start_0:left_end_0_exclusive]
-            if contains_N(left):
-                continue
-            if not is_gc_rich_local(left, gc_threshold):
-                continue
-
-            expected_right = revcomp_simple_local(left)
 
             for loop_len in range(loop_min, loop_max + 1):
-                right_start_0 = left_end_0_exclusive + loop_len
-                right_end_0_exclusive = right_start_0 + stem_len
+                left_end_0_exclusive = right_start_0 - loop_len
+                left_start_0 = left_end_0_exclusive - stem_len
 
-                if right_end_0_exclusive > n:
+                if left_start_0 < 0:
                     continue
 
-                right = search_seq[right_start_0:right_end_0_exclusive]
-                if contains_N(right):
+                # Fast GC check on left arm using prefix sums
+                gc_count = gc_prefix[left_end_0_exclusive] - gc_prefix[left_start_0]
+                gc_fraction = gc_count / <double>stem_len
+                if gc_fraction < gc_threshold:
                     continue
 
-                mismatches = hamming_local(right, expected_right)
+                mismatches = count_stem_mismatches_direct(
+                    search_seq,
+                    left_start_0,
+                    right_start_0,
+                    stem_len,
+                    max_stem_mismatches,
+                )
                 if mismatches > max_stem_mismatches:
-                    continue
-
-                poly_start_0 = right_end_0_exclusive
-                poly_end_0_exclusive = collect_poly_t_end(search_seq, poly_start_0)
-
-                if (poly_end_0_exclusive - poly_start_0) < min_poly_t:
                     continue
 
                 hits_raw.append(
