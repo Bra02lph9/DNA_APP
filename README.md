@@ -9,6 +9,7 @@ L’application identifie automatiquement :
 - promoteurs bactériens
 - sites Shine-Dalgarno
 - terminateurs de transcription rho-indépendants
+- Orfs codone les plus plausible
 
 L’analyse utilise plusieurs filtres biologiques afin que les résultats obtenus soient cohérents avec le contexte biologique réel.
 
