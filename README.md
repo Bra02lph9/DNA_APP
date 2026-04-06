@@ -96,18 +96,8 @@ L’interface permet :
 
 # Technologies utilisées
 
-## Frontend
-
-- React  
-- TailwindCSS  
-- Axios  
-
-## Backend
-
-- Python  
-- Flask  
-- Biopython  
-
+Python, Flask, BioPython, Cython, Numba, Celery, Redis, MongoDB, Docker, React, Tailwind CSS
+ 
 ---
 # Objectif du projet
 
