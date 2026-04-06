@@ -952,6 +952,26 @@ function getItems(results, key) {
   return [];
 }
 
+function classifyByScore(items = []) {
+  const high = [];
+  const medium = [];
+  const low = [];
+
+  items.forEach((item) => {
+    const score = item.total_score ?? item.score ?? 0;
+
+    if (score >= 50) {
+      high.push(item);
+    } else if (score >= 30) {
+      medium.push(item);
+    } else if (score >= 8) {
+      low.push(item);
+    }
+  });
+
+  return { high, medium, low };
+}
+
 function ResultsContainer({ children, className = "" }) {
   return (
     <section
@@ -979,6 +999,7 @@ export default function Results({
   activeView,
   onSelectFeature,
 }) {
+  const [showLow, setShowLow] = useState(false);
   const renderLoading = () => (
     <ResultsContainer>
       <ResultsHeader title="Analysis Results" />
@@ -1039,35 +1060,62 @@ export default function Results({
     );
   };
 
-  const renderRankedCodingOrfs = () => {
-    const items = Array.isArray(results?.ranked_coding_orfs)
-      ? results.ranked_coding_orfs
-      : Array.isArray(results)
-      ? results
-      : [];
+const renderRankedCodingOrfs = () => {
+  const items = Array.isArray(results?.ranked_coding_orfs)
+    ? results.ranked_coding_orfs
+    : Array.isArray(results)
+    ? results
+    : [];
 
-    const best = results?.best_ranked_coding_orf ?? null;
+  const best = results?.best_ranked_coding_orf ?? null;
 
-    return (
-      <ResultsContainer className="space-y-6">
-        {best && (
-          <SectionCard title="Best Ranked Coding ORF" count={1}>
-            <RankedCodingORFList
-              items={[best]}
-              onSelectFeature={onSelectFeature}
-            />
-          </SectionCard>
-        )}
+  const { high, medium, low } = classifyByScore(items);
 
-        <SectionCard title="Ranked Coding ORFs" count={items.length}>
+  return (
+    <ResultsContainer className="space-y-6">
+      {best && (
+        <SectionCard title="Best Ranked Coding ORF" count={1}>
           <RankedCodingORFList
-            items={items}
+            items={[best]}
             onSelectFeature={onSelectFeature}
           />
         </SectionCard>
-      </ResultsContainer>
-    );
-  };
+      )}
+
+      <SectionCard title="🟢 High Confidence ORFs" count={high.length}>
+        <RankedCodingORFList
+          items={high}
+          onSelectFeature={onSelectFeature}
+        />
+      </SectionCard>
+
+      <SectionCard title="🟡 Medium Confidence ORFs" count={medium.length}>
+        <RankedCodingORFList
+          items={medium}
+          onSelectFeature={onSelectFeature}
+        />
+      </SectionCard>
+
+      <div className="flex justify-end">
+        <button
+          onClick={() => setShowLow(!showLow)}
+          className="text-sm text-cyan-600 hover:underline cursor-pointer"
+        >
+          {showLow ? "Hide Low Confidence" : "Show Low Confidence"}
+        </button>
+      </div>
+
+      {showLow && (
+        <SectionCard title="🔴 Low Confidence ORFs" count={low.length}>
+          <RankedCodingORFList
+            items={low}
+            onSelectFeature={onSelectFeature}
+          />
+        </SectionCard>
+      )}
+    </ResultsContainer>
+  );
+};
 
   const renderPromoters = () => {
     const items = getItems(results, "promoters");

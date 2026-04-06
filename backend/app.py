@@ -456,7 +456,6 @@ def get_task_status(task_id):
         return error_response(str(e))
 
 
-# Nouveau pipeline Mongo stocké
 @app.route("/analyses/run", methods=["POST"])
 def run_stored_analysis_route():
     data = get_json_data()
