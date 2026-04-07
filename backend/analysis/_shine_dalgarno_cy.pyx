@@ -11,31 +11,47 @@ DEF MAX_SD_DISTANCE = 12
 
 
 cdef inline bint is_start_codon_at(str seq, Py_ssize_t i):
-    cdef str a = seq[i]
-    cdef str b = seq[i + 1]
-    cdef str c = seq[i + 2]
     return (
-        (a == 'A' and b == 'T' and c == 'G') or
-        (a == 'G' and b == 'T' and c == 'G') or
-        (a == 'T' and b == 'T' and c == 'G')
+        (seq[i] == 'A' and seq[i + 1] == 'T' and seq[i + 2] == 'G') or
+        (seq[i] == 'G' and seq[i + 1] == 'T' and seq[i + 2] == 'G') or
+        (seq[i] == 'T' and seq[i + 1] == 'T' and seq[i + 2] == 'G')
     )
 
 
-cdef inline str start_codon_value(str seq, Py_ssize_t i):
-    cdef str a = seq[i]
-    if a == 'A':
+cdef inline int codon_type_at(str seq, Py_ssize_t i):
+    """
+    Return:
+      0 -> ATG
+      1 -> GTG
+      2 -> TTG
+     -1 -> not a valid start codon
+    """
+    if seq[i + 1] != 'T' or seq[i + 2] != 'G':
+        return -1
+
+    if seq[i] == 'A':
+        return 0
+    elif seq[i] == 'G':
+        return 1
+    elif seq[i] == 'T':
+        return 2
+    return -1
+
+
+cdef inline str codon_type_to_str(int codon_type):
+    if codon_type == 0:
         return "ATG"
-    elif a == 'G':
+    elif codon_type == 1:
         return "GTG"
     return "TTG"
 
 
-cdef inline int codon_score_int(str codon):
-    if codon == "ATG":
+cdef inline int codon_score_from_type(int codon_type):
+    if codon_type == 0:
         return 5
-    if codon == "GTG":
+    if codon_type == 1:
         return 3
-    if codon == "TTG":
+    if codon_type == 2:
         return 2
     return 0
 
@@ -84,13 +100,15 @@ cpdef list find_start_codons_cy(str search_seq):
     cdef object append_start = starts.append
     cdef Py_ssize_t seq_len = len(search_seq)
     cdef Py_ssize_t i
+    cdef int codon_type
 
     if seq_len < 3:
         return starts
 
     for i in range(seq_len - 2):
-        if is_start_codon_at(search_seq, i):
-            append_start((i, start_codon_value(search_seq, i)))
+        codon_type = codon_type_at(search_seq, i)
+        if codon_type != -1:
+            append_start((i, codon_type_to_str(codon_type)))
 
     return starts
 
@@ -112,9 +130,19 @@ cpdef object best_sd_for_start_cy(
     cdef int best_distance_delta = 999
     cdef int current_distance_delta
     cdef double best_score = -1e18
+    cdef int codon_bonus
 
     if start_pos_0 < 0 or start_pos_0 >= seq_len:
         return None
+
+    if start_codon == "ATG":
+        codon_bonus = 5
+    elif start_codon == "GTG":
+        codon_bonus = 3
+    elif start_codon == "TTG":
+        codon_bonus = 2
+    else:
+        codon_bonus = 0
 
     for distance in range(MIN_SD_DISTANCE, MAX_SD_DISTANCE + 1):
         site_end_0_exclusive = start_pos_0 - distance
@@ -136,7 +164,7 @@ cpdef object best_sd_for_start_cy(
         score = 20.0
         score -= mm * 4.0
         score += distance_score_int(distance)
-        score += codon_score_int(start_codon)
+        score += codon_bonus
 
         current_distance_delta = distance - 7
         if current_distance_delta < 0:

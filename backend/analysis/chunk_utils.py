@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-from dataclasses import asdict
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Iterable
 
 from .promoters import PromoterHit
 from .shine_dalgarno import ShineDalgarnoSite
 from .terminators import TerminatorHit
 
 
-DEFAULT_CHUNK_SIZE = 50_000
-DEFAULT_OVERLAP = 1_000
+DEFAULT_CHUNK_SIZE = 250_000
+DEFAULT_OVERLAP = 500
 
 
 def chunk_sequence(
@@ -49,8 +48,8 @@ def chunk_sequence(
         chunks.append(
             {
                 "chunk_id": chunk_id,
-                "start": global_start,   # 1-based inclusive
-                "end": global_end,       # 1-based inclusive
+                "start": global_start,
+                "end": global_end,
                 "sequence": chunk_seq,
             }
         )
@@ -202,16 +201,20 @@ def deduplicate_terminators(terminators: List[TerminatorHit]) -> List[Terminator
     )
 
 
+def _to_dict_light(obj) -> dict:
+    return vars(obj).copy()
+
+
 def serialize_promoters(promoters: List[PromoterHit]) -> List[dict]:
-    return [asdict(x) for x in promoters]
+    return [_to_dict_light(x) for x in promoters]
 
 
 def serialize_sd_sites(sd_sites: List[ShineDalgarnoSite]) -> List[dict]:
-    return [asdict(x) for x in sd_sites]
+    return [_to_dict_light(x) for x in sd_sites]
 
 
 def serialize_terminators(terminators: List[TerminatorHit]) -> List[dict]:
-    return [asdict(x) for x in terminators]
+    return [_to_dict_light(x) for x in terminators]
 
 
 def promoter_from_dict(data: dict) -> PromoterHit:
@@ -234,5 +237,13 @@ def sd_sites_from_dicts(items: List[dict]) -> List[ShineDalgarnoSite]:
     return [sd_site_from_dict(x) for x in items]
 
 
-def terminators_from_dicts(items: List[dict]) -> List[TerminatorHit]:
+def terminators_from_dicts(items: List[dict]) -> List[dict]:
     return [terminator_from_dict(x) for x in items]
+
+
+def flatten_dict_lists(chunks_results: Iterable[List[dict]]) -> List[dict]:
+    merged: List[dict] = []
+    for chunk_items in chunks_results:
+        if chunk_items:
+            merged.extend(chunk_items)
+    return merged

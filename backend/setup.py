@@ -21,10 +21,16 @@ extensions = [
 ]
 
 setup(
-    name="dna_analysis_extensions",
     ext_modules=cythonize(
         extensions,
-        compiler_directives={"language_level": "3"},
+        compiler_directives={
+            "language_level": 3,
+            "boundscheck": False,
+            "wraparound": False,
+            "initializedcheck": False,
+            "nonecheck": False,
+            "cdivision": True,
+        },
     ),
     zip_safe=False,
 )

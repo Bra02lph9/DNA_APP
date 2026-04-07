@@ -19,9 +19,7 @@ from tasks.analysis_tasks import (
     run_sequence_analysis,
     run_folder_analysis,
     run_global_coding_orfs_store,
-    run_chunked_promoters_store,
-    run_chunked_sd_store,
-    run_chunked_terminators_store,
+    run_chunked_features_store,
     assemble_and_rank_from_storage,
 )
 from tasks.celery_app import celery_app
@@ -466,8 +464,8 @@ def run_stored_analysis_route():
             return error_response("'sequence' is required")
 
         min_aa = get_min_aa(data)
-        chunk_size = get_positive_int(data.get("chunk_size"), 50_000, "chunk_size")
-        overlap = get_positive_int(data.get("overlap"), 1_000, "overlap")
+        chunk_size = get_positive_int(data.get("chunk_size"), 250_000, "chunk_size")
+        overlap = get_positive_int(data.get("overlap"), 500, "overlap")
 
         if chunk_size <= 0:
             return error_response("chunk_size must be > 0")
@@ -487,19 +485,8 @@ def run_stored_analysis_route():
             sequence=sequence,
             min_aa=min_aa,
         )
-        promoters_task = run_chunked_promoters_store.delay(
-            analysis_id=analysis_id,
-            sequence=sequence,
-            chunk_size=chunk_size,
-            overlap=overlap,
-        )
-        sd_task = run_chunked_sd_store.delay(
-            analysis_id=analysis_id,
-            sequence=sequence,
-            chunk_size=chunk_size,
-            overlap=overlap,
-        )
-        terminators_task = run_chunked_terminators_store.delay(
+
+        features_task = run_chunked_features_store.delay(
             analysis_id=analysis_id,
             sequence=sequence,
             chunk_size=chunk_size,
@@ -513,9 +500,7 @@ def run_stored_analysis_route():
                 "message": "Stored analysis started",
                 "tasks": {
                     "coding_orfs": coding_task.id,
-                    "promoters": promoters_task.id,
-                    "shine_dalgarno": sd_task.id,
-                    "terminators": terminators_task.id,
+                    "features": features_task.id,
                 },
             }
         ), 202

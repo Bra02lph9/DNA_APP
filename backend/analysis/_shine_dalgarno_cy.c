@@ -1524,7 +1524,7 @@ static const char* const __pyx_f[] = {
 /*--- Type declarations ---*/
 struct __pyx_opt_args_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy;
 
-/* "analysis/_shine_dalgarno_cy.pyx":98
+/* "analysis/_shine_dalgarno_cy.pyx":116
  * 
  * 
  * cpdef object best_sd_for_start_cy(             # <<<<<<<<<<<<<<
@@ -1686,18 +1686,6 @@ static void __Pyx_SetStringIndexingError(const char* message, int has_gil);
 static CYTHON_INLINE Py_UCS4 __Pyx_GetItemInt_Unicode_Fast(PyObject* ustring, Py_ssize_t i,
                                                            int wraparound, int boundscheck, int has_gil);
 
-/* RaiseUnexpectedTypeError.proto */
-static int __Pyx_RaiseUnexpectedTypeError(const char *expected, PyObject *obj);
-
-/* IncludeStringH.proto (used by BytesEquals) */
-#include <string.h>
-
-/* BytesEquals.proto (used by UnicodeEquals) */
-static CYTHON_INLINE int __Pyx_PyBytes_Equals(PyObject* s1, PyObject* s2, int equals);
-
-/* UnicodeEquals.proto */
-static CYTHON_INLINE int __Pyx_PyUnicode_Equals(PyObject* s1, PyObject* s2, int equals);
-
 /* ListAppend.proto */
 #if CYTHON_USE_PYLIST_INTERNALS && CYTHON_ASSUME_SAFE_MACROS
 static CYTHON_INLINE int __Pyx_PyList_Append(PyObject* list, PyObject* x) {
@@ -1726,6 +1714,15 @@ static CYTHON_INLINE PyObject* __Pyx_PyList_FromArray(PyObject *const *src, Py_s
 #if CYTHON_COMPILING_IN_CPYTHON || CYTHON_METH_FASTCALL
 static CYTHON_INLINE PyObject* __Pyx_PyTuple_FromArray(PyObject *const *src, Py_ssize_t n);
 #endif
+
+/* IncludeStringH.proto (used by BytesEquals) */
+#include <string.h>
+
+/* BytesEquals.proto (used by UnicodeEquals) */
+static CYTHON_INLINE int __Pyx_PyBytes_Equals(PyObject* s1, PyObject* s2, int equals);
+
+/* UnicodeEquals.proto (used by fastcall) */
+static CYTHON_INLINE int __Pyx_PyUnicode_Equals(PyObject* s1, PyObject* s2, int equals);
 
 /* fastcall.proto */
 #if CYTHON_AVOID_BORROWED_REFS
@@ -2277,9 +2274,8 @@ static int __Pyx_State_RemoveModule(void*);
 
 
 /* Module declarations from "analysis._shine_dalgarno_cy" */
-static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_is_start_codon_at(PyObject *, Py_ssize_t); /*proto*/
-static CYTHON_INLINE PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_start_codon_value(PyObject *, Py_ssize_t); /*proto*/
-static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_codon_score_int(PyObject *); /*proto*/
+static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_codon_type_at(PyObject *, Py_ssize_t); /*proto*/
+static CYTHON_INLINE PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_codon_type_to_str(int); /*proto*/
 static CYTHON_INLINE double __pyx_f_8analysis_18_shine_dalgarno_cy_distance_score_int(int); /*proto*/
 static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_has_N_6(PyObject *, Py_ssize_t); /*proto*/
 static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_hamming_sd_at(PyObject *, Py_ssize_t); /*proto*/
@@ -2323,7 +2319,7 @@ typedef struct {
   __Pyx_CachedCFunction __pyx_umethod_PyDict_Type_values;
   PyObject *__pyx_tuple[1];
   PyObject *__pyx_codeobj_tab[2];
-  PyObject *__pyx_string_tab[36];
+  PyObject *__pyx_string_tab[33];
   PyObject *__pyx_number_tab[2];
 /* #### Code section: module_state_contents ### */
 /* CommonTypesMetaclass.module_state_decls */
@@ -2369,38 +2365,35 @@ static __pyx_mstatetype * const __pyx_mstate_global = &__pyx_mstate_global_stati
 #define __pyx_kp_u_Note_that_Cython_is_deliberately __pyx_string_tab[1]
 #define __pyx_kp_u_add_note __pyx_string_tab[2]
 #define __pyx_kp_u_analysis__shine_dalgarno_cy_pyx __pyx_string_tab[3]
-#define __pyx_n_u_A __pyx_string_tab[4]
-#define __pyx_n_u_ATG __pyx_string_tab[5]
-#define __pyx_n_u_G __pyx_string_tab[6]
-#define __pyx_n_u_GTG __pyx_string_tab[7]
-#define __pyx_n_u_Pyx_PyDict_NextRef __pyx_string_tab[8]
-#define __pyx_n_u_T __pyx_string_tab[9]
-#define __pyx_n_u_TTG __pyx_string_tab[10]
-#define __pyx_n_u_analysis__shine_dalgarno_cy __pyx_string_tab[11]
-#define __pyx_n_u_append __pyx_string_tab[12]
-#define __pyx_n_u_asyncio_coroutines __pyx_string_tab[13]
-#define __pyx_n_u_best_sd_for_start_cy __pyx_string_tab[14]
-#define __pyx_n_u_cline_in_traceback __pyx_string_tab[15]
-#define __pyx_n_u_find_start_codons_cy __pyx_string_tab[16]
-#define __pyx_n_u_func __pyx_string_tab[17]
-#define __pyx_n_u_is_coroutine __pyx_string_tab[18]
-#define __pyx_n_u_items __pyx_string_tab[19]
-#define __pyx_n_u_main __pyx_string_tab[20]
-#define __pyx_n_u_max_mismatches __pyx_string_tab[21]
-#define __pyx_n_u_module __pyx_string_tab[22]
-#define __pyx_n_u_name __pyx_string_tab[23]
-#define __pyx_n_u_pop __pyx_string_tab[24]
-#define __pyx_n_u_qualname __pyx_string_tab[25]
-#define __pyx_n_u_round __pyx_string_tab[26]
-#define __pyx_n_u_search_seq __pyx_string_tab[27]
-#define __pyx_n_u_set_name __pyx_string_tab[28]
-#define __pyx_n_u_setdefault __pyx_string_tab[29]
-#define __pyx_n_u_start_codon __pyx_string_tab[30]
-#define __pyx_n_u_start_pos_0 __pyx_string_tab[31]
-#define __pyx_n_u_test __pyx_string_tab[32]
-#define __pyx_n_u_values __pyx_string_tab[33]
-#define __pyx_kp_b_iso88591_c_a_q_1_Q_2Rs_c_q_E_1_2Q_Ba_7_q __pyx_string_tab[34]
-#define __pyx_kp_b_iso88591_q_vQ_c_xr_q_U_82Q_A_a_1_1 __pyx_string_tab[35]
+#define __pyx_n_u_ATG __pyx_string_tab[4]
+#define __pyx_n_u_GTG __pyx_string_tab[5]
+#define __pyx_n_u_Pyx_PyDict_NextRef __pyx_string_tab[6]
+#define __pyx_n_u_TTG __pyx_string_tab[7]
+#define __pyx_n_u_analysis__shine_dalgarno_cy __pyx_string_tab[8]
+#define __pyx_n_u_append __pyx_string_tab[9]
+#define __pyx_n_u_asyncio_coroutines __pyx_string_tab[10]
+#define __pyx_n_u_best_sd_for_start_cy __pyx_string_tab[11]
+#define __pyx_n_u_cline_in_traceback __pyx_string_tab[12]
+#define __pyx_n_u_find_start_codons_cy __pyx_string_tab[13]
+#define __pyx_n_u_func __pyx_string_tab[14]
+#define __pyx_n_u_is_coroutine __pyx_string_tab[15]
+#define __pyx_n_u_items __pyx_string_tab[16]
+#define __pyx_n_u_main __pyx_string_tab[17]
+#define __pyx_n_u_max_mismatches __pyx_string_tab[18]
+#define __pyx_n_u_module __pyx_string_tab[19]
+#define __pyx_n_u_name __pyx_string_tab[20]
+#define __pyx_n_u_pop __pyx_string_tab[21]
+#define __pyx_n_u_qualname __pyx_string_tab[22]
+#define __pyx_n_u_round __pyx_string_tab[23]
+#define __pyx_n_u_search_seq __pyx_string_tab[24]
+#define __pyx_n_u_set_name __pyx_string_tab[25]
+#define __pyx_n_u_setdefault __pyx_string_tab[26]
+#define __pyx_n_u_start_codon __pyx_string_tab[27]
+#define __pyx_n_u_start_pos_0 __pyx_string_tab[28]
+#define __pyx_n_u_test __pyx_string_tab[29]
+#define __pyx_n_u_values __pyx_string_tab[30]
+#define __pyx_kp_b_iso88591_c_a_q_1_Q_2Rs_c_q_3a_a_S_a_S_a __pyx_string_tab[31]
+#define __pyx_kp_b_iso88591_q_vQ_c_xr_q_U_82Q_q_d_aq_1 __pyx_string_tab[32]
 #define __pyx_int_2 __pyx_number_tab[0]
 #define __pyx_int_3 __pyx_number_tab[1]
 /* #### Code section: module_state_clear ### */
@@ -2419,7 +2412,7 @@ static CYTHON_SMALL_CODE int __pyx_m_clear(PyObject *m) {
   #endif
   for (int i=0; i<1; ++i) { Py_CLEAR(clear_module_state->__pyx_tuple[i]); }
   for (int i=0; i<2; ++i) { Py_CLEAR(clear_module_state->__pyx_codeobj_tab[i]); }
-  for (int i=0; i<36; ++i) { Py_CLEAR(clear_module_state->__pyx_string_tab[i]); }
+  for (int i=0; i<33; ++i) { Py_CLEAR(clear_module_state->__pyx_string_tab[i]); }
   for (int i=0; i<2; ++i) { Py_CLEAR(clear_module_state->__pyx_number_tab[i]); }
 /* #### Code section: module_state_clear_contents ### */
 /* CommonTypesMetaclass.module_state_clear */
@@ -2445,7 +2438,7 @@ static CYTHON_SMALL_CODE int __pyx_m_traverse(PyObject *m, visitproc visit, void
   __Pyx_VISIT_CONST(traverse_module_state->__pyx_empty_unicode);
   for (int i=0; i<1; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_tuple[i]); }
   for (int i=0; i<2; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_codeobj_tab[i]); }
-  for (int i=0; i<36; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_string_tab[i]); }
+  for (int i=0; i<33; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_string_tab[i]); }
   for (int i=0; i<2; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_number_tab[i]); }
 /* #### Code section: module_state_traverse_contents ### */
 /* CommonTypesMetaclass.module_state_traverse */
@@ -2464,215 +2457,329 @@ return 0;
  * 
  * 
  * cdef inline bint is_start_codon_at(str seq, Py_ssize_t i):             # <<<<<<<<<<<<<<
- *     cdef str a = seq[i]
- *     cdef str b = seq[i + 1]
+ *     return (
+ *         (seq[i] == 'A' and seq[i + 1] == 'T' and seq[i + 2] == 'G') or
 */
 
 static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_is_start_codon_at(PyObject *__pyx_v_seq, Py_ssize_t __pyx_v_i) {
-  PyObject *__pyx_v_a = 0;
-  PyObject *__pyx_v_b = 0;
-  PyObject *__pyx_v_c = 0;
   int __pyx_r;
-  __Pyx_RefNannyDeclarations
-  Py_UCS4 __pyx_t_1;
-  PyObject *__pyx_t_2 = NULL;
-  Py_ssize_t __pyx_t_3;
-  int __pyx_t_4;
-  int __pyx_t_5;
+  int __pyx_t_1;
+  Py_UCS4 __pyx_t_2;
+  int __pyx_t_3;
+  Py_ssize_t __pyx_t_4;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
-  __Pyx_RefNannySetupContext("is_start_codon_at", 0);
-
-  /* "analysis/_shine_dalgarno_cy.pyx":14
- * 
- * cdef inline bint is_start_codon_at(str seq, Py_ssize_t i):
- *     cdef str a = seq[i]             # <<<<<<<<<<<<<<
- *     cdef str b = seq[i + 1]
- *     cdef str c = seq[i + 2]
-*/
-  __pyx_t_1 = __Pyx_GetItemInt_Unicode(__pyx_v_seq, __pyx_v_i, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_1 == (Py_UCS4)-1)) __PYX_ERR(0, 14, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_PyUnicode_FromOrdinal(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 14, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (!(likely(PyUnicode_CheckExact(__pyx_t_2)) || __Pyx_RaiseUnexpectedTypeError("str", __pyx_t_2))) __PYX_ERR(0, 14, __pyx_L1_error)
-  __pyx_v_a = ((PyObject*)__pyx_t_2);
-  __pyx_t_2 = 0;
 
   /* "analysis/_shine_dalgarno_cy.pyx":15
  * cdef inline bint is_start_codon_at(str seq, Py_ssize_t i):
- *     cdef str a = seq[i]
- *     cdef str b = seq[i + 1]             # <<<<<<<<<<<<<<
- *     cdef str c = seq[i + 2]
  *     return (
+ *         (seq[i] == 'A' and seq[i + 1] == 'T' and seq[i + 2] == 'G') or             # <<<<<<<<<<<<<<
+ *         (seq[i] == 'G' and seq[i + 1] == 'T' and seq[i + 2] == 'G') or
+ *         (seq[i] == 'T' and seq[i + 1] == 'T' and seq[i + 2] == 'G')
 */
-  __pyx_t_3 = (__pyx_v_i + 1);
-  __pyx_t_1 = __Pyx_GetItemInt_Unicode(__pyx_v_seq, __pyx_t_3, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_1 == (Py_UCS4)-1)) __PYX_ERR(0, 15, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_PyUnicode_FromOrdinal(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 15, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (!(likely(PyUnicode_CheckExact(__pyx_t_2)) || __Pyx_RaiseUnexpectedTypeError("str", __pyx_t_2))) __PYX_ERR(0, 15, __pyx_L1_error)
-  __pyx_v_b = ((PyObject*)__pyx_t_2);
-  __pyx_t_2 = 0;
-
-  /* "analysis/_shine_dalgarno_cy.pyx":16
- *     cdef str a = seq[i]
- *     cdef str b = seq[i + 1]
- *     cdef str c = seq[i + 2]             # <<<<<<<<<<<<<<
- *     return (
- *         (a == 'A' and b == 'T' and c == 'G') or
-*/
-  __pyx_t_3 = (__pyx_v_i + 2);
-  __pyx_t_1 = __Pyx_GetItemInt_Unicode(__pyx_v_seq, __pyx_t_3, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_1 == (Py_UCS4)-1)) __PYX_ERR(0, 16, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_PyUnicode_FromOrdinal(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 16, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (!(likely(PyUnicode_CheckExact(__pyx_t_2)) || __Pyx_RaiseUnexpectedTypeError("str", __pyx_t_2))) __PYX_ERR(0, 16, __pyx_L1_error)
-  __pyx_v_c = ((PyObject*)__pyx_t_2);
-  __pyx_t_2 = 0;
-
-  /* "analysis/_shine_dalgarno_cy.pyx":18
- *     cdef str c = seq[i + 2]
- *     return (
- *         (a == 'A' and b == 'T' and c == 'G') or             # <<<<<<<<<<<<<<
- *         (a == 'G' and b == 'T' and c == 'G') or
- *         (a == 'T' and b == 'T' and c == 'G')
-*/
-  __pyx_t_5 = (__Pyx_PyUnicode_Equals(__pyx_v_a, __pyx_mstate_global->__pyx_n_u_A, Py_EQ)); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 18, __pyx_L1_error)
-  if (!__pyx_t_5) {
+  __pyx_t_2 = __Pyx_GetItemInt_Unicode(__pyx_v_seq, __pyx_v_i, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_2 == (Py_UCS4)-1)) __PYX_ERR(0, 15, __pyx_L1_error)
+  __pyx_t_3 = (__pyx_t_2 == 65);
+  if (!__pyx_t_3) {
     goto __pyx_L4_next_or;
   } else {
   }
-  __pyx_t_5 = (__Pyx_PyUnicode_Equals(__pyx_v_b, __pyx_mstate_global->__pyx_n_u_T, Py_EQ)); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 18, __pyx_L1_error)
-  if (!__pyx_t_5) {
+  __pyx_t_4 = (__pyx_v_i + 1);
+  __pyx_t_2 = __Pyx_GetItemInt_Unicode(__pyx_v_seq, __pyx_t_4, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_2 == (Py_UCS4)-1)) __PYX_ERR(0, 15, __pyx_L1_error)
+  __pyx_t_3 = (__pyx_t_2 == 84);
+  if (!__pyx_t_3) {
     goto __pyx_L4_next_or;
   } else {
   }
-  __pyx_t_5 = (__Pyx_PyUnicode_Equals(__pyx_v_c, __pyx_mstate_global->__pyx_n_u_G, Py_EQ)); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 18, __pyx_L1_error)
-  if (!__pyx_t_5) {
+  __pyx_t_4 = (__pyx_v_i + 2);
+  __pyx_t_2 = __Pyx_GetItemInt_Unicode(__pyx_v_seq, __pyx_t_4, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_2 == (Py_UCS4)-1)) __PYX_ERR(0, 15, __pyx_L1_error)
+  __pyx_t_3 = (__pyx_t_2 == 71);
+  if (!__pyx_t_3) {
   } else {
-    __pyx_t_4 = __pyx_t_5;
+    __pyx_t_1 = __pyx_t_3;
     goto __pyx_L3_bool_binop_done;
   }
   __pyx_L4_next_or:;
 
-  /* "analysis/_shine_dalgarno_cy.pyx":19
+  /* "analysis/_shine_dalgarno_cy.pyx":16
  *     return (
- *         (a == 'A' and b == 'T' and c == 'G') or
- *         (a == 'G' and b == 'T' and c == 'G') or             # <<<<<<<<<<<<<<
- *         (a == 'T' and b == 'T' and c == 'G')
+ *         (seq[i] == 'A' and seq[i + 1] == 'T' and seq[i + 2] == 'G') or
+ *         (seq[i] == 'G' and seq[i + 1] == 'T' and seq[i + 2] == 'G') or             # <<<<<<<<<<<<<<
+ *         (seq[i] == 'T' and seq[i + 1] == 'T' and seq[i + 2] == 'G')
  *     )
 */
-  __pyx_t_5 = (__Pyx_PyUnicode_Equals(__pyx_v_a, __pyx_mstate_global->__pyx_n_u_G, Py_EQ)); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 19, __pyx_L1_error)
-  if (!__pyx_t_5) {
+  __pyx_t_2 = __Pyx_GetItemInt_Unicode(__pyx_v_seq, __pyx_v_i, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_2 == (Py_UCS4)-1)) __PYX_ERR(0, 16, __pyx_L1_error)
+  __pyx_t_3 = (__pyx_t_2 == 71);
+  if (!__pyx_t_3) {
     goto __pyx_L7_next_or;
   } else {
   }
-  __pyx_t_5 = (__Pyx_PyUnicode_Equals(__pyx_v_b, __pyx_mstate_global->__pyx_n_u_T, Py_EQ)); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 19, __pyx_L1_error)
-  if (!__pyx_t_5) {
+  __pyx_t_4 = (__pyx_v_i + 1);
+  __pyx_t_2 = __Pyx_GetItemInt_Unicode(__pyx_v_seq, __pyx_t_4, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_2 == (Py_UCS4)-1)) __PYX_ERR(0, 16, __pyx_L1_error)
+  __pyx_t_3 = (__pyx_t_2 == 84);
+  if (!__pyx_t_3) {
     goto __pyx_L7_next_or;
   } else {
   }
-  __pyx_t_5 = (__Pyx_PyUnicode_Equals(__pyx_v_c, __pyx_mstate_global->__pyx_n_u_G, Py_EQ)); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 19, __pyx_L1_error)
-  if (!__pyx_t_5) {
+  __pyx_t_4 = (__pyx_v_i + 2);
+  __pyx_t_2 = __Pyx_GetItemInt_Unicode(__pyx_v_seq, __pyx_t_4, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_2 == (Py_UCS4)-1)) __PYX_ERR(0, 16, __pyx_L1_error)
+  __pyx_t_3 = (__pyx_t_2 == 71);
+  if (!__pyx_t_3) {
   } else {
-    __pyx_t_4 = __pyx_t_5;
+    __pyx_t_1 = __pyx_t_3;
     goto __pyx_L3_bool_binop_done;
   }
   __pyx_L7_next_or:;
 
-  /* "analysis/_shine_dalgarno_cy.pyx":20
- *         (a == 'A' and b == 'T' and c == 'G') or
- *         (a == 'G' and b == 'T' and c == 'G') or
- *         (a == 'T' and b == 'T' and c == 'G')             # <<<<<<<<<<<<<<
+  /* "analysis/_shine_dalgarno_cy.pyx":17
+ *         (seq[i] == 'A' and seq[i + 1] == 'T' and seq[i + 2] == 'G') or
+ *         (seq[i] == 'G' and seq[i + 1] == 'T' and seq[i + 2] == 'G') or
+ *         (seq[i] == 'T' and seq[i + 1] == 'T' and seq[i + 2] == 'G')             # <<<<<<<<<<<<<<
  *     )
  * 
 */
-  __pyx_t_5 = (__Pyx_PyUnicode_Equals(__pyx_v_a, __pyx_mstate_global->__pyx_n_u_T, Py_EQ)); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 20, __pyx_L1_error)
-  if (__pyx_t_5) {
+  __pyx_t_2 = __Pyx_GetItemInt_Unicode(__pyx_v_seq, __pyx_v_i, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_2 == (Py_UCS4)-1)) __PYX_ERR(0, 17, __pyx_L1_error)
+  __pyx_t_3 = (__pyx_t_2 == 84);
+  if (__pyx_t_3) {
   } else {
-    __pyx_t_4 = __pyx_t_5;
+    __pyx_t_1 = __pyx_t_3;
     goto __pyx_L3_bool_binop_done;
   }
-  __pyx_t_5 = (__Pyx_PyUnicode_Equals(__pyx_v_b, __pyx_mstate_global->__pyx_n_u_T, Py_EQ)); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 20, __pyx_L1_error)
-  if (__pyx_t_5) {
+  __pyx_t_4 = (__pyx_v_i + 1);
+  __pyx_t_2 = __Pyx_GetItemInt_Unicode(__pyx_v_seq, __pyx_t_4, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_2 == (Py_UCS4)-1)) __PYX_ERR(0, 17, __pyx_L1_error)
+  __pyx_t_3 = (__pyx_t_2 == 84);
+  if (__pyx_t_3) {
   } else {
-    __pyx_t_4 = __pyx_t_5;
+    __pyx_t_1 = __pyx_t_3;
     goto __pyx_L3_bool_binop_done;
   }
-  __pyx_t_5 = (__Pyx_PyUnicode_Equals(__pyx_v_c, __pyx_mstate_global->__pyx_n_u_G, Py_EQ)); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 20, __pyx_L1_error)
-  __pyx_t_4 = __pyx_t_5;
+  __pyx_t_4 = (__pyx_v_i + 2);
+  __pyx_t_2 = __Pyx_GetItemInt_Unicode(__pyx_v_seq, __pyx_t_4, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_2 == (Py_UCS4)-1)) __PYX_ERR(0, 17, __pyx_L1_error)
+  __pyx_t_3 = (__pyx_t_2 == 71);
+  __pyx_t_1 = __pyx_t_3;
   __pyx_L3_bool_binop_done:;
-  __pyx_r = __pyx_t_4;
+  __pyx_r = __pyx_t_1;
   goto __pyx_L0;
 
   /* "analysis/_shine_dalgarno_cy.pyx":13
  * 
  * 
  * cdef inline bint is_start_codon_at(str seq, Py_ssize_t i):             # <<<<<<<<<<<<<<
- *     cdef str a = seq[i]
- *     cdef str b = seq[i + 1]
+ *     return (
+ *         (seq[i] == 'A' and seq[i + 1] == 'T' and seq[i + 2] == 'G') or
 */
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_2);
   __Pyx_AddTraceback("analysis._shine_dalgarno_cy.is_start_codon_at", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
-  __Pyx_XDECREF(__pyx_v_a);
-  __Pyx_XDECREF(__pyx_v_b);
-  __Pyx_XDECREF(__pyx_v_c);
-  __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "analysis/_shine_dalgarno_cy.pyx":24
+/* "analysis/_shine_dalgarno_cy.pyx":21
  * 
  * 
- * cdef inline str start_codon_value(str seq, Py_ssize_t i):             # <<<<<<<<<<<<<<
- *     cdef str a = seq[i]
- *     if a == 'A':
+ * cdef inline int codon_type_at(str seq, Py_ssize_t i):             # <<<<<<<<<<<<<<
+ *     """
+ *     Return:
 */
 
-static CYTHON_INLINE PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_start_codon_value(PyObject *__pyx_v_seq, Py_ssize_t __pyx_v_i) {
-  PyObject *__pyx_v_a = 0;
-  PyObject *__pyx_r = NULL;
-  __Pyx_RefNannyDeclarations
-  Py_UCS4 __pyx_t_1;
-  PyObject *__pyx_t_2 = NULL;
-  int __pyx_t_3;
+static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_codon_type_at(PyObject *__pyx_v_seq, Py_ssize_t __pyx_v_i) {
+  int __pyx_r;
+  int __pyx_t_1;
+  Py_ssize_t __pyx_t_2;
+  Py_UCS4 __pyx_t_3;
+  int __pyx_t_4;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
-  __Pyx_RefNannySetupContext("start_codon_value", 0);
 
-  /* "analysis/_shine_dalgarno_cy.pyx":25
+  /* "analysis/_shine_dalgarno_cy.pyx":29
+ *      -1 -> not a valid start codon
+ *     """
+ *     if seq[i + 1] != 'T' or seq[i + 2] != 'G':             # <<<<<<<<<<<<<<
+ *         return -1
  * 
- * cdef inline str start_codon_value(str seq, Py_ssize_t i):
- *     cdef str a = seq[i]             # <<<<<<<<<<<<<<
- *     if a == 'A':
+*/
+  __pyx_t_2 = (__pyx_v_i + 1);
+  __pyx_t_3 = __Pyx_GetItemInt_Unicode(__pyx_v_seq, __pyx_t_2, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_3 == (Py_UCS4)-1)) __PYX_ERR(0, 29, __pyx_L1_error)
+  __pyx_t_4 = (__pyx_t_3 != 84);
+  if (!__pyx_t_4) {
+  } else {
+    __pyx_t_1 = __pyx_t_4;
+    goto __pyx_L4_bool_binop_done;
+  }
+  __pyx_t_2 = (__pyx_v_i + 2);
+  __pyx_t_3 = __Pyx_GetItemInt_Unicode(__pyx_v_seq, __pyx_t_2, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_3 == (Py_UCS4)-1)) __PYX_ERR(0, 29, __pyx_L1_error)
+  __pyx_t_4 = (__pyx_t_3 != 71);
+  __pyx_t_1 = __pyx_t_4;
+  __pyx_L4_bool_binop_done:;
+  if (__pyx_t_1) {
+
+    /* "analysis/_shine_dalgarno_cy.pyx":30
+ *     """
+ *     if seq[i + 1] != 'T' or seq[i + 2] != 'G':
+ *         return -1             # <<<<<<<<<<<<<<
+ * 
+ *     if seq[i] == 'A':
+*/
+    __pyx_r = -1;
+    goto __pyx_L0;
+
+    /* "analysis/_shine_dalgarno_cy.pyx":29
+ *      -1 -> not a valid start codon
+ *     """
+ *     if seq[i + 1] != 'T' or seq[i + 2] != 'G':             # <<<<<<<<<<<<<<
+ *         return -1
+ * 
+*/
+  }
+
+  /* "analysis/_shine_dalgarno_cy.pyx":32
+ *         return -1
+ * 
+ *     if seq[i] == 'A':             # <<<<<<<<<<<<<<
+ *         return 0
+ *     elif seq[i] == 'G':
+*/
+  __pyx_t_3 = __Pyx_GetItemInt_Unicode(__pyx_v_seq, __pyx_v_i, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_3 == (Py_UCS4)-1)) __PYX_ERR(0, 32, __pyx_L1_error)
+  __pyx_t_1 = (__pyx_t_3 == 65);
+  if (__pyx_t_1) {
+
+    /* "analysis/_shine_dalgarno_cy.pyx":33
+ * 
+ *     if seq[i] == 'A':
+ *         return 0             # <<<<<<<<<<<<<<
+ *     elif seq[i] == 'G':
+ *         return 1
+*/
+    __pyx_r = 0;
+    goto __pyx_L0;
+
+    /* "analysis/_shine_dalgarno_cy.pyx":32
+ *         return -1
+ * 
+ *     if seq[i] == 'A':             # <<<<<<<<<<<<<<
+ *         return 0
+ *     elif seq[i] == 'G':
+*/
+  }
+
+  /* "analysis/_shine_dalgarno_cy.pyx":34
+ *     if seq[i] == 'A':
+ *         return 0
+ *     elif seq[i] == 'G':             # <<<<<<<<<<<<<<
+ *         return 1
+ *     elif seq[i] == 'T':
+*/
+  __pyx_t_3 = __Pyx_GetItemInt_Unicode(__pyx_v_seq, __pyx_v_i, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_3 == (Py_UCS4)-1)) __PYX_ERR(0, 34, __pyx_L1_error)
+  __pyx_t_1 = (__pyx_t_3 == 71);
+  if (__pyx_t_1) {
+
+    /* "analysis/_shine_dalgarno_cy.pyx":35
+ *         return 0
+ *     elif seq[i] == 'G':
+ *         return 1             # <<<<<<<<<<<<<<
+ *     elif seq[i] == 'T':
+ *         return 2
+*/
+    __pyx_r = 1;
+    goto __pyx_L0;
+
+    /* "analysis/_shine_dalgarno_cy.pyx":34
+ *     if seq[i] == 'A':
+ *         return 0
+ *     elif seq[i] == 'G':             # <<<<<<<<<<<<<<
+ *         return 1
+ *     elif seq[i] == 'T':
+*/
+  }
+
+  /* "analysis/_shine_dalgarno_cy.pyx":36
+ *     elif seq[i] == 'G':
+ *         return 1
+ *     elif seq[i] == 'T':             # <<<<<<<<<<<<<<
+ *         return 2
+ *     return -1
+*/
+  __pyx_t_3 = __Pyx_GetItemInt_Unicode(__pyx_v_seq, __pyx_v_i, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_3 == (Py_UCS4)-1)) __PYX_ERR(0, 36, __pyx_L1_error)
+  __pyx_t_1 = (__pyx_t_3 == 84);
+  if (__pyx_t_1) {
+
+    /* "analysis/_shine_dalgarno_cy.pyx":37
+ *         return 1
+ *     elif seq[i] == 'T':
+ *         return 2             # <<<<<<<<<<<<<<
+ *     return -1
+ * 
+*/
+    __pyx_r = 2;
+    goto __pyx_L0;
+
+    /* "analysis/_shine_dalgarno_cy.pyx":36
+ *     elif seq[i] == 'G':
+ *         return 1
+ *     elif seq[i] == 'T':             # <<<<<<<<<<<<<<
+ *         return 2
+ *     return -1
+*/
+  }
+
+  /* "analysis/_shine_dalgarno_cy.pyx":38
+ *     elif seq[i] == 'T':
+ *         return 2
+ *     return -1             # <<<<<<<<<<<<<<
+ * 
+ * 
+*/
+  __pyx_r = -1;
+  goto __pyx_L0;
+
+  /* "analysis/_shine_dalgarno_cy.pyx":21
+ * 
+ * 
+ * cdef inline int codon_type_at(str seq, Py_ssize_t i):             # <<<<<<<<<<<<<<
+ *     """
+ *     Return:
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("analysis._shine_dalgarno_cy.codon_type_at", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = -1;
+  __pyx_L0:;
+  return __pyx_r;
+}
+
+/* "analysis/_shine_dalgarno_cy.pyx":41
+ * 
+ * 
+ * cdef inline str codon_type_to_str(int codon_type):             # <<<<<<<<<<<<<<
+ *     if codon_type == 0:
  *         return "ATG"
 */
-  __pyx_t_1 = __Pyx_GetItemInt_Unicode(__pyx_v_seq, __pyx_v_i, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_1 == (Py_UCS4)-1)) __PYX_ERR(0, 25, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_PyUnicode_FromOrdinal(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 25, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (!(likely(PyUnicode_CheckExact(__pyx_t_2)) || __Pyx_RaiseUnexpectedTypeError("str", __pyx_t_2))) __PYX_ERR(0, 25, __pyx_L1_error)
-  __pyx_v_a = ((PyObject*)__pyx_t_2);
-  __pyx_t_2 = 0;
 
-  /* "analysis/_shine_dalgarno_cy.pyx":26
- * cdef inline str start_codon_value(str seq, Py_ssize_t i):
- *     cdef str a = seq[i]
- *     if a == 'A':             # <<<<<<<<<<<<<<
+static CYTHON_INLINE PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_codon_type_to_str(int __pyx_v_codon_type) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("codon_type_to_str", 0);
+
+  /* "analysis/_shine_dalgarno_cy.pyx":42
+ * 
+ * cdef inline str codon_type_to_str(int codon_type):
+ *     if codon_type == 0:             # <<<<<<<<<<<<<<
  *         return "ATG"
- *     elif a == 'G':
+ *     elif codon_type == 1:
 */
-  __pyx_t_3 = (__Pyx_PyUnicode_Equals(__pyx_v_a, __pyx_mstate_global->__pyx_n_u_A, Py_EQ)); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 26, __pyx_L1_error)
-  if (__pyx_t_3) {
+  switch (__pyx_v_codon_type) {
+    case 0:
 
-    /* "analysis/_shine_dalgarno_cy.pyx":27
- *     cdef str a = seq[i]
- *     if a == 'A':
+    /* "analysis/_shine_dalgarno_cy.pyx":43
+ * cdef inline str codon_type_to_str(int codon_type):
+ *     if codon_type == 0:
  *         return "ATG"             # <<<<<<<<<<<<<<
- *     elif a == 'G':
+ *     elif codon_type == 1:
  *         return "GTG"
 */
     __Pyx_XDECREF(__pyx_r);
@@ -2680,28 +2787,19 @@ static CYTHON_INLINE PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_start_codo
     __pyx_r = __pyx_mstate_global->__pyx_n_u_ATG;
     goto __pyx_L0;
 
-    /* "analysis/_shine_dalgarno_cy.pyx":26
- * cdef inline str start_codon_value(str seq, Py_ssize_t i):
- *     cdef str a = seq[i]
- *     if a == 'A':             # <<<<<<<<<<<<<<
+    /* "analysis/_shine_dalgarno_cy.pyx":42
+ * 
+ * cdef inline str codon_type_to_str(int codon_type):
+ *     if codon_type == 0:             # <<<<<<<<<<<<<<
  *         return "ATG"
- *     elif a == 'G':
+ *     elif codon_type == 1:
 */
-  }
+    break;
+    case 1:
 
-  /* "analysis/_shine_dalgarno_cy.pyx":28
- *     if a == 'A':
+    /* "analysis/_shine_dalgarno_cy.pyx":45
  *         return "ATG"
- *     elif a == 'G':             # <<<<<<<<<<<<<<
- *         return "GTG"
- *     return "TTG"
-*/
-  __pyx_t_3 = (__Pyx_PyUnicode_Equals(__pyx_v_a, __pyx_mstate_global->__pyx_n_u_G, Py_EQ)); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 28, __pyx_L1_error)
-  if (__pyx_t_3) {
-
-    /* "analysis/_shine_dalgarno_cy.pyx":29
- *         return "ATG"
- *     elif a == 'G':
+ *     elif codon_type == 1:
  *         return "GTG"             # <<<<<<<<<<<<<<
  *     return "TTG"
  * 
@@ -2711,17 +2809,19 @@ static CYTHON_INLINE PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_start_codo
     __pyx_r = __pyx_mstate_global->__pyx_n_u_GTG;
     goto __pyx_L0;
 
-    /* "analysis/_shine_dalgarno_cy.pyx":28
- *     if a == 'A':
+    /* "analysis/_shine_dalgarno_cy.pyx":44
+ *     if codon_type == 0:
  *         return "ATG"
- *     elif a == 'G':             # <<<<<<<<<<<<<<
+ *     elif codon_type == 1:             # <<<<<<<<<<<<<<
  *         return "GTG"
  *     return "TTG"
 */
+    break;
+    default: break;
   }
 
-  /* "analysis/_shine_dalgarno_cy.pyx":30
- *     elif a == 'G':
+  /* "analysis/_shine_dalgarno_cy.pyx":46
+ *     elif codon_type == 1:
  *         return "GTG"
  *     return "TTG"             # <<<<<<<<<<<<<<
  * 
@@ -2732,112 +2832,104 @@ static CYTHON_INLINE PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_start_codo
   __pyx_r = __pyx_mstate_global->__pyx_n_u_TTG;
   goto __pyx_L0;
 
-  /* "analysis/_shine_dalgarno_cy.pyx":24
+  /* "analysis/_shine_dalgarno_cy.pyx":41
  * 
  * 
- * cdef inline str start_codon_value(str seq, Py_ssize_t i):             # <<<<<<<<<<<<<<
- *     cdef str a = seq[i]
- *     if a == 'A':
+ * cdef inline str codon_type_to_str(int codon_type):             # <<<<<<<<<<<<<<
+ *     if codon_type == 0:
+ *         return "ATG"
 */
 
   /* function exit code */
-  __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_2);
-  __Pyx_AddTraceback("analysis._shine_dalgarno_cy.start_codon_value", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __pyx_r = 0;
   __pyx_L0:;
-  __Pyx_XDECREF(__pyx_v_a);
   __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "analysis/_shine_dalgarno_cy.pyx":33
+/* "analysis/_shine_dalgarno_cy.pyx":49
  * 
  * 
- * cdef inline int codon_score_int(str codon):             # <<<<<<<<<<<<<<
- *     if codon == "ATG":
+ * cdef inline int codon_score_from_type(int codon_type):             # <<<<<<<<<<<<<<
+ *     if codon_type == 0:
  *         return 5
 */
 
-static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_codon_score_int(PyObject *__pyx_v_codon) {
+static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_codon_score_from_type(int __pyx_v_codon_type) {
   int __pyx_r;
   int __pyx_t_1;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
 
-  /* "analysis/_shine_dalgarno_cy.pyx":34
+  /* "analysis/_shine_dalgarno_cy.pyx":50
  * 
- * cdef inline int codon_score_int(str codon):
- *     if codon == "ATG":             # <<<<<<<<<<<<<<
+ * cdef inline int codon_score_from_type(int codon_type):
+ *     if codon_type == 0:             # <<<<<<<<<<<<<<
  *         return 5
- *     if codon == "GTG":
+ *     if codon_type == 1:
 */
-  __pyx_t_1 = (__Pyx_PyUnicode_Equals(__pyx_v_codon, __pyx_mstate_global->__pyx_n_u_ATG, Py_EQ)); if (unlikely((__pyx_t_1 < 0))) __PYX_ERR(0, 34, __pyx_L1_error)
+  __pyx_t_1 = (__pyx_v_codon_type == 0);
   if (__pyx_t_1) {
 
-    /* "analysis/_shine_dalgarno_cy.pyx":35
- * cdef inline int codon_score_int(str codon):
- *     if codon == "ATG":
+    /* "analysis/_shine_dalgarno_cy.pyx":51
+ * cdef inline int codon_score_from_type(int codon_type):
+ *     if codon_type == 0:
  *         return 5             # <<<<<<<<<<<<<<
- *     if codon == "GTG":
+ *     if codon_type == 1:
  *         return 3
 */
     __pyx_r = 5;
     goto __pyx_L0;
 
-    /* "analysis/_shine_dalgarno_cy.pyx":34
+    /* "analysis/_shine_dalgarno_cy.pyx":50
  * 
- * cdef inline int codon_score_int(str codon):
- *     if codon == "ATG":             # <<<<<<<<<<<<<<
+ * cdef inline int codon_score_from_type(int codon_type):
+ *     if codon_type == 0:             # <<<<<<<<<<<<<<
  *         return 5
- *     if codon == "GTG":
+ *     if codon_type == 1:
 */
   }
 
-  /* "analysis/_shine_dalgarno_cy.pyx":36
- *     if codon == "ATG":
+  /* "analysis/_shine_dalgarno_cy.pyx":52
+ *     if codon_type == 0:
  *         return 5
- *     if codon == "GTG":             # <<<<<<<<<<<<<<
+ *     if codon_type == 1:             # <<<<<<<<<<<<<<
  *         return 3
- *     if codon == "TTG":
+ *     if codon_type == 2:
 */
-  __pyx_t_1 = (__Pyx_PyUnicode_Equals(__pyx_v_codon, __pyx_mstate_global->__pyx_n_u_GTG, Py_EQ)); if (unlikely((__pyx_t_1 < 0))) __PYX_ERR(0, 36, __pyx_L1_error)
+  __pyx_t_1 = (__pyx_v_codon_type == 1);
   if (__pyx_t_1) {
 
-    /* "analysis/_shine_dalgarno_cy.pyx":37
+    /* "analysis/_shine_dalgarno_cy.pyx":53
  *         return 5
- *     if codon == "GTG":
+ *     if codon_type == 1:
  *         return 3             # <<<<<<<<<<<<<<
- *     if codon == "TTG":
+ *     if codon_type == 2:
  *         return 2
 */
     __pyx_r = 3;
     goto __pyx_L0;
 
-    /* "analysis/_shine_dalgarno_cy.pyx":36
- *     if codon == "ATG":
+    /* "analysis/_shine_dalgarno_cy.pyx":52
+ *     if codon_type == 0:
  *         return 5
- *     if codon == "GTG":             # <<<<<<<<<<<<<<
+ *     if codon_type == 1:             # <<<<<<<<<<<<<<
  *         return 3
- *     if codon == "TTG":
+ *     if codon_type == 2:
 */
   }
 
-  /* "analysis/_shine_dalgarno_cy.pyx":38
- *     if codon == "GTG":
+  /* "analysis/_shine_dalgarno_cy.pyx":54
+ *     if codon_type == 1:
  *         return 3
- *     if codon == "TTG":             # <<<<<<<<<<<<<<
+ *     if codon_type == 2:             # <<<<<<<<<<<<<<
  *         return 2
  *     return 0
 */
-  __pyx_t_1 = (__Pyx_PyUnicode_Equals(__pyx_v_codon, __pyx_mstate_global->__pyx_n_u_TTG, Py_EQ)); if (unlikely((__pyx_t_1 < 0))) __PYX_ERR(0, 38, __pyx_L1_error)
+  __pyx_t_1 = (__pyx_v_codon_type == 2);
   if (__pyx_t_1) {
 
-    /* "analysis/_shine_dalgarno_cy.pyx":39
+    /* "analysis/_shine_dalgarno_cy.pyx":55
  *         return 3
- *     if codon == "TTG":
+ *     if codon_type == 2:
  *         return 2             # <<<<<<<<<<<<<<
  *     return 0
  * 
@@ -2845,17 +2937,17 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_codon_score_int(
     __pyx_r = 2;
     goto __pyx_L0;
 
-    /* "analysis/_shine_dalgarno_cy.pyx":38
- *     if codon == "GTG":
+    /* "analysis/_shine_dalgarno_cy.pyx":54
+ *     if codon_type == 1:
  *         return 3
- *     if codon == "TTG":             # <<<<<<<<<<<<<<
+ *     if codon_type == 2:             # <<<<<<<<<<<<<<
  *         return 2
  *     return 0
 */
   }
 
-  /* "analysis/_shine_dalgarno_cy.pyx":40
- *     if codon == "TTG":
+  /* "analysis/_shine_dalgarno_cy.pyx":56
+ *     if codon_type == 2:
  *         return 2
  *     return 0             # <<<<<<<<<<<<<<
  * 
@@ -2864,23 +2956,20 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_codon_score_int(
   __pyx_r = 0;
   goto __pyx_L0;
 
-  /* "analysis/_shine_dalgarno_cy.pyx":33
+  /* "analysis/_shine_dalgarno_cy.pyx":49
  * 
  * 
- * cdef inline int codon_score_int(str codon):             # <<<<<<<<<<<<<<
- *     if codon == "ATG":
+ * cdef inline int codon_score_from_type(int codon_type):             # <<<<<<<<<<<<<<
+ *     if codon_type == 0:
  *         return 5
 */
 
   /* function exit code */
-  __pyx_L1_error:;
-  __Pyx_AddTraceback("analysis._shine_dalgarno_cy.codon_score_int", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __pyx_r = -1;
   __pyx_L0:;
   return __pyx_r;
 }
 
-/* "analysis/_shine_dalgarno_cy.pyx":43
+/* "analysis/_shine_dalgarno_cy.pyx":59
  * 
  * 
  * cdef inline double distance_score_int(int distance):             # <<<<<<<<<<<<<<
@@ -2894,7 +2983,7 @@ static CYTHON_INLINE double __pyx_f_8analysis_18_shine_dalgarno_cy_distance_scor
   double __pyx_r;
   int __pyx_t_1;
 
-  /* "analysis/_shine_dalgarno_cy.pyx":44
+  /* "analysis/_shine_dalgarno_cy.pyx":60
  * 
  * cdef inline double distance_score_int(int distance):
  *     cdef int delta = distance - 7             # <<<<<<<<<<<<<<
@@ -2903,7 +2992,7 @@ static CYTHON_INLINE double __pyx_f_8analysis_18_shine_dalgarno_cy_distance_scor
 */
   __pyx_v_delta = (__pyx_v_distance - 7);
 
-  /* "analysis/_shine_dalgarno_cy.pyx":45
+  /* "analysis/_shine_dalgarno_cy.pyx":61
  * cdef inline double distance_score_int(int distance):
  *     cdef int delta = distance - 7
  *     if delta < 0:             # <<<<<<<<<<<<<<
@@ -2913,7 +3002,7 @@ static CYTHON_INLINE double __pyx_f_8analysis_18_shine_dalgarno_cy_distance_scor
   __pyx_t_1 = (__pyx_v_delta < 0);
   if (__pyx_t_1) {
 
-    /* "analysis/_shine_dalgarno_cy.pyx":46
+    /* "analysis/_shine_dalgarno_cy.pyx":62
  *     cdef int delta = distance - 7
  *     if delta < 0:
  *         delta = -delta             # <<<<<<<<<<<<<<
@@ -2922,7 +3011,7 @@ static CYTHON_INLINE double __pyx_f_8analysis_18_shine_dalgarno_cy_distance_scor
 */
     __pyx_v_delta = (-__pyx_v_delta);
 
-    /* "analysis/_shine_dalgarno_cy.pyx":45
+    /* "analysis/_shine_dalgarno_cy.pyx":61
  * cdef inline double distance_score_int(int distance):
  *     cdef int delta = distance - 7
  *     if delta < 0:             # <<<<<<<<<<<<<<
@@ -2931,7 +3020,7 @@ static CYTHON_INLINE double __pyx_f_8analysis_18_shine_dalgarno_cy_distance_scor
 */
   }
 
-  /* "analysis/_shine_dalgarno_cy.pyx":48
+  /* "analysis/_shine_dalgarno_cy.pyx":64
  *         delta = -delta
  * 
  *     cdef double score = 10.0 - delta * 2.0             # <<<<<<<<<<<<<<
@@ -2940,7 +3029,7 @@ static CYTHON_INLINE double __pyx_f_8analysis_18_shine_dalgarno_cy_distance_scor
 */
   __pyx_v_score = (10.0 - (__pyx_v_delta * 2.0));
 
-  /* "analysis/_shine_dalgarno_cy.pyx":49
+  /* "analysis/_shine_dalgarno_cy.pyx":65
  * 
  *     cdef double score = 10.0 - delta * 2.0
  *     if score < 0.0:             # <<<<<<<<<<<<<<
@@ -2950,7 +3039,7 @@ static CYTHON_INLINE double __pyx_f_8analysis_18_shine_dalgarno_cy_distance_scor
   __pyx_t_1 = (__pyx_v_score < 0.0);
   if (__pyx_t_1) {
 
-    /* "analysis/_shine_dalgarno_cy.pyx":50
+    /* "analysis/_shine_dalgarno_cy.pyx":66
  *     cdef double score = 10.0 - delta * 2.0
  *     if score < 0.0:
  *         return 0.0             # <<<<<<<<<<<<<<
@@ -2960,7 +3049,7 @@ static CYTHON_INLINE double __pyx_f_8analysis_18_shine_dalgarno_cy_distance_scor
     __pyx_r = 0.0;
     goto __pyx_L0;
 
-    /* "analysis/_shine_dalgarno_cy.pyx":49
+    /* "analysis/_shine_dalgarno_cy.pyx":65
  * 
  *     cdef double score = 10.0 - delta * 2.0
  *     if score < 0.0:             # <<<<<<<<<<<<<<
@@ -2969,7 +3058,7 @@ static CYTHON_INLINE double __pyx_f_8analysis_18_shine_dalgarno_cy_distance_scor
 */
   }
 
-  /* "analysis/_shine_dalgarno_cy.pyx":51
+  /* "analysis/_shine_dalgarno_cy.pyx":67
  *     if score < 0.0:
  *         return 0.0
  *     return score             # <<<<<<<<<<<<<<
@@ -2979,7 +3068,7 @@ static CYTHON_INLINE double __pyx_f_8analysis_18_shine_dalgarno_cy_distance_scor
   __pyx_r = __pyx_v_score;
   goto __pyx_L0;
 
-  /* "analysis/_shine_dalgarno_cy.pyx":43
+  /* "analysis/_shine_dalgarno_cy.pyx":59
  * 
  * 
  * cdef inline double distance_score_int(int distance):             # <<<<<<<<<<<<<<
@@ -2992,7 +3081,7 @@ static CYTHON_INLINE double __pyx_f_8analysis_18_shine_dalgarno_cy_distance_scor
   return __pyx_r;
 }
 
-/* "analysis/_shine_dalgarno_cy.pyx":54
+/* "analysis/_shine_dalgarno_cy.pyx":70
  * 
  * 
  * cdef inline bint has_N_6(str s, Py_ssize_t i):             # <<<<<<<<<<<<<<
@@ -3010,14 +3099,14 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_has_N_6(PyObject
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
 
-  /* "analysis/_shine_dalgarno_cy.pyx":56
+  /* "analysis/_shine_dalgarno_cy.pyx":72
  * cdef inline bint has_N_6(str s, Py_ssize_t i):
  *     return (
  *         s[i] == 'N' or             # <<<<<<<<<<<<<<
  *         s[i + 1] == 'N' or
  *         s[i + 2] == 'N' or
 */
-  __pyx_t_2 = __Pyx_GetItemInt_Unicode(__pyx_v_s, __pyx_v_i, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_2 == (Py_UCS4)-1)) __PYX_ERR(0, 56, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_GetItemInt_Unicode(__pyx_v_s, __pyx_v_i, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_2 == (Py_UCS4)-1)) __PYX_ERR(0, 72, __pyx_L1_error)
   __pyx_t_3 = (__pyx_t_2 == 78);
   if (!__pyx_t_3) {
   } else {
@@ -3025,7 +3114,7 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_has_N_6(PyObject
     goto __pyx_L3_bool_binop_done;
   }
 
-  /* "analysis/_shine_dalgarno_cy.pyx":57
+  /* "analysis/_shine_dalgarno_cy.pyx":73
  *     return (
  *         s[i] == 'N' or
  *         s[i + 1] == 'N' or             # <<<<<<<<<<<<<<
@@ -3033,7 +3122,7 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_has_N_6(PyObject
  *         s[i + 3] == 'N' or
 */
   __pyx_t_4 = (__pyx_v_i + 1);
-  __pyx_t_2 = __Pyx_GetItemInt_Unicode(__pyx_v_s, __pyx_t_4, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_2 == (Py_UCS4)-1)) __PYX_ERR(0, 57, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_GetItemInt_Unicode(__pyx_v_s, __pyx_t_4, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_2 == (Py_UCS4)-1)) __PYX_ERR(0, 73, __pyx_L1_error)
   __pyx_t_3 = (__pyx_t_2 == 78);
   if (!__pyx_t_3) {
   } else {
@@ -3041,7 +3130,7 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_has_N_6(PyObject
     goto __pyx_L3_bool_binop_done;
   }
 
-  /* "analysis/_shine_dalgarno_cy.pyx":58
+  /* "analysis/_shine_dalgarno_cy.pyx":74
  *         s[i] == 'N' or
  *         s[i + 1] == 'N' or
  *         s[i + 2] == 'N' or             # <<<<<<<<<<<<<<
@@ -3049,7 +3138,7 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_has_N_6(PyObject
  *         s[i + 4] == 'N' or
 */
   __pyx_t_4 = (__pyx_v_i + 2);
-  __pyx_t_2 = __Pyx_GetItemInt_Unicode(__pyx_v_s, __pyx_t_4, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_2 == (Py_UCS4)-1)) __PYX_ERR(0, 58, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_GetItemInt_Unicode(__pyx_v_s, __pyx_t_4, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_2 == (Py_UCS4)-1)) __PYX_ERR(0, 74, __pyx_L1_error)
   __pyx_t_3 = (__pyx_t_2 == 78);
   if (!__pyx_t_3) {
   } else {
@@ -3057,7 +3146,7 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_has_N_6(PyObject
     goto __pyx_L3_bool_binop_done;
   }
 
-  /* "analysis/_shine_dalgarno_cy.pyx":59
+  /* "analysis/_shine_dalgarno_cy.pyx":75
  *         s[i + 1] == 'N' or
  *         s[i + 2] == 'N' or
  *         s[i + 3] == 'N' or             # <<<<<<<<<<<<<<
@@ -3065,7 +3154,7 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_has_N_6(PyObject
  *         s[i + 5] == 'N'
 */
   __pyx_t_4 = (__pyx_v_i + 3);
-  __pyx_t_2 = __Pyx_GetItemInt_Unicode(__pyx_v_s, __pyx_t_4, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_2 == (Py_UCS4)-1)) __PYX_ERR(0, 59, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_GetItemInt_Unicode(__pyx_v_s, __pyx_t_4, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_2 == (Py_UCS4)-1)) __PYX_ERR(0, 75, __pyx_L1_error)
   __pyx_t_3 = (__pyx_t_2 == 78);
   if (!__pyx_t_3) {
   } else {
@@ -3073,7 +3162,7 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_has_N_6(PyObject
     goto __pyx_L3_bool_binop_done;
   }
 
-  /* "analysis/_shine_dalgarno_cy.pyx":60
+  /* "analysis/_shine_dalgarno_cy.pyx":76
  *         s[i + 2] == 'N' or
  *         s[i + 3] == 'N' or
  *         s[i + 4] == 'N' or             # <<<<<<<<<<<<<<
@@ -3081,7 +3170,7 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_has_N_6(PyObject
  *     )
 */
   __pyx_t_4 = (__pyx_v_i + 4);
-  __pyx_t_2 = __Pyx_GetItemInt_Unicode(__pyx_v_s, __pyx_t_4, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_2 == (Py_UCS4)-1)) __PYX_ERR(0, 60, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_GetItemInt_Unicode(__pyx_v_s, __pyx_t_4, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_2 == (Py_UCS4)-1)) __PYX_ERR(0, 76, __pyx_L1_error)
   __pyx_t_3 = (__pyx_t_2 == 78);
   if (!__pyx_t_3) {
   } else {
@@ -3089,7 +3178,7 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_has_N_6(PyObject
     goto __pyx_L3_bool_binop_done;
   }
 
-  /* "analysis/_shine_dalgarno_cy.pyx":61
+  /* "analysis/_shine_dalgarno_cy.pyx":77
  *         s[i + 3] == 'N' or
  *         s[i + 4] == 'N' or
  *         s[i + 5] == 'N'             # <<<<<<<<<<<<<<
@@ -3097,14 +3186,14 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_has_N_6(PyObject
  * 
 */
   __pyx_t_4 = (__pyx_v_i + 5);
-  __pyx_t_2 = __Pyx_GetItemInt_Unicode(__pyx_v_s, __pyx_t_4, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_2 == (Py_UCS4)-1)) __PYX_ERR(0, 61, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_GetItemInt_Unicode(__pyx_v_s, __pyx_t_4, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_2 == (Py_UCS4)-1)) __PYX_ERR(0, 77, __pyx_L1_error)
   __pyx_t_3 = (__pyx_t_2 == 78);
   __pyx_t_1 = __pyx_t_3;
   __pyx_L3_bool_binop_done:;
   __pyx_r = __pyx_t_1;
   goto __pyx_L0;
 
-  /* "analysis/_shine_dalgarno_cy.pyx":54
+  /* "analysis/_shine_dalgarno_cy.pyx":70
  * 
  * 
  * cdef inline bint has_N_6(str s, Py_ssize_t i):             # <<<<<<<<<<<<<<
@@ -3120,7 +3209,7 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_has_N_6(PyObject
   return __pyx_r;
 }
 
-/* "analysis/_shine_dalgarno_cy.pyx":65
+/* "analysis/_shine_dalgarno_cy.pyx":81
  * 
  * 
  * cdef inline int hamming_sd_at(str s, Py_ssize_t i):             # <<<<<<<<<<<<<<
@@ -3138,7 +3227,7 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_hamming_sd_at(Py
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
 
-  /* "analysis/_shine_dalgarno_cy.pyx":66
+  /* "analysis/_shine_dalgarno_cy.pyx":82
  * 
  * cdef inline int hamming_sd_at(str s, Py_ssize_t i):
  *     cdef int d = 0             # <<<<<<<<<<<<<<
@@ -3147,18 +3236,18 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_hamming_sd_at(Py
 */
   __pyx_v_d = 0;
 
-  /* "analysis/_shine_dalgarno_cy.pyx":67
+  /* "analysis/_shine_dalgarno_cy.pyx":83
  * cdef inline int hamming_sd_at(str s, Py_ssize_t i):
  *     cdef int d = 0
  *     if s[i] != 'A':             # <<<<<<<<<<<<<<
  *         d += 1
  *     if s[i + 1] != 'G':
 */
-  __pyx_t_1 = __Pyx_GetItemInt_Unicode(__pyx_v_s, __pyx_v_i, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_1 == (Py_UCS4)-1)) __PYX_ERR(0, 67, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetItemInt_Unicode(__pyx_v_s, __pyx_v_i, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_1 == (Py_UCS4)-1)) __PYX_ERR(0, 83, __pyx_L1_error)
   __pyx_t_2 = (__pyx_t_1 != 65);
   if (__pyx_t_2) {
 
-    /* "analysis/_shine_dalgarno_cy.pyx":68
+    /* "analysis/_shine_dalgarno_cy.pyx":84
  *     cdef int d = 0
  *     if s[i] != 'A':
  *         d += 1             # <<<<<<<<<<<<<<
@@ -3167,7 +3256,7 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_hamming_sd_at(Py
 */
     __pyx_v_d = (__pyx_v_d + 1);
 
-    /* "analysis/_shine_dalgarno_cy.pyx":67
+    /* "analysis/_shine_dalgarno_cy.pyx":83
  * cdef inline int hamming_sd_at(str s, Py_ssize_t i):
  *     cdef int d = 0
  *     if s[i] != 'A':             # <<<<<<<<<<<<<<
@@ -3176,7 +3265,7 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_hamming_sd_at(Py
 */
   }
 
-  /* "analysis/_shine_dalgarno_cy.pyx":69
+  /* "analysis/_shine_dalgarno_cy.pyx":85
  *     if s[i] != 'A':
  *         d += 1
  *     if s[i + 1] != 'G':             # <<<<<<<<<<<<<<
@@ -3184,11 +3273,11 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_hamming_sd_at(Py
  *     if s[i + 2] != 'G':
 */
   __pyx_t_3 = (__pyx_v_i + 1);
-  __pyx_t_1 = __Pyx_GetItemInt_Unicode(__pyx_v_s, __pyx_t_3, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_1 == (Py_UCS4)-1)) __PYX_ERR(0, 69, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetItemInt_Unicode(__pyx_v_s, __pyx_t_3, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_1 == (Py_UCS4)-1)) __PYX_ERR(0, 85, __pyx_L1_error)
   __pyx_t_2 = (__pyx_t_1 != 71);
   if (__pyx_t_2) {
 
-    /* "analysis/_shine_dalgarno_cy.pyx":70
+    /* "analysis/_shine_dalgarno_cy.pyx":86
  *         d += 1
  *     if s[i + 1] != 'G':
  *         d += 1             # <<<<<<<<<<<<<<
@@ -3197,7 +3286,7 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_hamming_sd_at(Py
 */
     __pyx_v_d = (__pyx_v_d + 1);
 
-    /* "analysis/_shine_dalgarno_cy.pyx":69
+    /* "analysis/_shine_dalgarno_cy.pyx":85
  *     if s[i] != 'A':
  *         d += 1
  *     if s[i + 1] != 'G':             # <<<<<<<<<<<<<<
@@ -3206,7 +3295,7 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_hamming_sd_at(Py
 */
   }
 
-  /* "analysis/_shine_dalgarno_cy.pyx":71
+  /* "analysis/_shine_dalgarno_cy.pyx":87
  *     if s[i + 1] != 'G':
  *         d += 1
  *     if s[i + 2] != 'G':             # <<<<<<<<<<<<<<
@@ -3214,11 +3303,11 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_hamming_sd_at(Py
  *     if s[i + 3] != 'A':
 */
   __pyx_t_3 = (__pyx_v_i + 2);
-  __pyx_t_1 = __Pyx_GetItemInt_Unicode(__pyx_v_s, __pyx_t_3, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_1 == (Py_UCS4)-1)) __PYX_ERR(0, 71, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetItemInt_Unicode(__pyx_v_s, __pyx_t_3, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_1 == (Py_UCS4)-1)) __PYX_ERR(0, 87, __pyx_L1_error)
   __pyx_t_2 = (__pyx_t_1 != 71);
   if (__pyx_t_2) {
 
-    /* "analysis/_shine_dalgarno_cy.pyx":72
+    /* "analysis/_shine_dalgarno_cy.pyx":88
  *         d += 1
  *     if s[i + 2] != 'G':
  *         d += 1             # <<<<<<<<<<<<<<
@@ -3227,7 +3316,7 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_hamming_sd_at(Py
 */
     __pyx_v_d = (__pyx_v_d + 1);
 
-    /* "analysis/_shine_dalgarno_cy.pyx":71
+    /* "analysis/_shine_dalgarno_cy.pyx":87
  *     if s[i + 1] != 'G':
  *         d += 1
  *     if s[i + 2] != 'G':             # <<<<<<<<<<<<<<
@@ -3236,7 +3325,7 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_hamming_sd_at(Py
 */
   }
 
-  /* "analysis/_shine_dalgarno_cy.pyx":73
+  /* "analysis/_shine_dalgarno_cy.pyx":89
  *     if s[i + 2] != 'G':
  *         d += 1
  *     if s[i + 3] != 'A':             # <<<<<<<<<<<<<<
@@ -3244,11 +3333,11 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_hamming_sd_at(Py
  *     if s[i + 4] != 'G':
 */
   __pyx_t_3 = (__pyx_v_i + 3);
-  __pyx_t_1 = __Pyx_GetItemInt_Unicode(__pyx_v_s, __pyx_t_3, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_1 == (Py_UCS4)-1)) __PYX_ERR(0, 73, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetItemInt_Unicode(__pyx_v_s, __pyx_t_3, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_1 == (Py_UCS4)-1)) __PYX_ERR(0, 89, __pyx_L1_error)
   __pyx_t_2 = (__pyx_t_1 != 65);
   if (__pyx_t_2) {
 
-    /* "analysis/_shine_dalgarno_cy.pyx":74
+    /* "analysis/_shine_dalgarno_cy.pyx":90
  *         d += 1
  *     if s[i + 3] != 'A':
  *         d += 1             # <<<<<<<<<<<<<<
@@ -3257,7 +3346,7 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_hamming_sd_at(Py
 */
     __pyx_v_d = (__pyx_v_d + 1);
 
-    /* "analysis/_shine_dalgarno_cy.pyx":73
+    /* "analysis/_shine_dalgarno_cy.pyx":89
  *     if s[i + 2] != 'G':
  *         d += 1
  *     if s[i + 3] != 'A':             # <<<<<<<<<<<<<<
@@ -3266,7 +3355,7 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_hamming_sd_at(Py
 */
   }
 
-  /* "analysis/_shine_dalgarno_cy.pyx":75
+  /* "analysis/_shine_dalgarno_cy.pyx":91
  *     if s[i + 3] != 'A':
  *         d += 1
  *     if s[i + 4] != 'G':             # <<<<<<<<<<<<<<
@@ -3274,11 +3363,11 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_hamming_sd_at(Py
  *     if s[i + 5] != 'G':
 */
   __pyx_t_3 = (__pyx_v_i + 4);
-  __pyx_t_1 = __Pyx_GetItemInt_Unicode(__pyx_v_s, __pyx_t_3, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_1 == (Py_UCS4)-1)) __PYX_ERR(0, 75, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetItemInt_Unicode(__pyx_v_s, __pyx_t_3, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_1 == (Py_UCS4)-1)) __PYX_ERR(0, 91, __pyx_L1_error)
   __pyx_t_2 = (__pyx_t_1 != 71);
   if (__pyx_t_2) {
 
-    /* "analysis/_shine_dalgarno_cy.pyx":76
+    /* "analysis/_shine_dalgarno_cy.pyx":92
  *         d += 1
  *     if s[i + 4] != 'G':
  *         d += 1             # <<<<<<<<<<<<<<
@@ -3287,7 +3376,7 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_hamming_sd_at(Py
 */
     __pyx_v_d = (__pyx_v_d + 1);
 
-    /* "analysis/_shine_dalgarno_cy.pyx":75
+    /* "analysis/_shine_dalgarno_cy.pyx":91
  *     if s[i + 3] != 'A':
  *         d += 1
  *     if s[i + 4] != 'G':             # <<<<<<<<<<<<<<
@@ -3296,7 +3385,7 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_hamming_sd_at(Py
 */
   }
 
-  /* "analysis/_shine_dalgarno_cy.pyx":77
+  /* "analysis/_shine_dalgarno_cy.pyx":93
  *     if s[i + 4] != 'G':
  *         d += 1
  *     if s[i + 5] != 'G':             # <<<<<<<<<<<<<<
@@ -3304,11 +3393,11 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_hamming_sd_at(Py
  *     return d
 */
   __pyx_t_3 = (__pyx_v_i + 5);
-  __pyx_t_1 = __Pyx_GetItemInt_Unicode(__pyx_v_s, __pyx_t_3, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_1 == (Py_UCS4)-1)) __PYX_ERR(0, 77, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetItemInt_Unicode(__pyx_v_s, __pyx_t_3, Py_ssize_t, 1, PyLong_FromSsize_t, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(__pyx_t_1 == (Py_UCS4)-1)) __PYX_ERR(0, 93, __pyx_L1_error)
   __pyx_t_2 = (__pyx_t_1 != 71);
   if (__pyx_t_2) {
 
-    /* "analysis/_shine_dalgarno_cy.pyx":78
+    /* "analysis/_shine_dalgarno_cy.pyx":94
  *         d += 1
  *     if s[i + 5] != 'G':
  *         d += 1             # <<<<<<<<<<<<<<
@@ -3317,7 +3406,7 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_hamming_sd_at(Py
 */
     __pyx_v_d = (__pyx_v_d + 1);
 
-    /* "analysis/_shine_dalgarno_cy.pyx":77
+    /* "analysis/_shine_dalgarno_cy.pyx":93
  *     if s[i + 4] != 'G':
  *         d += 1
  *     if s[i + 5] != 'G':             # <<<<<<<<<<<<<<
@@ -3326,7 +3415,7 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_hamming_sd_at(Py
 */
   }
 
-  /* "analysis/_shine_dalgarno_cy.pyx":79
+  /* "analysis/_shine_dalgarno_cy.pyx":95
  *     if s[i + 5] != 'G':
  *         d += 1
  *     return d             # <<<<<<<<<<<<<<
@@ -3336,7 +3425,7 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_hamming_sd_at(Py
   __pyx_r = __pyx_v_d;
   goto __pyx_L0;
 
-  /* "analysis/_shine_dalgarno_cy.pyx":65
+  /* "analysis/_shine_dalgarno_cy.pyx":81
  * 
  * 
  * cdef inline int hamming_sd_at(str s, Py_ssize_t i):             # <<<<<<<<<<<<<<
@@ -3352,7 +3441,7 @@ static CYTHON_INLINE int __pyx_f_8analysis_18_shine_dalgarno_cy_hamming_sd_at(Py
   return __pyx_r;
 }
 
-/* "analysis/_shine_dalgarno_cy.pyx":82
+/* "analysis/_shine_dalgarno_cy.pyx":98
  * 
  * 
  * cpdef list find_start_codons_cy(str search_seq):             # <<<<<<<<<<<<<<
@@ -3372,6 +3461,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_find_start_codons_cy(PyO
   PyObject *__pyx_v_append_start = 0;
   Py_ssize_t __pyx_v_seq_len;
   Py_ssize_t __pyx_v_i;
+  int __pyx_v_codon_type;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -3379,54 +3469,55 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_find_start_codons_cy(PyO
   int __pyx_t_3;
   Py_ssize_t __pyx_t_4;
   Py_ssize_t __pyx_t_5;
-  PyObject *__pyx_t_6 = NULL;
+  int __pyx_t_6;
   PyObject *__pyx_t_7 = NULL;
-  int __pyx_t_8;
+  PyObject *__pyx_t_8 = NULL;
+  int __pyx_t_9;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("find_start_codons_cy", 0);
 
-  /* "analysis/_shine_dalgarno_cy.pyx":83
+  /* "analysis/_shine_dalgarno_cy.pyx":99
  * 
  * cpdef list find_start_codons_cy(str search_seq):
  *     cdef list starts = []             # <<<<<<<<<<<<<<
  *     cdef object append_start = starts.append
  *     cdef Py_ssize_t seq_len = len(search_seq)
 */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 83, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 99, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_starts = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "analysis/_shine_dalgarno_cy.pyx":84
+  /* "analysis/_shine_dalgarno_cy.pyx":100
  * cpdef list find_start_codons_cy(str search_seq):
  *     cdef list starts = []
  *     cdef object append_start = starts.append             # <<<<<<<<<<<<<<
  *     cdef Py_ssize_t seq_len = len(search_seq)
  *     cdef Py_ssize_t i
 */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_starts, __pyx_mstate_global->__pyx_n_u_append); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 84, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_starts, __pyx_mstate_global->__pyx_n_u_append); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 100, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_append_start = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "analysis/_shine_dalgarno_cy.pyx":85
+  /* "analysis/_shine_dalgarno_cy.pyx":101
  *     cdef list starts = []
  *     cdef object append_start = starts.append
  *     cdef Py_ssize_t seq_len = len(search_seq)             # <<<<<<<<<<<<<<
  *     cdef Py_ssize_t i
- * 
+ *     cdef int codon_type
 */
   if (unlikely(__pyx_v_search_seq == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-    __PYX_ERR(0, 85, __pyx_L1_error)
+    __PYX_ERR(0, 101, __pyx_L1_error)
   }
-  __pyx_t_2 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_search_seq); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 85, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_search_seq); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 101, __pyx_L1_error)
   __pyx_v_seq_len = __pyx_t_2;
 
-  /* "analysis/_shine_dalgarno_cy.pyx":88
- *     cdef Py_ssize_t i
+  /* "analysis/_shine_dalgarno_cy.pyx":105
+ *     cdef int codon_type
  * 
  *     if seq_len < 3:             # <<<<<<<<<<<<<<
  *         return starts
@@ -3435,7 +3526,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_find_start_codons_cy(PyO
   __pyx_t_3 = (__pyx_v_seq_len < 3);
   if (__pyx_t_3) {
 
-    /* "analysis/_shine_dalgarno_cy.pyx":89
+    /* "analysis/_shine_dalgarno_cy.pyx":106
  * 
  *     if seq_len < 3:
  *         return starts             # <<<<<<<<<<<<<<
@@ -3447,8 +3538,8 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_find_start_codons_cy(PyO
     __pyx_r = __pyx_v_starts;
     goto __pyx_L0;
 
-    /* "analysis/_shine_dalgarno_cy.pyx":88
- *     cdef Py_ssize_t i
+    /* "analysis/_shine_dalgarno_cy.pyx":105
+ *     cdef int codon_type
  * 
  *     if seq_len < 3:             # <<<<<<<<<<<<<<
  *         return starts
@@ -3456,62 +3547,72 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_find_start_codons_cy(PyO
 */
   }
 
-  /* "analysis/_shine_dalgarno_cy.pyx":91
+  /* "analysis/_shine_dalgarno_cy.pyx":108
  *         return starts
  * 
  *     for i in range(seq_len - 2):             # <<<<<<<<<<<<<<
- *         if is_start_codon_at(search_seq, i):
- *             append_start((i, start_codon_value(search_seq, i)))
+ *         codon_type = codon_type_at(search_seq, i)
+ *         if codon_type != -1:
 */
   __pyx_t_2 = (__pyx_v_seq_len - 2);
   __pyx_t_4 = __pyx_t_2;
   for (__pyx_t_5 = 0; __pyx_t_5 < __pyx_t_4; __pyx_t_5+=1) {
     __pyx_v_i = __pyx_t_5;
 
-    /* "analysis/_shine_dalgarno_cy.pyx":92
+    /* "analysis/_shine_dalgarno_cy.pyx":109
  * 
  *     for i in range(seq_len - 2):
- *         if is_start_codon_at(search_seq, i):             # <<<<<<<<<<<<<<
- *             append_start((i, start_codon_value(search_seq, i)))
+ *         codon_type = codon_type_at(search_seq, i)             # <<<<<<<<<<<<<<
+ *         if codon_type != -1:
+ *             append_start((i, codon_type_to_str(codon_type)))
+*/
+    __pyx_t_6 = __pyx_f_8analysis_18_shine_dalgarno_cy_codon_type_at(__pyx_v_search_seq, __pyx_v_i); if (unlikely(__pyx_t_6 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 109, __pyx_L1_error)
+    __pyx_v_codon_type = __pyx_t_6;
+
+    /* "analysis/_shine_dalgarno_cy.pyx":110
+ *     for i in range(seq_len - 2):
+ *         codon_type = codon_type_at(search_seq, i)
+ *         if codon_type != -1:             # <<<<<<<<<<<<<<
+ *             append_start((i, codon_type_to_str(codon_type)))
  * 
 */
-    __pyx_t_3 = __pyx_f_8analysis_18_shine_dalgarno_cy_is_start_codon_at(__pyx_v_search_seq, __pyx_v_i); if (unlikely(__pyx_t_3 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 92, __pyx_L1_error)
+    __pyx_t_3 = (__pyx_v_codon_type != -1L);
     if (__pyx_t_3) {
 
-      /* "analysis/_shine_dalgarno_cy.pyx":93
- *     for i in range(seq_len - 2):
- *         if is_start_codon_at(search_seq, i):
- *             append_start((i, start_codon_value(search_seq, i)))             # <<<<<<<<<<<<<<
+      /* "analysis/_shine_dalgarno_cy.pyx":111
+ *         codon_type = codon_type_at(search_seq, i)
+ *         if codon_type != -1:
+ *             append_start((i, codon_type_to_str(codon_type)))             # <<<<<<<<<<<<<<
  * 
  *     return starts
 */
-      __pyx_t_1 = PyLong_FromSsize_t(__pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 93, __pyx_L1_error)
+      __pyx_t_1 = PyLong_FromSsize_t(__pyx_v_i); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 111, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_6 = __pyx_f_8analysis_18_shine_dalgarno_cy_start_codon_value(__pyx_v_search_seq, __pyx_v_i); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 93, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_7 = PyTuple_New(2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 93, __pyx_L1_error)
+      __pyx_t_7 = __pyx_f_8analysis_18_shine_dalgarno_cy_codon_type_to_str(__pyx_v_codon_type); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 111, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
+      __pyx_t_8 = PyTuple_New(2); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 111, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_8);
       __Pyx_GIVEREF(__pyx_t_1);
-      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_7, 0, __pyx_t_1) != (0)) __PYX_ERR(0, 93, __pyx_L1_error);
-      __Pyx_GIVEREF(__pyx_t_6);
-      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_7, 1, __pyx_t_6) != (0)) __PYX_ERR(0, 93, __pyx_L1_error);
+      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_t_1) != (0)) __PYX_ERR(0, 111, __pyx_L1_error);
+      __Pyx_GIVEREF(__pyx_t_7);
+      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_8, 1, __pyx_t_7) != (0)) __PYX_ERR(0, 111, __pyx_L1_error);
       __pyx_t_1 = 0;
-      __pyx_t_6 = 0;
-      __pyx_t_8 = __Pyx_PyList_Append(__pyx_v_starts, __pyx_t_7); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 93, __pyx_L1_error)
-      __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+      __pyx_t_7 = 0;
+      __pyx_t_9 = __Pyx_PyList_Append(__pyx_v_starts, __pyx_t_8); if (unlikely(__pyx_t_9 == ((int)-1))) __PYX_ERR(0, 111, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
 
-      /* "analysis/_shine_dalgarno_cy.pyx":92
- * 
+      /* "analysis/_shine_dalgarno_cy.pyx":110
  *     for i in range(seq_len - 2):
- *         if is_start_codon_at(search_seq, i):             # <<<<<<<<<<<<<<
- *             append_start((i, start_codon_value(search_seq, i)))
+ *         codon_type = codon_type_at(search_seq, i)
+ *         if codon_type != -1:             # <<<<<<<<<<<<<<
+ *             append_start((i, codon_type_to_str(codon_type)))
  * 
 */
     }
   }
 
-  /* "analysis/_shine_dalgarno_cy.pyx":95
- *             append_start((i, start_codon_value(search_seq, i)))
+  /* "analysis/_shine_dalgarno_cy.pyx":113
+ *             append_start((i, codon_type_to_str(codon_type)))
  * 
  *     return starts             # <<<<<<<<<<<<<<
  * 
@@ -3522,7 +3623,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_find_start_codons_cy(PyO
   __pyx_r = __pyx_v_starts;
   goto __pyx_L0;
 
-  /* "analysis/_shine_dalgarno_cy.pyx":82
+  /* "analysis/_shine_dalgarno_cy.pyx":98
  * 
  * 
  * cpdef list find_start_codons_cy(str search_seq):             # <<<<<<<<<<<<<<
@@ -3533,8 +3634,8 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_find_start_codons_cy(PyO
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_XDECREF(__pyx_t_6);
   __Pyx_XDECREF(__pyx_t_7);
+  __Pyx_XDECREF(__pyx_t_8);
   __Pyx_AddTraceback("analysis._shine_dalgarno_cy.find_start_codons_cy", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
@@ -3584,32 +3685,32 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_search_seq,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 82, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 98, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 82, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 98, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "find_start_codons_cy", 0) < (0)) __PYX_ERR(0, 82, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "find_start_codons_cy", 0) < (0)) __PYX_ERR(0, 98, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("find_start_codons_cy", 1, 1, 1, i); __PYX_ERR(0, 82, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("find_start_codons_cy", 1, 1, 1, i); __PYX_ERR(0, 98, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 82, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 98, __pyx_L3_error)
     }
     __pyx_v_search_seq = ((PyObject*)values[0]);
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("find_start_codons_cy", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 82, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("find_start_codons_cy", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 98, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -3620,7 +3721,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_search_seq), (&PyUnicode_Type), 1, "search_seq", 1))) __PYX_ERR(0, 82, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_search_seq), (&PyUnicode_Type), 1, "search_seq", 1))) __PYX_ERR(0, 98, __pyx_L1_error)
   __pyx_r = __pyx_pf_8analysis_18_shine_dalgarno_cy_find_start_codons_cy(__pyx_self, __pyx_v_search_seq);
 
   /* function exit code */
@@ -3649,7 +3750,7 @@ static PyObject *__pyx_pf_8analysis_18_shine_dalgarno_cy_find_start_codons_cy(CY
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("find_start_codons_cy", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_8analysis_18_shine_dalgarno_cy_find_start_codons_cy(__pyx_v_search_seq, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 82, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_8analysis_18_shine_dalgarno_cy_find_start_codons_cy(__pyx_v_search_seq, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 98, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3666,7 +3767,7 @@ static PyObject *__pyx_pf_8analysis_18_shine_dalgarno_cy_find_start_codons_cy(CY
   return __pyx_r;
 }
 
-/* "analysis/_shine_dalgarno_cy.pyx":98
+/* "analysis/_shine_dalgarno_cy.pyx":116
  * 
  * 
  * cpdef object best_sd_for_start_cy(             # <<<<<<<<<<<<<<
@@ -3694,6 +3795,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
   int __pyx_v_best_distance_delta;
   int __pyx_v_current_distance_delta;
   double __pyx_v_best_score;
+  int __pyx_v_codon_bonus;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   Py_ssize_t __pyx_t_1;
@@ -3720,7 +3822,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
     }
   }
 
-  /* "analysis/_shine_dalgarno_cy.pyx":104
+  /* "analysis/_shine_dalgarno_cy.pyx":122
  *     int max_mismatches=2,
  * ):
  *     cdef Py_ssize_t seq_len = len(search_seq)             # <<<<<<<<<<<<<<
@@ -3729,12 +3831,12 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
 */
   if (unlikely(__pyx_v_search_seq == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-    __PYX_ERR(0, 104, __pyx_L1_error)
+    __PYX_ERR(0, 122, __pyx_L1_error)
   }
-  __pyx_t_1 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_search_seq); if (unlikely(__pyx_t_1 == ((Py_ssize_t)-1))) __PYX_ERR(0, 104, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyUnicode_GET_LENGTH(__pyx_v_search_seq); if (unlikely(__pyx_t_1 == ((Py_ssize_t)-1))) __PYX_ERR(0, 122, __pyx_L1_error)
   __pyx_v_seq_len = __pyx_t_1;
 
-  /* "analysis/_shine_dalgarno_cy.pyx":110
+  /* "analysis/_shine_dalgarno_cy.pyx":128
  *     cdef int mm
  *     cdef double score
  *     cdef object best_result = None             # <<<<<<<<<<<<<<
@@ -3744,7 +3846,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
   __Pyx_INCREF(Py_None);
   __pyx_v_best_result = Py_None;
 
-  /* "analysis/_shine_dalgarno_cy.pyx":111
+  /* "analysis/_shine_dalgarno_cy.pyx":129
  *     cdef double score
  *     cdef object best_result = None
  *     cdef int best_mm = 999             # <<<<<<<<<<<<<<
@@ -3753,7 +3855,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
 */
   __pyx_v_best_mm = 0x3E7;
 
-  /* "analysis/_shine_dalgarno_cy.pyx":112
+  /* "analysis/_shine_dalgarno_cy.pyx":130
  *     cdef object best_result = None
  *     cdef int best_mm = 999
  *     cdef int best_distance_delta = 999             # <<<<<<<<<<<<<<
@@ -3762,17 +3864,17 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
 */
   __pyx_v_best_distance_delta = 0x3E7;
 
-  /* "analysis/_shine_dalgarno_cy.pyx":114
+  /* "analysis/_shine_dalgarno_cy.pyx":132
  *     cdef int best_distance_delta = 999
  *     cdef int current_distance_delta
  *     cdef double best_score = -1e18             # <<<<<<<<<<<<<<
+ *     cdef int codon_bonus
  * 
- *     if start_pos_0 < 0 or start_pos_0 >= seq_len:
 */
   __pyx_v_best_score = -1e18;
 
-  /* "analysis/_shine_dalgarno_cy.pyx":116
- *     cdef double best_score = -1e18
+  /* "analysis/_shine_dalgarno_cy.pyx":135
+ *     cdef int codon_bonus
  * 
  *     if start_pos_0 < 0 or start_pos_0 >= seq_len:             # <<<<<<<<<<<<<<
  *         return None
@@ -3789,19 +3891,19 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
   __pyx_L4_bool_binop_done:;
   if (__pyx_t_2) {
 
-    /* "analysis/_shine_dalgarno_cy.pyx":117
+    /* "analysis/_shine_dalgarno_cy.pyx":136
  * 
  *     if start_pos_0 < 0 or start_pos_0 >= seq_len:
  *         return None             # <<<<<<<<<<<<<<
  * 
- *     for distance in range(MIN_SD_DISTANCE, MAX_SD_DISTANCE + 1):
+ *     if start_codon == "ATG":
 */
     __Pyx_XDECREF(__pyx_r);
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "analysis/_shine_dalgarno_cy.pyx":116
- *     cdef double best_score = -1e18
+    /* "analysis/_shine_dalgarno_cy.pyx":135
+ *     cdef int codon_bonus
  * 
  *     if start_pos_0 < 0 or start_pos_0 >= seq_len:             # <<<<<<<<<<<<<<
  *         return None
@@ -3809,8 +3911,107 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
 */
   }
 
-  /* "analysis/_shine_dalgarno_cy.pyx":119
+  /* "analysis/_shine_dalgarno_cy.pyx":138
  *         return None
+ * 
+ *     if start_codon == "ATG":             # <<<<<<<<<<<<<<
+ *         codon_bonus = 5
+ *     elif start_codon == "GTG":
+*/
+  __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_v_start_codon, __pyx_mstate_global->__pyx_n_u_ATG, Py_EQ)); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 138, __pyx_L1_error)
+  if (__pyx_t_2) {
+
+    /* "analysis/_shine_dalgarno_cy.pyx":139
+ * 
+ *     if start_codon == "ATG":
+ *         codon_bonus = 5             # <<<<<<<<<<<<<<
+ *     elif start_codon == "GTG":
+ *         codon_bonus = 3
+*/
+    __pyx_v_codon_bonus = 5;
+
+    /* "analysis/_shine_dalgarno_cy.pyx":138
+ *         return None
+ * 
+ *     if start_codon == "ATG":             # <<<<<<<<<<<<<<
+ *         codon_bonus = 5
+ *     elif start_codon == "GTG":
+*/
+    goto __pyx_L6;
+  }
+
+  /* "analysis/_shine_dalgarno_cy.pyx":140
+ *     if start_codon == "ATG":
+ *         codon_bonus = 5
+ *     elif start_codon == "GTG":             # <<<<<<<<<<<<<<
+ *         codon_bonus = 3
+ *     elif start_codon == "TTG":
+*/
+  __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_v_start_codon, __pyx_mstate_global->__pyx_n_u_GTG, Py_EQ)); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 140, __pyx_L1_error)
+  if (__pyx_t_2) {
+
+    /* "analysis/_shine_dalgarno_cy.pyx":141
+ *         codon_bonus = 5
+ *     elif start_codon == "GTG":
+ *         codon_bonus = 3             # <<<<<<<<<<<<<<
+ *     elif start_codon == "TTG":
+ *         codon_bonus = 2
+*/
+    __pyx_v_codon_bonus = 3;
+
+    /* "analysis/_shine_dalgarno_cy.pyx":140
+ *     if start_codon == "ATG":
+ *         codon_bonus = 5
+ *     elif start_codon == "GTG":             # <<<<<<<<<<<<<<
+ *         codon_bonus = 3
+ *     elif start_codon == "TTG":
+*/
+    goto __pyx_L6;
+  }
+
+  /* "analysis/_shine_dalgarno_cy.pyx":142
+ *     elif start_codon == "GTG":
+ *         codon_bonus = 3
+ *     elif start_codon == "TTG":             # <<<<<<<<<<<<<<
+ *         codon_bonus = 2
+ *     else:
+*/
+  __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_v_start_codon, __pyx_mstate_global->__pyx_n_u_TTG, Py_EQ)); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 142, __pyx_L1_error)
+  if (__pyx_t_2) {
+
+    /* "analysis/_shine_dalgarno_cy.pyx":143
+ *         codon_bonus = 3
+ *     elif start_codon == "TTG":
+ *         codon_bonus = 2             # <<<<<<<<<<<<<<
+ *     else:
+ *         codon_bonus = 0
+*/
+    __pyx_v_codon_bonus = 2;
+
+    /* "analysis/_shine_dalgarno_cy.pyx":142
+ *     elif start_codon == "GTG":
+ *         codon_bonus = 3
+ *     elif start_codon == "TTG":             # <<<<<<<<<<<<<<
+ *         codon_bonus = 2
+ *     else:
+*/
+    goto __pyx_L6;
+  }
+
+  /* "analysis/_shine_dalgarno_cy.pyx":145
+ *         codon_bonus = 2
+ *     else:
+ *         codon_bonus = 0             # <<<<<<<<<<<<<<
+ * 
+ *     for distance in range(MIN_SD_DISTANCE, MAX_SD_DISTANCE + 1):
+*/
+  /*else*/ {
+    __pyx_v_codon_bonus = 0;
+  }
+  __pyx_L6:;
+
+  /* "analysis/_shine_dalgarno_cy.pyx":147
+ *         codon_bonus = 0
  * 
  *     for distance in range(MIN_SD_DISTANCE, MAX_SD_DISTANCE + 1):             # <<<<<<<<<<<<<<
  *         site_end_0_exclusive = start_pos_0 - distance
@@ -3819,7 +4020,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
   for (__pyx_t_4 = 4; __pyx_t_4 < 0xd; __pyx_t_4+=1) {
     __pyx_v_distance = __pyx_t_4;
 
-    /* "analysis/_shine_dalgarno_cy.pyx":120
+    /* "analysis/_shine_dalgarno_cy.pyx":148
  * 
  *     for distance in range(MIN_SD_DISTANCE, MAX_SD_DISTANCE + 1):
  *         site_end_0_exclusive = start_pos_0 - distance             # <<<<<<<<<<<<<<
@@ -3828,7 +4029,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
 */
     __pyx_v_site_end_0_exclusive = (__pyx_v_start_pos_0 - __pyx_v_distance);
 
-    /* "analysis/_shine_dalgarno_cy.pyx":121
+    /* "analysis/_shine_dalgarno_cy.pyx":149
  *     for distance in range(MIN_SD_DISTANCE, MAX_SD_DISTANCE + 1):
  *         site_end_0_exclusive = start_pos_0 - distance
  *         site_start_0 = site_end_0_exclusive - SD_LEN             # <<<<<<<<<<<<<<
@@ -3837,7 +4038,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
 */
     __pyx_v_site_start_0 = (__pyx_v_site_end_0_exclusive - 6);
 
-    /* "analysis/_shine_dalgarno_cy.pyx":123
+    /* "analysis/_shine_dalgarno_cy.pyx":151
  *         site_start_0 = site_end_0_exclusive - SD_LEN
  * 
  *         if site_start_0 < 0:             # <<<<<<<<<<<<<<
@@ -3847,16 +4048,16 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
     __pyx_t_2 = (__pyx_v_site_start_0 < 0);
     if (__pyx_t_2) {
 
-      /* "analysis/_shine_dalgarno_cy.pyx":124
+      /* "analysis/_shine_dalgarno_cy.pyx":152
  * 
  *         if site_start_0 < 0:
  *             continue             # <<<<<<<<<<<<<<
  * 
  *         if site_end_0_exclusive > seq_len:
 */
-      goto __pyx_L6_continue;
+      goto __pyx_L7_continue;
 
-      /* "analysis/_shine_dalgarno_cy.pyx":123
+      /* "analysis/_shine_dalgarno_cy.pyx":151
  *         site_start_0 = site_end_0_exclusive - SD_LEN
  * 
  *         if site_start_0 < 0:             # <<<<<<<<<<<<<<
@@ -3865,7 +4066,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
 */
     }
 
-    /* "analysis/_shine_dalgarno_cy.pyx":126
+    /* "analysis/_shine_dalgarno_cy.pyx":154
  *             continue
  * 
  *         if site_end_0_exclusive > seq_len:             # <<<<<<<<<<<<<<
@@ -3875,16 +4076,16 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
     __pyx_t_2 = (__pyx_v_site_end_0_exclusive > __pyx_v_seq_len);
     if (__pyx_t_2) {
 
-      /* "analysis/_shine_dalgarno_cy.pyx":127
+      /* "analysis/_shine_dalgarno_cy.pyx":155
  * 
  *         if site_end_0_exclusive > seq_len:
  *             continue             # <<<<<<<<<<<<<<
  * 
  *         if has_N_6(search_seq, site_start_0):
 */
-      goto __pyx_L6_continue;
+      goto __pyx_L7_continue;
 
-      /* "analysis/_shine_dalgarno_cy.pyx":126
+      /* "analysis/_shine_dalgarno_cy.pyx":154
  *             continue
  * 
  *         if site_end_0_exclusive > seq_len:             # <<<<<<<<<<<<<<
@@ -3893,26 +4094,26 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
 */
     }
 
-    /* "analysis/_shine_dalgarno_cy.pyx":129
+    /* "analysis/_shine_dalgarno_cy.pyx":157
  *             continue
  * 
  *         if has_N_6(search_seq, site_start_0):             # <<<<<<<<<<<<<<
  *             continue
  * 
 */
-    __pyx_t_2 = __pyx_f_8analysis_18_shine_dalgarno_cy_has_N_6(__pyx_v_search_seq, __pyx_v_site_start_0); if (unlikely(__pyx_t_2 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 129, __pyx_L1_error)
+    __pyx_t_2 = __pyx_f_8analysis_18_shine_dalgarno_cy_has_N_6(__pyx_v_search_seq, __pyx_v_site_start_0); if (unlikely(__pyx_t_2 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 157, __pyx_L1_error)
     if (__pyx_t_2) {
 
-      /* "analysis/_shine_dalgarno_cy.pyx":130
+      /* "analysis/_shine_dalgarno_cy.pyx":158
  * 
  *         if has_N_6(search_seq, site_start_0):
  *             continue             # <<<<<<<<<<<<<<
  * 
  *         mm = hamming_sd_at(search_seq, site_start_0)
 */
-      goto __pyx_L6_continue;
+      goto __pyx_L7_continue;
 
-      /* "analysis/_shine_dalgarno_cy.pyx":129
+      /* "analysis/_shine_dalgarno_cy.pyx":157
  *             continue
  * 
  *         if has_N_6(search_seq, site_start_0):             # <<<<<<<<<<<<<<
@@ -3921,17 +4122,17 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
 */
     }
 
-    /* "analysis/_shine_dalgarno_cy.pyx":132
+    /* "analysis/_shine_dalgarno_cy.pyx":160
  *             continue
  * 
  *         mm = hamming_sd_at(search_seq, site_start_0)             # <<<<<<<<<<<<<<
  *         if mm > max_mismatches:
  *             continue
 */
-    __pyx_t_5 = __pyx_f_8analysis_18_shine_dalgarno_cy_hamming_sd_at(__pyx_v_search_seq, __pyx_v_site_start_0); if (unlikely(__pyx_t_5 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 132, __pyx_L1_error)
+    __pyx_t_5 = __pyx_f_8analysis_18_shine_dalgarno_cy_hamming_sd_at(__pyx_v_search_seq, __pyx_v_site_start_0); if (unlikely(__pyx_t_5 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 160, __pyx_L1_error)
     __pyx_v_mm = __pyx_t_5;
 
-    /* "analysis/_shine_dalgarno_cy.pyx":133
+    /* "analysis/_shine_dalgarno_cy.pyx":161
  * 
  *         mm = hamming_sd_at(search_seq, site_start_0)
  *         if mm > max_mismatches:             # <<<<<<<<<<<<<<
@@ -3941,16 +4142,16 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
     __pyx_t_2 = (__pyx_v_mm > __pyx_v_max_mismatches);
     if (__pyx_t_2) {
 
-      /* "analysis/_shine_dalgarno_cy.pyx":134
+      /* "analysis/_shine_dalgarno_cy.pyx":162
  *         mm = hamming_sd_at(search_seq, site_start_0)
  *         if mm > max_mismatches:
  *             continue             # <<<<<<<<<<<<<<
  * 
  *         score = 20.0
 */
-      goto __pyx_L6_continue;
+      goto __pyx_L7_continue;
 
-      /* "analysis/_shine_dalgarno_cy.pyx":133
+      /* "analysis/_shine_dalgarno_cy.pyx":161
  * 
  *         mm = hamming_sd_at(search_seq, site_start_0)
  *         if mm > max_mismatches:             # <<<<<<<<<<<<<<
@@ -3959,7 +4160,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
 */
     }
 
-    /* "analysis/_shine_dalgarno_cy.pyx":136
+    /* "analysis/_shine_dalgarno_cy.pyx":164
  *             continue
  * 
  *         score = 20.0             # <<<<<<<<<<<<<<
@@ -3968,37 +4169,36 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
 */
     __pyx_v_score = 20.0;
 
-    /* "analysis/_shine_dalgarno_cy.pyx":137
+    /* "analysis/_shine_dalgarno_cy.pyx":165
  * 
  *         score = 20.0
  *         score -= mm * 4.0             # <<<<<<<<<<<<<<
  *         score += distance_score_int(distance)
- *         score += codon_score_int(start_codon)
+ *         score += codon_bonus
 */
     __pyx_v_score = (__pyx_v_score - (__pyx_v_mm * 4.0));
 
-    /* "analysis/_shine_dalgarno_cy.pyx":138
+    /* "analysis/_shine_dalgarno_cy.pyx":166
  *         score = 20.0
  *         score -= mm * 4.0
  *         score += distance_score_int(distance)             # <<<<<<<<<<<<<<
- *         score += codon_score_int(start_codon)
+ *         score += codon_bonus
  * 
 */
-    __pyx_t_6 = __pyx_f_8analysis_18_shine_dalgarno_cy_distance_score_int(__pyx_v_distance); if (unlikely(__pyx_t_6 == ((double)-1) && PyErr_Occurred())) __PYX_ERR(0, 138, __pyx_L1_error)
+    __pyx_t_6 = __pyx_f_8analysis_18_shine_dalgarno_cy_distance_score_int(__pyx_v_distance); if (unlikely(__pyx_t_6 == ((double)-1) && PyErr_Occurred())) __PYX_ERR(0, 166, __pyx_L1_error)
     __pyx_v_score = (__pyx_v_score + __pyx_t_6);
 
-    /* "analysis/_shine_dalgarno_cy.pyx":139
+    /* "analysis/_shine_dalgarno_cy.pyx":167
  *         score -= mm * 4.0
  *         score += distance_score_int(distance)
- *         score += codon_score_int(start_codon)             # <<<<<<<<<<<<<<
+ *         score += codon_bonus             # <<<<<<<<<<<<<<
  * 
  *         current_distance_delta = distance - 7
 */
-    __pyx_t_5 = __pyx_f_8analysis_18_shine_dalgarno_cy_codon_score_int(__pyx_v_start_codon); if (unlikely(__pyx_t_5 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(0, 139, __pyx_L1_error)
-    __pyx_v_score = (__pyx_v_score + __pyx_t_5);
+    __pyx_v_score = (__pyx_v_score + __pyx_v_codon_bonus);
 
-    /* "analysis/_shine_dalgarno_cy.pyx":141
- *         score += codon_score_int(start_codon)
+    /* "analysis/_shine_dalgarno_cy.pyx":169
+ *         score += codon_bonus
  * 
  *         current_distance_delta = distance - 7             # <<<<<<<<<<<<<<
  *         if current_distance_delta < 0:
@@ -4006,7 +4206,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
 */
     __pyx_v_current_distance_delta = (__pyx_v_distance - 7);
 
-    /* "analysis/_shine_dalgarno_cy.pyx":142
+    /* "analysis/_shine_dalgarno_cy.pyx":170
  * 
  *         current_distance_delta = distance - 7
  *         if current_distance_delta < 0:             # <<<<<<<<<<<<<<
@@ -4016,7 +4216,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
     __pyx_t_2 = (__pyx_v_current_distance_delta < 0);
     if (__pyx_t_2) {
 
-      /* "analysis/_shine_dalgarno_cy.pyx":143
+      /* "analysis/_shine_dalgarno_cy.pyx":171
  *         current_distance_delta = distance - 7
  *         if current_distance_delta < 0:
  *             current_distance_delta = -current_distance_delta             # <<<<<<<<<<<<<<
@@ -4025,7 +4225,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
 */
       __pyx_v_current_distance_delta = (-__pyx_v_current_distance_delta);
 
-      /* "analysis/_shine_dalgarno_cy.pyx":142
+      /* "analysis/_shine_dalgarno_cy.pyx":170
  * 
  *         current_distance_delta = distance - 7
  *         if current_distance_delta < 0:             # <<<<<<<<<<<<<<
@@ -4034,7 +4234,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
 */
     }
 
-    /* "analysis/_shine_dalgarno_cy.pyx":145
+    /* "analysis/_shine_dalgarno_cy.pyx":173
  *             current_distance_delta = -current_distance_delta
  * 
  *         if best_result is None:             # <<<<<<<<<<<<<<
@@ -4044,7 +4244,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
     __pyx_t_2 = (__pyx_v_best_result == Py_None);
     if (__pyx_t_2) {
 
-      /* "analysis/_shine_dalgarno_cy.pyx":146
+      /* "analysis/_shine_dalgarno_cy.pyx":174
  * 
  *         if best_result is None:
  *             best_score = score             # <<<<<<<<<<<<<<
@@ -4053,7 +4253,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
 */
       __pyx_v_best_score = __pyx_v_score;
 
-      /* "analysis/_shine_dalgarno_cy.pyx":147
+      /* "analysis/_shine_dalgarno_cy.pyx":175
  *         if best_result is None:
  *             best_score = score
  *             best_mm = mm             # <<<<<<<<<<<<<<
@@ -4062,7 +4262,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
 */
       __pyx_v_best_mm = __pyx_v_mm;
 
-      /* "analysis/_shine_dalgarno_cy.pyx":148
+      /* "analysis/_shine_dalgarno_cy.pyx":176
  *             best_score = score
  *             best_mm = mm
  *             best_distance_delta = current_distance_delta             # <<<<<<<<<<<<<<
@@ -4071,47 +4271,47 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
 */
       __pyx_v_best_distance_delta = __pyx_v_current_distance_delta;
 
-      /* "analysis/_shine_dalgarno_cy.pyx":150
+      /* "analysis/_shine_dalgarno_cy.pyx":178
  *             best_distance_delta = current_distance_delta
  *             best_result = (
  *                 site_start_0,             # <<<<<<<<<<<<<<
  *                 site_end_0_exclusive,
  *                 mm,
 */
-      __pyx_t_7 = __Pyx_PyLong_From_int(__pyx_v_site_start_0); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 150, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyLong_From_int(__pyx_v_site_start_0); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 178, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
 
-      /* "analysis/_shine_dalgarno_cy.pyx":151
+      /* "analysis/_shine_dalgarno_cy.pyx":179
  *             best_result = (
  *                 site_start_0,
  *                 site_end_0_exclusive,             # <<<<<<<<<<<<<<
  *                 mm,
  *                 distance,
 */
-      __pyx_t_8 = __Pyx_PyLong_From_int(__pyx_v_site_end_0_exclusive); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 151, __pyx_L1_error)
+      __pyx_t_8 = __Pyx_PyLong_From_int(__pyx_v_site_end_0_exclusive); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 179, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_8);
 
-      /* "analysis/_shine_dalgarno_cy.pyx":152
+      /* "analysis/_shine_dalgarno_cy.pyx":180
  *                 site_start_0,
  *                 site_end_0_exclusive,
  *                 mm,             # <<<<<<<<<<<<<<
  *                 distance,
  *                 round(score, 3),
 */
-      __pyx_t_9 = __Pyx_PyLong_From_int(__pyx_v_mm); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 152, __pyx_L1_error)
+      __pyx_t_9 = __Pyx_PyLong_From_int(__pyx_v_mm); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 180, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_9);
 
-      /* "analysis/_shine_dalgarno_cy.pyx":153
+      /* "analysis/_shine_dalgarno_cy.pyx":181
  *                 site_end_0_exclusive,
  *                 mm,
  *                 distance,             # <<<<<<<<<<<<<<
  *                 round(score, 3),
  *             )
 */
-      __pyx_t_10 = __Pyx_PyLong_From_int(__pyx_v_distance); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 153, __pyx_L1_error)
+      __pyx_t_10 = __Pyx_PyLong_From_int(__pyx_v_distance); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 181, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_10);
 
-      /* "analysis/_shine_dalgarno_cy.pyx":154
+      /* "analysis/_shine_dalgarno_cy.pyx":182
  *                 mm,
  *                 distance,
  *                 round(score, 3),             # <<<<<<<<<<<<<<
@@ -4119,7 +4319,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
  *         else:
 */
       __pyx_t_12 = NULL;
-      __pyx_t_13 = PyFloat_FromDouble(__pyx_v_score); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 154, __pyx_L1_error)
+      __pyx_t_13 = PyFloat_FromDouble(__pyx_v_score); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 182, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_13);
       __pyx_t_14 = 1;
       {
@@ -4127,29 +4327,29 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
         __pyx_t_11 = __Pyx_PyObject_FastCall((PyObject*)__pyx_builtin_round, __pyx_callargs+__pyx_t_14, (3-__pyx_t_14) | (__pyx_t_14*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
         __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-        if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 154, __pyx_L1_error)
+        if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 182, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_11);
       }
 
-      /* "analysis/_shine_dalgarno_cy.pyx":150
+      /* "analysis/_shine_dalgarno_cy.pyx":178
  *             best_distance_delta = current_distance_delta
  *             best_result = (
  *                 site_start_0,             # <<<<<<<<<<<<<<
  *                 site_end_0_exclusive,
  *                 mm,
 */
-      __pyx_t_13 = PyTuple_New(5); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 150, __pyx_L1_error)
+      __pyx_t_13 = PyTuple_New(5); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 178, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_13);
       __Pyx_GIVEREF(__pyx_t_7);
-      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_13, 0, __pyx_t_7) != (0)) __PYX_ERR(0, 150, __pyx_L1_error);
+      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_13, 0, __pyx_t_7) != (0)) __PYX_ERR(0, 178, __pyx_L1_error);
       __Pyx_GIVEREF(__pyx_t_8);
-      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_13, 1, __pyx_t_8) != (0)) __PYX_ERR(0, 150, __pyx_L1_error);
+      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_13, 1, __pyx_t_8) != (0)) __PYX_ERR(0, 178, __pyx_L1_error);
       __Pyx_GIVEREF(__pyx_t_9);
-      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_13, 2, __pyx_t_9) != (0)) __PYX_ERR(0, 150, __pyx_L1_error);
+      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_13, 2, __pyx_t_9) != (0)) __PYX_ERR(0, 178, __pyx_L1_error);
       __Pyx_GIVEREF(__pyx_t_10);
-      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_13, 3, __pyx_t_10) != (0)) __PYX_ERR(0, 150, __pyx_L1_error);
+      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_13, 3, __pyx_t_10) != (0)) __PYX_ERR(0, 178, __pyx_L1_error);
       __Pyx_GIVEREF(__pyx_t_11);
-      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_13, 4, __pyx_t_11) != (0)) __PYX_ERR(0, 150, __pyx_L1_error);
+      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_13, 4, __pyx_t_11) != (0)) __PYX_ERR(0, 178, __pyx_L1_error);
       __pyx_t_7 = 0;
       __pyx_t_8 = 0;
       __pyx_t_9 = 0;
@@ -4158,17 +4358,17 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
       __Pyx_DECREF_SET(__pyx_v_best_result, __pyx_t_13);
       __pyx_t_13 = 0;
 
-      /* "analysis/_shine_dalgarno_cy.pyx":145
+      /* "analysis/_shine_dalgarno_cy.pyx":173
  *             current_distance_delta = -current_distance_delta
  * 
  *         if best_result is None:             # <<<<<<<<<<<<<<
  *             best_score = score
  *             best_mm = mm
 */
-      goto __pyx_L13;
+      goto __pyx_L14;
     }
 
-    /* "analysis/_shine_dalgarno_cy.pyx":157
+    /* "analysis/_shine_dalgarno_cy.pyx":185
  *             )
  *         else:
  *             if score > best_score:             # <<<<<<<<<<<<<<
@@ -4179,7 +4379,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
       __pyx_t_2 = (__pyx_v_score > __pyx_v_best_score);
       if (__pyx_t_2) {
 
-        /* "analysis/_shine_dalgarno_cy.pyx":158
+        /* "analysis/_shine_dalgarno_cy.pyx":186
  *         else:
  *             if score > best_score:
  *                 best_score = score             # <<<<<<<<<<<<<<
@@ -4188,7 +4388,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
 */
         __pyx_v_best_score = __pyx_v_score;
 
-        /* "analysis/_shine_dalgarno_cy.pyx":159
+        /* "analysis/_shine_dalgarno_cy.pyx":187
  *             if score > best_score:
  *                 best_score = score
  *                 best_mm = mm             # <<<<<<<<<<<<<<
@@ -4197,7 +4397,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
 */
         __pyx_v_best_mm = __pyx_v_mm;
 
-        /* "analysis/_shine_dalgarno_cy.pyx":160
+        /* "analysis/_shine_dalgarno_cy.pyx":188
  *                 best_score = score
  *                 best_mm = mm
  *                 best_distance_delta = current_distance_delta             # <<<<<<<<<<<<<<
@@ -4206,47 +4406,47 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
 */
         __pyx_v_best_distance_delta = __pyx_v_current_distance_delta;
 
-        /* "analysis/_shine_dalgarno_cy.pyx":162
+        /* "analysis/_shine_dalgarno_cy.pyx":190
  *                 best_distance_delta = current_distance_delta
  *                 best_result = (
  *                     site_start_0,             # <<<<<<<<<<<<<<
  *                     site_end_0_exclusive,
  *                     mm,
 */
-        __pyx_t_13 = __Pyx_PyLong_From_int(__pyx_v_site_start_0); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 162, __pyx_L1_error)
+        __pyx_t_13 = __Pyx_PyLong_From_int(__pyx_v_site_start_0); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 190, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_13);
 
-        /* "analysis/_shine_dalgarno_cy.pyx":163
+        /* "analysis/_shine_dalgarno_cy.pyx":191
  *                 best_result = (
  *                     site_start_0,
  *                     site_end_0_exclusive,             # <<<<<<<<<<<<<<
  *                     mm,
  *                     distance,
 */
-        __pyx_t_11 = __Pyx_PyLong_From_int(__pyx_v_site_end_0_exclusive); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 163, __pyx_L1_error)
+        __pyx_t_11 = __Pyx_PyLong_From_int(__pyx_v_site_end_0_exclusive); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 191, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_11);
 
-        /* "analysis/_shine_dalgarno_cy.pyx":164
+        /* "analysis/_shine_dalgarno_cy.pyx":192
  *                     site_start_0,
  *                     site_end_0_exclusive,
  *                     mm,             # <<<<<<<<<<<<<<
  *                     distance,
  *                     round(score, 3),
 */
-        __pyx_t_10 = __Pyx_PyLong_From_int(__pyx_v_mm); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 164, __pyx_L1_error)
+        __pyx_t_10 = __Pyx_PyLong_From_int(__pyx_v_mm); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 192, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_10);
 
-        /* "analysis/_shine_dalgarno_cy.pyx":165
+        /* "analysis/_shine_dalgarno_cy.pyx":193
  *                     site_end_0_exclusive,
  *                     mm,
  *                     distance,             # <<<<<<<<<<<<<<
  *                     round(score, 3),
  *                 )
 */
-        __pyx_t_9 = __Pyx_PyLong_From_int(__pyx_v_distance); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 165, __pyx_L1_error)
+        __pyx_t_9 = __Pyx_PyLong_From_int(__pyx_v_distance); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 193, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_9);
 
-        /* "analysis/_shine_dalgarno_cy.pyx":166
+        /* "analysis/_shine_dalgarno_cy.pyx":194
  *                     mm,
  *                     distance,
  *                     round(score, 3),             # <<<<<<<<<<<<<<
@@ -4254,7 +4454,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
  *             elif score == best_score:
 */
         __pyx_t_7 = NULL;
-        __pyx_t_12 = PyFloat_FromDouble(__pyx_v_score); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 166, __pyx_L1_error)
+        __pyx_t_12 = PyFloat_FromDouble(__pyx_v_score); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 194, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_12);
         __pyx_t_14 = 1;
         {
@@ -4262,29 +4462,29 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
           __pyx_t_8 = __Pyx_PyObject_FastCall((PyObject*)__pyx_builtin_round, __pyx_callargs+__pyx_t_14, (3-__pyx_t_14) | (__pyx_t_14*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
           __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
           __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-          if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 166, __pyx_L1_error)
+          if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 194, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_8);
         }
 
-        /* "analysis/_shine_dalgarno_cy.pyx":162
+        /* "analysis/_shine_dalgarno_cy.pyx":190
  *                 best_distance_delta = current_distance_delta
  *                 best_result = (
  *                     site_start_0,             # <<<<<<<<<<<<<<
  *                     site_end_0_exclusive,
  *                     mm,
 */
-        __pyx_t_12 = PyTuple_New(5); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 162, __pyx_L1_error)
+        __pyx_t_12 = PyTuple_New(5); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 190, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_12);
         __Pyx_GIVEREF(__pyx_t_13);
-        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_12, 0, __pyx_t_13) != (0)) __PYX_ERR(0, 162, __pyx_L1_error);
+        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_12, 0, __pyx_t_13) != (0)) __PYX_ERR(0, 190, __pyx_L1_error);
         __Pyx_GIVEREF(__pyx_t_11);
-        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_12, 1, __pyx_t_11) != (0)) __PYX_ERR(0, 162, __pyx_L1_error);
+        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_12, 1, __pyx_t_11) != (0)) __PYX_ERR(0, 190, __pyx_L1_error);
         __Pyx_GIVEREF(__pyx_t_10);
-        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_12, 2, __pyx_t_10) != (0)) __PYX_ERR(0, 162, __pyx_L1_error);
+        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_12, 2, __pyx_t_10) != (0)) __PYX_ERR(0, 190, __pyx_L1_error);
         __Pyx_GIVEREF(__pyx_t_9);
-        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_12, 3, __pyx_t_9) != (0)) __PYX_ERR(0, 162, __pyx_L1_error);
+        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_12, 3, __pyx_t_9) != (0)) __PYX_ERR(0, 190, __pyx_L1_error);
         __Pyx_GIVEREF(__pyx_t_8);
-        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_12, 4, __pyx_t_8) != (0)) __PYX_ERR(0, 162, __pyx_L1_error);
+        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_12, 4, __pyx_t_8) != (0)) __PYX_ERR(0, 190, __pyx_L1_error);
         __pyx_t_13 = 0;
         __pyx_t_11 = 0;
         __pyx_t_10 = 0;
@@ -4293,17 +4493,17 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
         __Pyx_DECREF_SET(__pyx_v_best_result, __pyx_t_12);
         __pyx_t_12 = 0;
 
-        /* "analysis/_shine_dalgarno_cy.pyx":157
+        /* "analysis/_shine_dalgarno_cy.pyx":185
  *             )
  *         else:
  *             if score > best_score:             # <<<<<<<<<<<<<<
  *                 best_score = score
  *                 best_mm = mm
 */
-        goto __pyx_L14;
+        goto __pyx_L15;
       }
 
-      /* "analysis/_shine_dalgarno_cy.pyx":168
+      /* "analysis/_shine_dalgarno_cy.pyx":196
  *                     round(score, 3),
  *                 )
  *             elif score == best_score:             # <<<<<<<<<<<<<<
@@ -4313,7 +4513,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
       __pyx_t_2 = (__pyx_v_score == __pyx_v_best_score);
       if (__pyx_t_2) {
 
-        /* "analysis/_shine_dalgarno_cy.pyx":169
+        /* "analysis/_shine_dalgarno_cy.pyx":197
  *                 )
  *             elif score == best_score:
  *                 if mm < best_mm:             # <<<<<<<<<<<<<<
@@ -4323,7 +4523,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
         __pyx_t_2 = (__pyx_v_mm < __pyx_v_best_mm);
         if (__pyx_t_2) {
 
-          /* "analysis/_shine_dalgarno_cy.pyx":170
+          /* "analysis/_shine_dalgarno_cy.pyx":198
  *             elif score == best_score:
  *                 if mm < best_mm:
  *                     best_mm = mm             # <<<<<<<<<<<<<<
@@ -4332,7 +4532,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
 */
           __pyx_v_best_mm = __pyx_v_mm;
 
-          /* "analysis/_shine_dalgarno_cy.pyx":171
+          /* "analysis/_shine_dalgarno_cy.pyx":199
  *                 if mm < best_mm:
  *                     best_mm = mm
  *                     best_distance_delta = current_distance_delta             # <<<<<<<<<<<<<<
@@ -4341,47 +4541,47 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
 */
           __pyx_v_best_distance_delta = __pyx_v_current_distance_delta;
 
-          /* "analysis/_shine_dalgarno_cy.pyx":173
+          /* "analysis/_shine_dalgarno_cy.pyx":201
  *                     best_distance_delta = current_distance_delta
  *                     best_result = (
  *                         site_start_0,             # <<<<<<<<<<<<<<
  *                         site_end_0_exclusive,
  *                         mm,
 */
-          __pyx_t_12 = __Pyx_PyLong_From_int(__pyx_v_site_start_0); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 173, __pyx_L1_error)
+          __pyx_t_12 = __Pyx_PyLong_From_int(__pyx_v_site_start_0); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 201, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_12);
 
-          /* "analysis/_shine_dalgarno_cy.pyx":174
+          /* "analysis/_shine_dalgarno_cy.pyx":202
  *                     best_result = (
  *                         site_start_0,
  *                         site_end_0_exclusive,             # <<<<<<<<<<<<<<
  *                         mm,
  *                         distance,
 */
-          __pyx_t_8 = __Pyx_PyLong_From_int(__pyx_v_site_end_0_exclusive); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 174, __pyx_L1_error)
+          __pyx_t_8 = __Pyx_PyLong_From_int(__pyx_v_site_end_0_exclusive); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 202, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_8);
 
-          /* "analysis/_shine_dalgarno_cy.pyx":175
+          /* "analysis/_shine_dalgarno_cy.pyx":203
  *                         site_start_0,
  *                         site_end_0_exclusive,
  *                         mm,             # <<<<<<<<<<<<<<
  *                         distance,
  *                         round(score, 3),
 */
-          __pyx_t_9 = __Pyx_PyLong_From_int(__pyx_v_mm); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 175, __pyx_L1_error)
+          __pyx_t_9 = __Pyx_PyLong_From_int(__pyx_v_mm); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 203, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_9);
 
-          /* "analysis/_shine_dalgarno_cy.pyx":176
+          /* "analysis/_shine_dalgarno_cy.pyx":204
  *                         site_end_0_exclusive,
  *                         mm,
  *                         distance,             # <<<<<<<<<<<<<<
  *                         round(score, 3),
  *                     )
 */
-          __pyx_t_10 = __Pyx_PyLong_From_int(__pyx_v_distance); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 176, __pyx_L1_error)
+          __pyx_t_10 = __Pyx_PyLong_From_int(__pyx_v_distance); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 204, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_10);
 
-          /* "analysis/_shine_dalgarno_cy.pyx":177
+          /* "analysis/_shine_dalgarno_cy.pyx":205
  *                         mm,
  *                         distance,
  *                         round(score, 3),             # <<<<<<<<<<<<<<
@@ -4389,7 +4589,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
  *                 elif mm == best_mm:
 */
           __pyx_t_13 = NULL;
-          __pyx_t_7 = PyFloat_FromDouble(__pyx_v_score); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 177, __pyx_L1_error)
+          __pyx_t_7 = PyFloat_FromDouble(__pyx_v_score); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 205, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_7);
           __pyx_t_14 = 1;
           {
@@ -4397,29 +4597,29 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
             __pyx_t_11 = __Pyx_PyObject_FastCall((PyObject*)__pyx_builtin_round, __pyx_callargs+__pyx_t_14, (3-__pyx_t_14) | (__pyx_t_14*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
             __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
             __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-            if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 177, __pyx_L1_error)
+            if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 205, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_11);
           }
 
-          /* "analysis/_shine_dalgarno_cy.pyx":173
+          /* "analysis/_shine_dalgarno_cy.pyx":201
  *                     best_distance_delta = current_distance_delta
  *                     best_result = (
  *                         site_start_0,             # <<<<<<<<<<<<<<
  *                         site_end_0_exclusive,
  *                         mm,
 */
-          __pyx_t_7 = PyTuple_New(5); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 173, __pyx_L1_error)
+          __pyx_t_7 = PyTuple_New(5); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 201, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_7);
           __Pyx_GIVEREF(__pyx_t_12);
-          if (__Pyx_PyTuple_SET_ITEM(__pyx_t_7, 0, __pyx_t_12) != (0)) __PYX_ERR(0, 173, __pyx_L1_error);
+          if (__Pyx_PyTuple_SET_ITEM(__pyx_t_7, 0, __pyx_t_12) != (0)) __PYX_ERR(0, 201, __pyx_L1_error);
           __Pyx_GIVEREF(__pyx_t_8);
-          if (__Pyx_PyTuple_SET_ITEM(__pyx_t_7, 1, __pyx_t_8) != (0)) __PYX_ERR(0, 173, __pyx_L1_error);
+          if (__Pyx_PyTuple_SET_ITEM(__pyx_t_7, 1, __pyx_t_8) != (0)) __PYX_ERR(0, 201, __pyx_L1_error);
           __Pyx_GIVEREF(__pyx_t_9);
-          if (__Pyx_PyTuple_SET_ITEM(__pyx_t_7, 2, __pyx_t_9) != (0)) __PYX_ERR(0, 173, __pyx_L1_error);
+          if (__Pyx_PyTuple_SET_ITEM(__pyx_t_7, 2, __pyx_t_9) != (0)) __PYX_ERR(0, 201, __pyx_L1_error);
           __Pyx_GIVEREF(__pyx_t_10);
-          if (__Pyx_PyTuple_SET_ITEM(__pyx_t_7, 3, __pyx_t_10) != (0)) __PYX_ERR(0, 173, __pyx_L1_error);
+          if (__Pyx_PyTuple_SET_ITEM(__pyx_t_7, 3, __pyx_t_10) != (0)) __PYX_ERR(0, 201, __pyx_L1_error);
           __Pyx_GIVEREF(__pyx_t_11);
-          if (__Pyx_PyTuple_SET_ITEM(__pyx_t_7, 4, __pyx_t_11) != (0)) __PYX_ERR(0, 173, __pyx_L1_error);
+          if (__Pyx_PyTuple_SET_ITEM(__pyx_t_7, 4, __pyx_t_11) != (0)) __PYX_ERR(0, 201, __pyx_L1_error);
           __pyx_t_12 = 0;
           __pyx_t_8 = 0;
           __pyx_t_9 = 0;
@@ -4428,17 +4628,17 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
           __Pyx_DECREF_SET(__pyx_v_best_result, __pyx_t_7);
           __pyx_t_7 = 0;
 
-          /* "analysis/_shine_dalgarno_cy.pyx":169
+          /* "analysis/_shine_dalgarno_cy.pyx":197
  *                 )
  *             elif score == best_score:
  *                 if mm < best_mm:             # <<<<<<<<<<<<<<
  *                     best_mm = mm
  *                     best_distance_delta = current_distance_delta
 */
-          goto __pyx_L15;
+          goto __pyx_L16;
         }
 
-        /* "analysis/_shine_dalgarno_cy.pyx":179
+        /* "analysis/_shine_dalgarno_cy.pyx":207
  *                         round(score, 3),
  *                     )
  *                 elif mm == best_mm:             # <<<<<<<<<<<<<<
@@ -4448,7 +4648,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
         __pyx_t_2 = (__pyx_v_mm == __pyx_v_best_mm);
         if (__pyx_t_2) {
 
-          /* "analysis/_shine_dalgarno_cy.pyx":180
+          /* "analysis/_shine_dalgarno_cy.pyx":208
  *                     )
  *                 elif mm == best_mm:
  *                     if current_distance_delta < best_distance_delta:             # <<<<<<<<<<<<<<
@@ -4458,7 +4658,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
           __pyx_t_2 = (__pyx_v_current_distance_delta < __pyx_v_best_distance_delta);
           if (__pyx_t_2) {
 
-            /* "analysis/_shine_dalgarno_cy.pyx":181
+            /* "analysis/_shine_dalgarno_cy.pyx":209
  *                 elif mm == best_mm:
  *                     if current_distance_delta < best_distance_delta:
  *                         best_distance_delta = current_distance_delta             # <<<<<<<<<<<<<<
@@ -4467,47 +4667,47 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
 */
             __pyx_v_best_distance_delta = __pyx_v_current_distance_delta;
 
-            /* "analysis/_shine_dalgarno_cy.pyx":183
+            /* "analysis/_shine_dalgarno_cy.pyx":211
  *                         best_distance_delta = current_distance_delta
  *                         best_result = (
  *                             site_start_0,             # <<<<<<<<<<<<<<
  *                             site_end_0_exclusive,
  *                             mm,
 */
-            __pyx_t_7 = __Pyx_PyLong_From_int(__pyx_v_site_start_0); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 183, __pyx_L1_error)
+            __pyx_t_7 = __Pyx_PyLong_From_int(__pyx_v_site_start_0); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 211, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_7);
 
-            /* "analysis/_shine_dalgarno_cy.pyx":184
+            /* "analysis/_shine_dalgarno_cy.pyx":212
  *                         best_result = (
  *                             site_start_0,
  *                             site_end_0_exclusive,             # <<<<<<<<<<<<<<
  *                             mm,
  *                             distance,
 */
-            __pyx_t_11 = __Pyx_PyLong_From_int(__pyx_v_site_end_0_exclusive); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 184, __pyx_L1_error)
+            __pyx_t_11 = __Pyx_PyLong_From_int(__pyx_v_site_end_0_exclusive); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 212, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_11);
 
-            /* "analysis/_shine_dalgarno_cy.pyx":185
+            /* "analysis/_shine_dalgarno_cy.pyx":213
  *                             site_start_0,
  *                             site_end_0_exclusive,
  *                             mm,             # <<<<<<<<<<<<<<
  *                             distance,
  *                             round(score, 3),
 */
-            __pyx_t_10 = __Pyx_PyLong_From_int(__pyx_v_mm); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 185, __pyx_L1_error)
+            __pyx_t_10 = __Pyx_PyLong_From_int(__pyx_v_mm); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 213, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_10);
 
-            /* "analysis/_shine_dalgarno_cy.pyx":186
+            /* "analysis/_shine_dalgarno_cy.pyx":214
  *                             site_end_0_exclusive,
  *                             mm,
  *                             distance,             # <<<<<<<<<<<<<<
  *                             round(score, 3),
  *                         )
 */
-            __pyx_t_9 = __Pyx_PyLong_From_int(__pyx_v_distance); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 186, __pyx_L1_error)
+            __pyx_t_9 = __Pyx_PyLong_From_int(__pyx_v_distance); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 214, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_9);
 
-            /* "analysis/_shine_dalgarno_cy.pyx":187
+            /* "analysis/_shine_dalgarno_cy.pyx":215
  *                             mm,
  *                             distance,
  *                             round(score, 3),             # <<<<<<<<<<<<<<
@@ -4515,7 +4715,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
  *                     elif current_distance_delta == best_distance_delta:
 */
             __pyx_t_12 = NULL;
-            __pyx_t_13 = PyFloat_FromDouble(__pyx_v_score); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 187, __pyx_L1_error)
+            __pyx_t_13 = PyFloat_FromDouble(__pyx_v_score); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 215, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_13);
             __pyx_t_14 = 1;
             {
@@ -4523,29 +4723,29 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
               __pyx_t_8 = __Pyx_PyObject_FastCall((PyObject*)__pyx_builtin_round, __pyx_callargs+__pyx_t_14, (3-__pyx_t_14) | (__pyx_t_14*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
               __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
               __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-              if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 187, __pyx_L1_error)
+              if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 215, __pyx_L1_error)
               __Pyx_GOTREF(__pyx_t_8);
             }
 
-            /* "analysis/_shine_dalgarno_cy.pyx":183
+            /* "analysis/_shine_dalgarno_cy.pyx":211
  *                         best_distance_delta = current_distance_delta
  *                         best_result = (
  *                             site_start_0,             # <<<<<<<<<<<<<<
  *                             site_end_0_exclusive,
  *                             mm,
 */
-            __pyx_t_13 = PyTuple_New(5); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 183, __pyx_L1_error)
+            __pyx_t_13 = PyTuple_New(5); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 211, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_13);
             __Pyx_GIVEREF(__pyx_t_7);
-            if (__Pyx_PyTuple_SET_ITEM(__pyx_t_13, 0, __pyx_t_7) != (0)) __PYX_ERR(0, 183, __pyx_L1_error);
+            if (__Pyx_PyTuple_SET_ITEM(__pyx_t_13, 0, __pyx_t_7) != (0)) __PYX_ERR(0, 211, __pyx_L1_error);
             __Pyx_GIVEREF(__pyx_t_11);
-            if (__Pyx_PyTuple_SET_ITEM(__pyx_t_13, 1, __pyx_t_11) != (0)) __PYX_ERR(0, 183, __pyx_L1_error);
+            if (__Pyx_PyTuple_SET_ITEM(__pyx_t_13, 1, __pyx_t_11) != (0)) __PYX_ERR(0, 211, __pyx_L1_error);
             __Pyx_GIVEREF(__pyx_t_10);
-            if (__Pyx_PyTuple_SET_ITEM(__pyx_t_13, 2, __pyx_t_10) != (0)) __PYX_ERR(0, 183, __pyx_L1_error);
+            if (__Pyx_PyTuple_SET_ITEM(__pyx_t_13, 2, __pyx_t_10) != (0)) __PYX_ERR(0, 211, __pyx_L1_error);
             __Pyx_GIVEREF(__pyx_t_9);
-            if (__Pyx_PyTuple_SET_ITEM(__pyx_t_13, 3, __pyx_t_9) != (0)) __PYX_ERR(0, 183, __pyx_L1_error);
+            if (__Pyx_PyTuple_SET_ITEM(__pyx_t_13, 3, __pyx_t_9) != (0)) __PYX_ERR(0, 211, __pyx_L1_error);
             __Pyx_GIVEREF(__pyx_t_8);
-            if (__Pyx_PyTuple_SET_ITEM(__pyx_t_13, 4, __pyx_t_8) != (0)) __PYX_ERR(0, 183, __pyx_L1_error);
+            if (__Pyx_PyTuple_SET_ITEM(__pyx_t_13, 4, __pyx_t_8) != (0)) __PYX_ERR(0, 211, __pyx_L1_error);
             __pyx_t_7 = 0;
             __pyx_t_11 = 0;
             __pyx_t_10 = 0;
@@ -4554,17 +4754,17 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
             __Pyx_DECREF_SET(__pyx_v_best_result, __pyx_t_13);
             __pyx_t_13 = 0;
 
-            /* "analysis/_shine_dalgarno_cy.pyx":180
+            /* "analysis/_shine_dalgarno_cy.pyx":208
  *                     )
  *                 elif mm == best_mm:
  *                     if current_distance_delta < best_distance_delta:             # <<<<<<<<<<<<<<
  *                         best_distance_delta = current_distance_delta
  *                         best_result = (
 */
-            goto __pyx_L16;
+            goto __pyx_L17;
           }
 
-          /* "analysis/_shine_dalgarno_cy.pyx":189
+          /* "analysis/_shine_dalgarno_cy.pyx":217
  *                             round(score, 3),
  *                         )
  *                     elif current_distance_delta == best_distance_delta:             # <<<<<<<<<<<<<<
@@ -4574,65 +4774,65 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
           __pyx_t_2 = (__pyx_v_current_distance_delta == __pyx_v_best_distance_delta);
           if (__pyx_t_2) {
 
-            /* "analysis/_shine_dalgarno_cy.pyx":190
+            /* "analysis/_shine_dalgarno_cy.pyx":218
  *                         )
  *                     elif current_distance_delta == best_distance_delta:
  *                         if site_start_0 < best_result[0]:             # <<<<<<<<<<<<<<
  *                             best_result = (
  *                                 site_start_0,
 */
-            __pyx_t_13 = __Pyx_PyLong_From_int(__pyx_v_site_start_0); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 190, __pyx_L1_error)
+            __pyx_t_13 = __Pyx_PyLong_From_int(__pyx_v_site_start_0); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 218, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_13);
-            __pyx_t_8 = __Pyx_GetItemInt(__pyx_v_best_result, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 190, __pyx_L1_error)
+            __pyx_t_8 = __Pyx_GetItemInt(__pyx_v_best_result, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_OwnStrongReference); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 218, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_8);
-            __pyx_t_9 = PyObject_RichCompare(__pyx_t_13, __pyx_t_8, Py_LT); __Pyx_XGOTREF(__pyx_t_9); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 190, __pyx_L1_error)
+            __pyx_t_9 = PyObject_RichCompare(__pyx_t_13, __pyx_t_8, Py_LT); __Pyx_XGOTREF(__pyx_t_9); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 218, __pyx_L1_error)
             __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
             __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-            __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_9); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 190, __pyx_L1_error)
+            __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_9); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 218, __pyx_L1_error)
             __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
             if (__pyx_t_2) {
 
-              /* "analysis/_shine_dalgarno_cy.pyx":192
+              /* "analysis/_shine_dalgarno_cy.pyx":220
  *                         if site_start_0 < best_result[0]:
  *                             best_result = (
  *                                 site_start_0,             # <<<<<<<<<<<<<<
  *                                 site_end_0_exclusive,
  *                                 mm,
 */
-              __pyx_t_9 = __Pyx_PyLong_From_int(__pyx_v_site_start_0); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 192, __pyx_L1_error)
+              __pyx_t_9 = __Pyx_PyLong_From_int(__pyx_v_site_start_0); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 220, __pyx_L1_error)
               __Pyx_GOTREF(__pyx_t_9);
 
-              /* "analysis/_shine_dalgarno_cy.pyx":193
+              /* "analysis/_shine_dalgarno_cy.pyx":221
  *                             best_result = (
  *                                 site_start_0,
  *                                 site_end_0_exclusive,             # <<<<<<<<<<<<<<
  *                                 mm,
  *                                 distance,
 */
-              __pyx_t_8 = __Pyx_PyLong_From_int(__pyx_v_site_end_0_exclusive); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 193, __pyx_L1_error)
+              __pyx_t_8 = __Pyx_PyLong_From_int(__pyx_v_site_end_0_exclusive); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 221, __pyx_L1_error)
               __Pyx_GOTREF(__pyx_t_8);
 
-              /* "analysis/_shine_dalgarno_cy.pyx":194
+              /* "analysis/_shine_dalgarno_cy.pyx":222
  *                                 site_start_0,
  *                                 site_end_0_exclusive,
  *                                 mm,             # <<<<<<<<<<<<<<
  *                                 distance,
  *                                 round(score, 3),
 */
-              __pyx_t_13 = __Pyx_PyLong_From_int(__pyx_v_mm); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 194, __pyx_L1_error)
+              __pyx_t_13 = __Pyx_PyLong_From_int(__pyx_v_mm); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 222, __pyx_L1_error)
               __Pyx_GOTREF(__pyx_t_13);
 
-              /* "analysis/_shine_dalgarno_cy.pyx":195
+              /* "analysis/_shine_dalgarno_cy.pyx":223
  *                                 site_end_0_exclusive,
  *                                 mm,
  *                                 distance,             # <<<<<<<<<<<<<<
  *                                 round(score, 3),
  *                             )
 */
-              __pyx_t_10 = __Pyx_PyLong_From_int(__pyx_v_distance); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 195, __pyx_L1_error)
+              __pyx_t_10 = __Pyx_PyLong_From_int(__pyx_v_distance); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 223, __pyx_L1_error)
               __Pyx_GOTREF(__pyx_t_10);
 
-              /* "analysis/_shine_dalgarno_cy.pyx":196
+              /* "analysis/_shine_dalgarno_cy.pyx":224
  *                                 mm,
  *                                 distance,
  *                                 round(score, 3),             # <<<<<<<<<<<<<<
@@ -4640,7 +4840,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
  * 
 */
               __pyx_t_7 = NULL;
-              __pyx_t_12 = PyFloat_FromDouble(__pyx_v_score); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 196, __pyx_L1_error)
+              __pyx_t_12 = PyFloat_FromDouble(__pyx_v_score); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 224, __pyx_L1_error)
               __Pyx_GOTREF(__pyx_t_12);
               __pyx_t_14 = 1;
               {
@@ -4648,29 +4848,29 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
                 __pyx_t_11 = __Pyx_PyObject_FastCall((PyObject*)__pyx_builtin_round, __pyx_callargs+__pyx_t_14, (3-__pyx_t_14) | (__pyx_t_14*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
                 __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
                 __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-                if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 196, __pyx_L1_error)
+                if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 224, __pyx_L1_error)
                 __Pyx_GOTREF(__pyx_t_11);
               }
 
-              /* "analysis/_shine_dalgarno_cy.pyx":192
+              /* "analysis/_shine_dalgarno_cy.pyx":220
  *                         if site_start_0 < best_result[0]:
  *                             best_result = (
  *                                 site_start_0,             # <<<<<<<<<<<<<<
  *                                 site_end_0_exclusive,
  *                                 mm,
 */
-              __pyx_t_12 = PyTuple_New(5); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 192, __pyx_L1_error)
+              __pyx_t_12 = PyTuple_New(5); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 220, __pyx_L1_error)
               __Pyx_GOTREF(__pyx_t_12);
               __Pyx_GIVEREF(__pyx_t_9);
-              if (__Pyx_PyTuple_SET_ITEM(__pyx_t_12, 0, __pyx_t_9) != (0)) __PYX_ERR(0, 192, __pyx_L1_error);
+              if (__Pyx_PyTuple_SET_ITEM(__pyx_t_12, 0, __pyx_t_9) != (0)) __PYX_ERR(0, 220, __pyx_L1_error);
               __Pyx_GIVEREF(__pyx_t_8);
-              if (__Pyx_PyTuple_SET_ITEM(__pyx_t_12, 1, __pyx_t_8) != (0)) __PYX_ERR(0, 192, __pyx_L1_error);
+              if (__Pyx_PyTuple_SET_ITEM(__pyx_t_12, 1, __pyx_t_8) != (0)) __PYX_ERR(0, 220, __pyx_L1_error);
               __Pyx_GIVEREF(__pyx_t_13);
-              if (__Pyx_PyTuple_SET_ITEM(__pyx_t_12, 2, __pyx_t_13) != (0)) __PYX_ERR(0, 192, __pyx_L1_error);
+              if (__Pyx_PyTuple_SET_ITEM(__pyx_t_12, 2, __pyx_t_13) != (0)) __PYX_ERR(0, 220, __pyx_L1_error);
               __Pyx_GIVEREF(__pyx_t_10);
-              if (__Pyx_PyTuple_SET_ITEM(__pyx_t_12, 3, __pyx_t_10) != (0)) __PYX_ERR(0, 192, __pyx_L1_error);
+              if (__Pyx_PyTuple_SET_ITEM(__pyx_t_12, 3, __pyx_t_10) != (0)) __PYX_ERR(0, 220, __pyx_L1_error);
               __Pyx_GIVEREF(__pyx_t_11);
-              if (__Pyx_PyTuple_SET_ITEM(__pyx_t_12, 4, __pyx_t_11) != (0)) __PYX_ERR(0, 192, __pyx_L1_error);
+              if (__Pyx_PyTuple_SET_ITEM(__pyx_t_12, 4, __pyx_t_11) != (0)) __PYX_ERR(0, 220, __pyx_L1_error);
               __pyx_t_9 = 0;
               __pyx_t_8 = 0;
               __pyx_t_13 = 0;
@@ -4679,7 +4879,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
               __Pyx_DECREF_SET(__pyx_v_best_result, __pyx_t_12);
               __pyx_t_12 = 0;
 
-              /* "analysis/_shine_dalgarno_cy.pyx":190
+              /* "analysis/_shine_dalgarno_cy.pyx":218
  *                         )
  *                     elif current_distance_delta == best_distance_delta:
  *                         if site_start_0 < best_result[0]:             # <<<<<<<<<<<<<<
@@ -4688,7 +4888,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
 */
             }
 
-            /* "analysis/_shine_dalgarno_cy.pyx":189
+            /* "analysis/_shine_dalgarno_cy.pyx":217
  *                             round(score, 3),
  *                         )
  *                     elif current_distance_delta == best_distance_delta:             # <<<<<<<<<<<<<<
@@ -4696,9 +4896,9 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
  *                             best_result = (
 */
           }
-          __pyx_L16:;
+          __pyx_L17:;
 
-          /* "analysis/_shine_dalgarno_cy.pyx":179
+          /* "analysis/_shine_dalgarno_cy.pyx":207
  *                         round(score, 3),
  *                     )
  *                 elif mm == best_mm:             # <<<<<<<<<<<<<<
@@ -4706,9 +4906,9 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
  *                         best_distance_delta = current_distance_delta
 */
         }
-        __pyx_L15:;
+        __pyx_L16:;
 
-        /* "analysis/_shine_dalgarno_cy.pyx":168
+        /* "analysis/_shine_dalgarno_cy.pyx":196
  *                     round(score, 3),
  *                 )
  *             elif score == best_score:             # <<<<<<<<<<<<<<
@@ -4716,13 +4916,13 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
  *                     best_mm = mm
 */
       }
-      __pyx_L14:;
+      __pyx_L15:;
     }
-    __pyx_L13:;
-    __pyx_L6_continue:;
+    __pyx_L14:;
+    __pyx_L7_continue:;
   }
 
-  /* "analysis/_shine_dalgarno_cy.pyx":199
+  /* "analysis/_shine_dalgarno_cy.pyx":227
  *                             )
  * 
  *     return best_result             # <<<<<<<<<<<<<<
@@ -4732,7 +4932,7 @@ static PyObject *__pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(PyO
   __pyx_r = __pyx_v_best_result;
   goto __pyx_L0;
 
-  /* "analysis/_shine_dalgarno_cy.pyx":98
+  /* "analysis/_shine_dalgarno_cy.pyx":116
  * 
  * 
  * cpdef object best_sd_for_start_cy(             # <<<<<<<<<<<<<<
@@ -4800,62 +5000,62 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_search_seq,&__pyx_mstate_global->__pyx_n_u_start_pos_0,&__pyx_mstate_global->__pyx_n_u_start_codon,&__pyx_mstate_global->__pyx_n_u_max_mismatches,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 98, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 116, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  4:
         values[3] = __Pyx_ArgRef_FASTCALL(__pyx_args, 3);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 98, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 116, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  3:
         values[2] = __Pyx_ArgRef_FASTCALL(__pyx_args, 2);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 98, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 116, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  2:
         values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 98, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 116, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 98, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 116, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "best_sd_for_start_cy", 0) < (0)) __PYX_ERR(0, 98, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "best_sd_for_start_cy", 0) < (0)) __PYX_ERR(0, 116, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 3; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("best_sd_for_start_cy", 0, 3, 4, i); __PYX_ERR(0, 98, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("best_sd_for_start_cy", 0, 3, 4, i); __PYX_ERR(0, 116, __pyx_L3_error) }
       }
     } else {
       switch (__pyx_nargs) {
         case  4:
         values[3] = __Pyx_ArgRef_FASTCALL(__pyx_args, 3);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 98, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 116, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  3:
         values[2] = __Pyx_ArgRef_FASTCALL(__pyx_args, 2);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 98, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 116, __pyx_L3_error)
         values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 98, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 116, __pyx_L3_error)
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 98, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 116, __pyx_L3_error)
         break;
         default: goto __pyx_L5_argtuple_error;
       }
     }
     __pyx_v_search_seq = ((PyObject*)values[0]);
-    __pyx_v_start_pos_0 = __Pyx_PyLong_As_int(values[1]); if (unlikely((__pyx_v_start_pos_0 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 100, __pyx_L3_error)
+    __pyx_v_start_pos_0 = __Pyx_PyLong_As_int(values[1]); if (unlikely((__pyx_v_start_pos_0 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 118, __pyx_L3_error)
     __pyx_v_start_codon = ((PyObject*)values[2]);
     if (values[3]) {
-      __pyx_v_max_mismatches = __Pyx_PyLong_As_int(values[3]); if (unlikely((__pyx_v_max_mismatches == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 102, __pyx_L3_error)
+      __pyx_v_max_mismatches = __Pyx_PyLong_As_int(values[3]); if (unlikely((__pyx_v_max_mismatches == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 120, __pyx_L3_error)
     } else {
       __pyx_v_max_mismatches = ((int)2);
     }
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("best_sd_for_start_cy", 0, 3, 4, __pyx_nargs); __PYX_ERR(0, 98, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("best_sd_for_start_cy", 0, 3, 4, __pyx_nargs); __PYX_ERR(0, 116, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -4866,8 +5066,8 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_search_seq), (&PyUnicode_Type), 1, "search_seq", 1))) __PYX_ERR(0, 99, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_start_codon), (&PyUnicode_Type), 1, "start_codon", 1))) __PYX_ERR(0, 101, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_search_seq), (&PyUnicode_Type), 1, "search_seq", 1))) __PYX_ERR(0, 117, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_start_codon), (&PyUnicode_Type), 1, "start_codon", 1))) __PYX_ERR(0, 119, __pyx_L1_error)
   __pyx_r = __pyx_pf_8analysis_18_shine_dalgarno_cy_2best_sd_for_start_cy(__pyx_self, __pyx_v_search_seq, __pyx_v_start_pos_0, __pyx_v_start_codon, __pyx_v_max_mismatches);
 
   /* function exit code */
@@ -4899,7 +5099,7 @@ static PyObject *__pyx_pf_8analysis_18_shine_dalgarno_cy_2best_sd_for_start_cy(C
   __Pyx_XDECREF(__pyx_r);
   __pyx_t_2.__pyx_n = 1;
   __pyx_t_2.max_mismatches = __pyx_v_max_mismatches;
-  __pyx_t_1 = __pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(__pyx_v_search_seq, __pyx_v_start_pos_0, __pyx_v_start_codon, 1, &__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 98, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_8analysis_18_shine_dalgarno_cy_best_sd_for_start_cy(__pyx_v_search_seq, __pyx_v_start_pos_0, __pyx_v_start_codon, 1, &__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 116, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -5264,35 +5464,35 @@ __Pyx_RefNannySetupContext("PyInit__shine_dalgarno_cy", 0);
   (void)__Pyx_modinit_function_import_code(__pyx_mstate);
   /*--- Execution code ---*/
 
-  /* "analysis/_shine_dalgarno_cy.pyx":82
+  /* "analysis/_shine_dalgarno_cy.pyx":98
  * 
  * 
  * cpdef list find_start_codons_cy(str search_seq):             # <<<<<<<<<<<<<<
  *     cdef list starts = []
  *     cdef object append_start = starts.append
 */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_8analysis_18_shine_dalgarno_cy_1find_start_codons_cy, 0, __pyx_mstate_global->__pyx_n_u_find_start_codons_cy, NULL, __pyx_mstate_global->__pyx_n_u_analysis__shine_dalgarno_cy, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[0])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 82, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_8analysis_18_shine_dalgarno_cy_1find_start_codons_cy, 0, __pyx_mstate_global->__pyx_n_u_find_start_codons_cy, NULL, __pyx_mstate_global->__pyx_n_u_analysis__shine_dalgarno_cy, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[0])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 98, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_2);
   #endif
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_find_start_codons_cy, __pyx_t_2) < (0)) __PYX_ERR(0, 82, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_find_start_codons_cy, __pyx_t_2) < (0)) __PYX_ERR(0, 98, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "analysis/_shine_dalgarno_cy.pyx":98
+  /* "analysis/_shine_dalgarno_cy.pyx":116
  * 
  * 
  * cpdef object best_sd_for_start_cy(             # <<<<<<<<<<<<<<
  *     str search_seq,
  *     int start_pos_0,
 */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_8analysis_18_shine_dalgarno_cy_3best_sd_for_start_cy, 0, __pyx_mstate_global->__pyx_n_u_best_sd_for_start_cy, NULL, __pyx_mstate_global->__pyx_n_u_analysis__shine_dalgarno_cy, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[1])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 98, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_8analysis_18_shine_dalgarno_cy_3best_sd_for_start_cy, 0, __pyx_mstate_global->__pyx_n_u_best_sd_for_start_cy, NULL, __pyx_mstate_global->__pyx_n_u_analysis__shine_dalgarno_cy, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[1])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 116, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_2);
   #endif
   __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_2, __pyx_mstate_global->__pyx_tuple[0]);
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_best_sd_for_start_cy, __pyx_t_2) < (0)) __PYX_ERR(0, 98, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_best_sd_for_start_cy, __pyx_t_2) < (0)) __PYX_ERR(0, 116, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "analysis/_shine_dalgarno_cy.pyx":1
@@ -5341,7 +5541,7 @@ __Pyx_RefNannySetupContext("PyInit__shine_dalgarno_cy", 0);
 
 static int __Pyx_InitCachedBuiltins(__pyx_mstatetype *__pyx_mstate) {
   CYTHON_UNUSED_VAR(__pyx_mstate);
-  __pyx_builtin_round = __Pyx_GetBuiltinName(__pyx_mstate->__pyx_n_u_round); if (!__pyx_builtin_round) __PYX_ERR(0, 154, __pyx_L1_error)
+  __pyx_builtin_round = __Pyx_GetBuiltinName(__pyx_mstate->__pyx_n_u_round); if (!__pyx_builtin_round) __PYX_ERR(0, 182, __pyx_L1_error)
 
   /* Cached unbound methods */
   __pyx_mstate->__pyx_umethod_PyDict_Type_items.type = (PyObject*)&PyDict_Type;
@@ -5361,14 +5561,14 @@ static int __Pyx_InitCachedConstants(__pyx_mstatetype *__pyx_mstate) {
   CYTHON_UNUSED_VAR(__pyx_mstate);
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "analysis/_shine_dalgarno_cy.pyx":98
+  /* "analysis/_shine_dalgarno_cy.pyx":116
  * 
  * 
  * cpdef object best_sd_for_start_cy(             # <<<<<<<<<<<<<<
  *     str search_seq,
  *     int start_pos_0,
 */
-  __pyx_mstate_global->__pyx_tuple[0] = PyTuple_Pack(1, __pyx_mstate_global->__pyx_int_2); if (unlikely(!__pyx_mstate_global->__pyx_tuple[0])) __PYX_ERR(0, 98, __pyx_L1_error)
+  __pyx_mstate_global->__pyx_tuple[0] = PyTuple_Pack(1, __pyx_mstate_global->__pyx_int_2); if (unlikely(!__pyx_mstate_global->__pyx_tuple[0])) __PYX_ERR(0, 116, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_mstate_global->__pyx_tuple[0]);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_tuple[0]);
   #if CYTHON_IMMORTAL_CONSTANTS
@@ -5401,31 +5601,31 @@ static int __Pyx_InitCachedConstants(__pyx_mstatetype *__pyx_mstate) {
 static int __Pyx_InitConstants(__pyx_mstatetype *__pyx_mstate) {
   CYTHON_UNUSED_VAR(__pyx_mstate);
   {
-    const struct { const unsigned int length: 9; } index[] = {{1},{179},{8},{31},{1},{3},{1},{3},{20},{1},{3},{27},{6},{18},{20},{18},{20},{8},{13},{5},{8},{14},{10},{8},{3},{12},{5},{10},{12},{10},{11},{11},{8},{6},{459},{87}};
-    #if (CYTHON_COMPRESS_STRINGS) == 2 /* compression: bz2 (810 bytes) */
-const char* const cstring = "BZh91AY&SY\350\240\345\307\000\000\227\377\373\377\316\357\377\373\237\374\316\277\241v\006\277\377\377d@@@@@@@@@@@\000@\000@\002\235\231m\200\213\rS\022bi\246\022z\217\"zO \201\240i\223\020\001\240\0324\302hi\223L\t\264\324\032LA\014\2020\232L\246#F\200\000\000\000\000\000\000\006M4\0341\032i\240\320\006\200\000\000\006\203 \323@\320\001\243@\030\206\200jzSF\251\372H\017P\031\032\032\000\006#M\006\2004\310\030\203 4h\364M4<\037-\237\r\217\261\r\247\020.\322.\340\027\001$\213\265[\376T\005n\250\222H%@\345Q\376&TD\347\002\r|\033a\006\006\202\030\034\363\230\215$g]F\314H4\031\254\304\004\023A\n'\025\215H\266\004)a?L\355Ik\002\242'\000Z\025\026[\004&1i\025]3\205\314\270i\341\350\273\226\231\371\214\215\343\337<\177(\241\212\202\t\264\260wN4p`\035\244\001\203\211\024\367\233E\004up\024\364\234\206i\367\031\014\266\335'\221Bu\035\240\254\021w\ni\007\256\201\274\252\232i\365\014W\233;\333\276t\236\200\363\306\354\312\237/p`;}>\324@\352(\0270\342\300f|&\212c\021\263\003\014H\255\201\301trla8\3152\355\263\372i\304S\271\244\242\306\273P\252\360\255h\204\030PX\243\013\204\365A\013\222\023\350\016+\372!\234\"j,\365F\215<F\001\275\001T\326\214\204\223J\326\224%\224\323\020\351\274no-\336\316\3747+\255\023@\303Ii\220\250 \031\005\223-w\243\203(\215\203X+0]3c\230\236M]\365\277\332\235\267Y\264\340#\246t\300\302+\332\335G\026\325\233R\033\267\211\362\2158\343u@2@\335\267mk\236:\366\2104]A\337\251!6{\\\307\224\244\021\014hSV\007\301\206L\010x\033\210\320w\351t5Z\370)\224\230K\220a\n\005!\312)\025M\221\266\014\231^\016\031\331e%*\034\242\221V\256D\304f\304\365\303h\270\346\313%A;\201\200\367=\330\230@\353\321,9\263^p\0210,\020\221@,Y;\311\255\244\214\3707\321q+\014\205nS\007\027Q8\022\253\020\3674:tr\254\3347\006\352\344\233;\312\022\272\372\203\353\361F\276K\n\246\032\020\206g\021IM\212\t\325\260A\333\330@<+a\264%w\207e\370\214\370\340\370\274\010\265\252\2313\375\260\375q\315\234\245\214\375\221f\261 \374\224=\213\034\330-\267\373w\345\242\017Kx\261\034\333f:\2250\246+%\306\313 ""\244\310(\033(\232\306e\337#\017/\002\357\274\306\352\321$+`N%]\233\36343\004^S\234\336\004\222\352\211W9\233\016\r6\256\266\271=\317\010\347\364\324\221N\017D\345\221\314s<\363\221\251\2536IX\034\003Z\030\036}\200\251\360\361b\006\247\370\273\222)\302\204\207E\007.8";
-    PyObject *data = __Pyx_DecompressString(cstring, 810, 2);
+    const struct { const unsigned int length: 9; } index[] = {{1},{179},{8},{31},{3},{3},{20},{3},{27},{6},{18},{20},{18},{20},{8},{13},{5},{8},{14},{10},{8},{3},{12},{5},{10},{12},{10},{11},{11},{8},{6},{500},{93}};
+    #if (CYTHON_COMPRESS_STRINGS) == 2 /* compression: bz2 (826 bytes) */
+const char* const cstring = "BZh91AY&SY\323cRi\000\000\241\177\373\377\356\357\377\373\237\374\316\277\241~\002\277\377\377d@@@@@@@@@@@\000@\000@\002\274N\3164\2567\rCP\322\236\246\322z\032\207\250\332'\250d4\365\000\036P\000\000h\03244\320z\2144j\rI\211\210\000\230L\223\322a\000\000\000\000\000\000\000\000d\001\000\232\"52d=F\200\000\000\000\r\000h\000\000\000\000\003M!LL\232M\250\032\006\200\000\000\000\000\000\000\000\003M0\217\274!+\277\363\367\370\t\244\305\037\264\225\265@\252\t$D\005:\311!\rq(I\004\204%\rxh`\254\026j$\246\204\016y\367N@C\202\t\353.Z\210\243EX\353\226\325\002\271\254d\010\003\354\236\037\270@DDB'\013v:\004\023J=B\0272;\260\220\314B\340\304\202\225L\301t\006\316\312\346\025\355\305\014\\\026-\302\245\302M\225/(.\312\224HYf\037\242\036\303\233\214b0z\000\010:\272\024y\304\254\231\377hQwp\013V\273a\267\034\201\344\254\376\305A.Ft\n\222Od\r\335\204\272S\316#|\020\352~\306\340c\257\254\225S\277\250\200\350\362t\242\003I0(\221\315*T\3418\016\310\242\301\220:\033G\344`|\320\372\260c\330e\324\315C\323\n:\364\225h\307\201JL-j\251\006\212\216\254\327e\2660V\213\252J\031\336\325`A\r\224\333\255\0336e\t\000\237TG-\350QA\253\327\252A`\246\262s\230\256\310>\352\305a\t\227\355\367\314k\201-\004\241\300\3600\020\210\030;\362\031\001f\233\200V\007Z\tW\241\231\251\221D\\\366c\374}\026\340*\345Pn\206ML\240\307J\353\324A-Ci\301\373(f\220\216i\243x\005\234\005E\270\237<\355\327\210)q\033E\222\243\201\211\342A<d\220\021\014,\224\324\201\360#\022\0049M\204\320*U4-\\\370)\214\204+@%SA\320\203\207C\314B\274\002\032I\005T\353@\351\034i\007\016\207\256a4\302\235i\315\\\031\r\310Vbt\346\r \024\005!(\234\240\301\022\230\320\225\211\245*\203e\002\020\247\010\240v\326e\"\347N\023;\351fW\n\221\210Oe09\25520\t'R\007\263\201\243FU\213\001\201\326\324\030\250\222)\310\345x%\376\006\337\306X\217A(\\[\241*\r\3441\2609\226\033:\353\020np\373t\n\333b\216OH\275\375 \365\262\017\205\345\r\244\0326\276\014\017r\367x\336\215\010\276\033\277XV\252y? \244<I\322\213\322\177\357\2669\305[V\214\343\2046`\014x\036u\271""\263B\017p+\254\245\321M\250\332\220\363(\264\325\372\023\037\226\303\214\367\n\207g\212\225\207\244\235\237\264\035|\036\204\230)\354\003\351`uUT\350\010\310 \361\222\252H+\364\024QN\017D\310\023\210\342y\330\211\251\251^\212\2200\004\001\t\235\032\201\tD\021\222\217@\177\305\334\221N\024$4\330\324\232@";
+    PyObject *data = __Pyx_DecompressString(cstring, 826, 2);
     if (unlikely(!data)) __PYX_ERR(0, 1, __pyx_L1_error)
     const char* const bytes = __Pyx_PyBytes_AsString(data);
     #if !CYTHON_ASSUME_SAFE_MACROS
     if (likely(bytes)); else { Py_DECREF(data); __PYX_ERR(0, 1, __pyx_L1_error) }
     #endif
-    #elif (CYTHON_COMPRESS_STRINGS) != 0 /* compression: zlib (749 bytes) */
-const char* const cstring = "x\332eQMO\023A\030\246Pt\023J\354\306\"-\202L1J\242X)\220h\"\304\340W\343\305PRo\232\311tw\332\216ng\332\235Y\322M8p\334\343\036\3478\307=\366\350\317\350q\217\375\t\374\004\337\255\240ML\336\335y?\236\347\375|\373E(\212T\217(\364>T=\301\021\223\310\245\036kS\237(\352\205H*\2379\212\372\031\210\243\263\217g/\216^\037!\302]\344\323\037\324Q\022\311\240\355xDJ*\221\350\240v\300<\3058R\341\200\312\032\372\334A\241\010\020\247\324EJ\240\001\340\346\t\252G9\222Te\n\332%\234\013E\024\023\034\003\235\361\356.r\231\017E\330\005\315\330\237\210'i\215\270.\006\034%\234x\241d\362%\226=\306)v\211\327%>\027\330\tk\203ptz\332j4\032\255\006\306g\341\010\276\0170\006\376BG\352\234vZ\255V\343\226^\373\237N\006\003\312]\"C\3560Qs\204/\002\030\211\3126\225\nK\027w\204\217\245\"\276\002\254\343ed\006\035\373\304\241m\342\374\3540\356\336\206\205+\270\004\024\306\235\200;\030c\006\326m>\246h_b\334'\300\206\377\010\367\231\354\023\345\364h\346\025n\340Q``N\372\360\016\304\000\343a@\274?&\244\340\256\244\304wzX\322!\206\237\272A\202\346\322\016\t<5\337\304L\035\010\211\3671V\331\034\370\202x\001\225W\271kk\241\\\231\346\037i\307\330\246z]XX\336\326$\315\257\307\3034\377\330\324\247\371-\335\234\346\357^]\306\007\361y,\365\236q\022;\265\356E\303i\336\212\n\361GmO6\336\374\252\247\326\266\276L\016\222fj\255O\326\367\222w\t\231Z+\321\211^\324\325\264\260\n\372d\005\231EscD\257\342j|\254\2073k5\372\256\253\372\330\014S\010\034F\35587s\027\341\265\354\370~\374.&\240Ll\350\307\234f\256m\2233\366\324\252\232J\262\223\200\007r\357\230\035\210\025\236\230\246\231\025>\206^\241VE\333i\341\001\360\013;\263\322i\321\236\223\265\270\031wu\363\372\316\302j1\272\200\371\206i\021\346M\213\033\300->5$C\225\326\346\004\362\351]\250m\257\317\362\027\357\307\207q[\347\322\322#\330Z\351YR\315P\345\312\234@>\3355\315\351ZY/\351zZ\202\355\324\222\3668\227\226k\t\311\020\233[sR\205+\354&\366\264\262?^\032\327\323\362C}\222,&\317\307\3151\311\342\250:'\331\254\335$\353~\271\020\325\257r7W\333\326\027\246\231\376""\275(D\255\253Q\344\307\377\256\266\034}\205\355\277\326\0070j\266\273M}\252\277\301U\013e\270\326\343\311\0264\226\\\376\202\333\257D\365\337\366\007\221E";
-    PyObject *data = __Pyx_DecompressString(cstring, 749, 1);
+    #elif (CYTHON_COMPRESS_STRINGS) != 0 /* compression: zlib (766 bytes) */
+const char* const cstring = "x\332eQMo\323L\020nJ\nFME,\032\232\000\245\353\"\250\304G \005\t$\212\020\360B\305\0055P\216h\265\2617\311\202\263\233x\327U,q\350\321\307=\356q\217>\346\310\317\310\321\307\374\204\376\004\306\246}\025\ti\274\236\231}\236\331\231g\336|\026\212\"5$\n\275O\324Pp\304$\nh\310z4\"\212\206\t\222*b\276\242Q\001\342\350\350\303\321\343\347/\237#\302\003\024\321\037\324W\022\311\270\347\207DJ*\221\350\243^\314B\3058R\311\230\3126\372\324G\211\210\021\2474@J\2401\340\226\tjH9\222T\025\016\332#\234\013E\024\023\034\003\235\361\301\036\nX\004\217\260\023Z\260?\222P\3226\t\002\0148J8\t\023\311\344\023,\207\214S\034\220p@\".\260\237\264\307\311\364\355\361\341\341\361!\306G\311\024\276\377`\010\374\231N\325\027\332?>>\274\340\266\377\345\222\361\230\362\200\310\204\373L\264}\021\211\030\346\241\262G\245\3022\300}\021a\251H\244\000\353\207\005\231A\273\021\361i\217\370?\373\214\007\027\327\"\020\\\002\n\343~\314}\2141\203\350\242\036St$1\036\021`\3039\305#&GD\371CZdE\020\207\024\030\230\223\021\374\307b\214\361$&\341\337\020J\360@R\022\371C,\351\004\303\241\316\221\340\005\264O\342P-7Q\272c!\361S\214U1\007>!aL\345i\345\314Yi\266\026\325;\306\267\256\365\316j+k;\206\344\325-=\311\253wmgQ\3356\335\263\313+k\316\351/\275\257\277hi\036Y?ss\347Z:YT\257@\366\231&\271s\003\216\253\r\375\325T\376\361\027\345Qu\322\232\376`\334\371\315W\277;\271\263c~e\373Y7w\266\346[\217\262w\031\240\326\323\327f\325xym\003\374\371:\262\253\366<H_hO\037\230I\031m\244\337\215g\016\354$\207\213giOW\312t\035\376\216\253\257\353wE;\356\334\205\346\355\333\"\345.\034\317\266\262\335\014\"\250\273kw!_\273g\273\266|\364\000F\202wZ\306\315kE\347\265\335\362\331\274\356.YCw\365\240\024b\243\236\236\200\014\223\274\016\302\344\365\233\300\255\337\267\244@m6\226\014\352\231=\353.\334\255\262~\375:\350\324\003E6\357\200\274\233\0172\257@5[K\006\365\314\300v\027\215\246\271d:\371&(\323\316z\263J\336lg\244@\334\336^2\017\326\265\227\271\213\326\323\331\245Y'o\3362\257\263\325\354\341\254;#\305=\362\226\254\230u\220""\225k\254\245\235\323\312\371zw\314\211\355\346\377\257\336)\226<M#}\261\\']K\277\201\362/\315>\214\3524\364w\353\331\203\254\024\376\225\016\n\325\232\260\261\273\363mh0\003\302z\332\371\003\270\310\241\335";
+    PyObject *data = __Pyx_DecompressString(cstring, 766, 1);
     if (unlikely(!data)) __PYX_ERR(0, 1, __pyx_L1_error)
     const char* const bytes = __Pyx_PyBytes_AsString(data);
     #if !CYTHON_ASSUME_SAFE_MACROS
     if (likely(bytes)); else { Py_DECREF(data); __PYX_ERR(0, 1, __pyx_L1_error) }
     #endif
-    #else /* compression: none (1060 bytes) */
-const char* const bytes = "?Note that Cython is deliberately stricter than PEP-484 and rejects subclasses of builtin types. If you need to pass subclasses then set the 'annotation_typing' directive to False.add_noteanalysis/_shine_dalgarno_cy.pyxAATGGGTG__Pyx_PyDict_NextRefTTTGanalysis._shine_dalgarno_cyappendasyncio.coroutinesbest_sd_for_start_cycline_in_tracebackfind_start_codons_cy__func___is_coroutineitems__main__max_mismatches__module____name__pop__qualname__roundsearch_seq__set_name__setdefaultstart_codonstart_pos_0__test__values\200\001\360\010\000\030\031\340\004\036\230c\240\021\240!\360\014\000\005\037\230a\330\004\027\220q\330\004#\2401\340\004\035\230Q\340\004\007\200|\2202\220R\220s\230,\240c\250\021\330\010\017\210q\340\004\010\210\014\220E\230\021\320\032;\2701\330\010\037\230|\2502\250Q\330\010\027\320\027,\250B\250a\340\010\013\210=\230\002\230!\330\014\r\340\010\013\320\013 \240\002\240!\330\014\r\340\010\013\2107\220!\220<\230q\330\014\r\340\010\r\210]\230!\230<\240q\330\010\013\2103\210b\220\001\330\014\r\340\010\020\220\001\330\010\021\220\023\220B\220a\330\010\021\320\021#\2401\240A\330\010\021\220\037\240\001\240\021\340\010!\240\031\250\"\250A\330\010\013\320\013\"\240\"\240A\330\014%\240Q\240a\340\010\013\210<\220s\230!\330\014\031\230\021\330\014\026\220a\330\014\"\240!\330\014\r\330\020\021\330\020\021\330\020\021\330\020\021\330\020\025\220Q\220g\230Q\360\006\000\r\020\210v\220R\220q\330\020\035\230Q\330\020\032\230!\330\020&\240a\330\020\021\330\024\025\330\024\025\330\024\025\330\024\025\330\024\031\230\021\230'\240\021\340\021\027\220s\230!\330\020\023\2203\220b\230\001\330\024\036\230a\330\024*\250!\330\024\025\330\030\031\330\030\031\330\030\031\330\030\031\330\030\035\230Q\230g\240Q\340\025\030\230\003\2301\330\024\027\320\027.\250b\260\001\330\030.\250a\330\030\031\330\034\035\330\034\035\330\034\035\330\034\035\330\034!\240\021\240'\250\021\340\0310\260\003\2601\330\030\033\230=\250\002\250+\260Q\260a\330\034\035\330 !\330 !\330 !\330 !\330 %\240Q\240g\250Q""\360\006\000\005\014\2101\200\001\330\004\027\220q\330\004\037\230v\240Q\330\004\036\230c\240\021\240!\360\006\000\005\010\200x\210r\220\021\330\010\017\210q\340\004\010\210\005\210U\220!\2208\2302\230Q\330\010\013\320\013\034\230A\230\\\250\021\330\014\030\230\002\230#\320\035.\250a\250|\2701\340\004\013\2101";
+    #else /* compression: none (1104 bytes) */
+const char* const bytes = "?Note that Cython is deliberately stricter than PEP-484 and rejects subclasses of builtin types. If you need to pass subclasses then set the 'annotation_typing' directive to False.add_noteanalysis/_shine_dalgarno_cy.pyxATGGTG__Pyx_PyDict_NextRefTTGanalysis._shine_dalgarno_cyappendasyncio.coroutinesbest_sd_for_start_cycline_in_tracebackfind_start_codons_cy__func___is_coroutineitems__main__max_mismatches__module____name__pop__qualname__roundsearch_seq__set_name__setdefaultstart_codonstart_pos_0__test__values\200\001\360\010\000\030\031\340\004\036\230c\240\021\240!\360\014\000\005\037\230a\330\004\027\220q\330\004#\2401\340\004\035\230Q\360\006\000\005\010\200|\2202\220R\220s\230,\240c\250\021\330\010\017\210q\340\004\007\200|\2203\220a\330\010\026\220a\330\t\025\220S\230\001\330\010\026\220a\330\t\025\220S\230\001\330\010\026\220a\340\010\026\220a\340\004\010\210\014\220E\230\021\320\032;\2701\330\010\037\230|\2502\250Q\330\010\027\320\027,\250B\250a\340\010\013\210=\230\002\230!\330\014\r\340\010\013\320\013 \240\002\240!\330\014\r\340\010\013\2107\220!\220<\230q\330\014\r\340\010\r\210]\230!\230<\240q\330\010\013\2103\210b\220\001\330\014\r\340\010\020\220\001\330\010\021\220\023\220B\220a\330\010\021\320\021#\2401\240A\330\010\021\220\021\340\010!\240\031\250\"\250A\330\010\013\320\013\"\240\"\240A\330\014%\240Q\240a\340\010\013\210<\220s\230!\330\014\031\230\021\330\014\026\220a\330\014\"\240!\330\014\r\330\020\021\330\020\021\330\020\021\330\020\021\330\020\025\220Q\220g\230Q\360\006\000\r\020\210v\220R\220q\330\020\035\230Q\330\020\032\230!\330\020&\240a\330\020\021\330\024\025\330\024\025\330\024\025\330\024\025\330\024\031\230\021\230'\240\021\340\021\027\220s\230!\330\020\023\2203\220b\230\001\330\024\036\230a\330\024*\250!\330\024\025\330\030\031\330\030\031\330\030\031\330\030\031\330\030\035\230Q\230g\240Q\340\025\030\230\003\2301\330\024\027\320\027.\250b\260\001\330\030.\250a\330\030\031\330\034\035\330\034\035\330\034\035\330\034\035\330\034!\240\021""\240'\250\021\340\0310\260\003\2601\330\030\033\230=\250\002\250+\260Q\260a\330\034\035\330 !\330 !\330 !\330 !\330 %\240Q\240g\250Q\360\006\000\005\014\2101\200\001\330\004\027\220q\330\004\037\230v\240Q\330\004\036\230c\240\021\240!\360\010\000\005\010\200x\210r\220\021\330\010\017\210q\340\004\010\210\005\210U\220!\2208\2302\230Q\330\010\025\220]\240!\240<\250q\330\010\013\210;\220d\230!\330\014\030\230\002\230#\320\035.\250a\250q\340\004\013\2101";
     PyObject *data = NULL;
     CYTHON_UNUSED_VAR(__Pyx_DecompressString);
     #endif
     PyObject **stringtab = __pyx_mstate->__pyx_string_tab;
     Py_ssize_t pos = 0;
-    for (int i = 0; i < 34; i++) {
+    for (int i = 0; i < 31; i++) {
       Py_ssize_t bytes_length = index[i].length;
       PyObject *string = PyUnicode_DecodeUTF8(bytes + pos, bytes_length, NULL);
       if (likely(string) && i >= 4) PyUnicode_InternInPlace(&string);
@@ -5436,7 +5636,7 @@ const char* const bytes = "?Note that Cython is deliberately stricter than PEP-4
       stringtab[i] = string;
       pos += bytes_length;
     }
-    for (int i = 34; i < 36; i++) {
+    for (int i = 31; i < 33; i++) {
       Py_ssize_t bytes_length = index[i].length;
       PyObject *string = PyBytes_FromStringAndSize(bytes + pos, bytes_length);
       stringtab[i] = string;
@@ -5447,14 +5647,14 @@ const char* const bytes = "?Note that Cython is deliberately stricter than PEP-4
       }
     }
     Py_XDECREF(data);
-    for (Py_ssize_t i = 0; i < 36; i++) {
+    for (Py_ssize_t i = 0; i < 33; i++) {
       if (unlikely(PyObject_Hash(stringtab[i]) == -1)) {
         __PYX_ERR(0, 1, __pyx_L1_error)
       }
     }
     #if CYTHON_IMMORTAL_CONSTANTS
     {
-      PyObject **table = stringtab + 34;
+      PyObject **table = stringtab + 31;
       for (Py_ssize_t i=0; i<2; ++i) {
         #if CYTHON_COMPILING_IN_CPYTHON_FREETHREADING
         #if PY_VERSION_HEX < 0x030E0000
@@ -5527,14 +5727,14 @@ static int __Pyx_CreateCodeObjects(__pyx_mstatetype *__pyx_mstate) {
   PyObject* tuple_dedup_map = PyDict_New();
   if (unlikely(!tuple_dedup_map)) return -1;
   {
-    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 82};
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 98};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_search_seq};
-    __pyx_mstate_global->__pyx_codeobj_tab[0] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_analysis__shine_dalgarno_cy_pyx, __pyx_mstate->__pyx_n_u_find_start_codons_cy, __pyx_mstate->__pyx_kp_b_iso88591_q_vQ_c_xr_q_U_82Q_A_a_1_1, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[0])) goto bad;
+    __pyx_mstate_global->__pyx_codeobj_tab[0] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_analysis__shine_dalgarno_cy_pyx, __pyx_mstate->__pyx_n_u_find_start_codons_cy, __pyx_mstate->__pyx_kp_b_iso88591_q_vQ_c_xr_q_U_82Q_q_d_aq_1, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[0])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {4, 0, 0, 4, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 98};
+    const __Pyx_PyCode_New_function_description descr = {4, 0, 0, 4, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 116};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_search_seq, __pyx_mstate->__pyx_n_u_start_pos_0, __pyx_mstate->__pyx_n_u_start_codon, __pyx_mstate->__pyx_n_u_max_mismatches};
-    __pyx_mstate_global->__pyx_codeobj_tab[1] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_analysis__shine_dalgarno_cy_pyx, __pyx_mstate->__pyx_n_u_best_sd_for_start_cy, __pyx_mstate->__pyx_kp_b_iso88591_c_a_q_1_Q_2Rs_c_q_E_1_2Q_Ba_7_q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[1])) goto bad;
+    __pyx_mstate_global->__pyx_codeobj_tab[1] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_analysis__shine_dalgarno_cy_pyx, __pyx_mstate->__pyx_n_u_best_sd_for_start_cy, __pyx_mstate->__pyx_kp_b_iso88591_c_a_q_1_Q_2Rs_c_q_3a_a_S_a_S_a, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[1])) goto bad;
   }
   Py_DECREF(tuple_dedup_map);
   return 0;
@@ -5794,16 +5994,61 @@ static CYTHON_INLINE Py_UCS4 __Pyx_GetItemInt_Unicode_Fast(PyObject* ustring, Py
     }
 }
 
-/* RaiseUnexpectedTypeError */
-static int
-__Pyx_RaiseUnexpectedTypeError(const char *expected, PyObject *obj)
+/* TupleAndListFromArray (used by fastcall) */
+#if !CYTHON_COMPILING_IN_CPYTHON && CYTHON_METH_FASTCALL
+static CYTHON_INLINE PyObject *
+__Pyx_PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
 {
-    __Pyx_TypeName obj_type_name = __Pyx_PyType_GetFullyQualifiedName(Py_TYPE(obj));
-    PyErr_Format(PyExc_TypeError, "Expected %s, got " __Pyx_FMT_TYPENAME,
-                 expected, obj_type_name);
-    __Pyx_DECREF_TypeName(obj_type_name);
-    return 0;
+    PyObject *res;
+    Py_ssize_t i;
+    if (n <= 0) {
+        return __Pyx_NewRef(__pyx_mstate_global->__pyx_empty_tuple);
+    }
+    res = PyTuple_New(n);
+    if (unlikely(res == NULL)) return NULL;
+    for (i = 0; i < n; i++) {
+        if (unlikely(__Pyx_PyTuple_SET_ITEM(res, i, src[i]) < (0))) {
+            Py_DECREF(res);
+            return NULL;
+        }
+        Py_INCREF(src[i]);
+    }
+    return res;
 }
+#elif CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE void __Pyx_copy_object_array(PyObject *const *CYTHON_RESTRICT src, PyObject** CYTHON_RESTRICT dest, Py_ssize_t length) {
+    PyObject *v;
+    Py_ssize_t i;
+    for (i = 0; i < length; i++) {
+        v = dest[i] = src[i];
+        Py_INCREF(v);
+    }
+}
+static CYTHON_INLINE PyObject *
+__Pyx_PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
+{
+    PyObject *res;
+    if (n <= 0) {
+        return __Pyx_NewRef(__pyx_mstate_global->__pyx_empty_tuple);
+    }
+    res = PyTuple_New(n);
+    if (unlikely(res == NULL)) return NULL;
+    __Pyx_copy_object_array(src, ((PyTupleObject*)res)->ob_item, n);
+    return res;
+}
+static CYTHON_INLINE PyObject *
+__Pyx_PyList_FromArray(PyObject *const *src, Py_ssize_t n)
+{
+    PyObject *res;
+    if (n <= 0) {
+        return PyList_New(0);
+    }
+    res = PyList_New(n);
+    if (unlikely(res == NULL)) return NULL;
+    __Pyx_copy_object_array(src, ((PyListObject*)res)->ob_item, n);
+    return res;
+}
+#endif
 
 /* BytesEquals (used by UnicodeEquals) */
 static CYTHON_INLINE int __Pyx_PyBytes_Equals(PyObject* s1, PyObject* s2, int equals) {
@@ -5853,7 +6098,7 @@ static CYTHON_INLINE int __Pyx_PyBytes_Equals(PyObject* s1, PyObject* s2, int eq
 #endif
 }
 
-/* UnicodeEquals */
+/* UnicodeEquals (used by fastcall) */
 static CYTHON_INLINE int __Pyx_PyUnicode_Equals(PyObject* s1, PyObject* s2, int equals) {
 #if CYTHON_COMPILING_IN_PYPY || CYTHON_COMPILING_IN_LIMITED_API || CYTHON_COMPILING_IN_GRAAL
     return PyObject_RichCompareBool(s1, s2, equals);
@@ -5926,62 +6171,6 @@ return_ne:
     return (equals == Py_NE);
 #endif
 }
-
-/* TupleAndListFromArray (used by fastcall) */
-#if !CYTHON_COMPILING_IN_CPYTHON && CYTHON_METH_FASTCALL
-static CYTHON_INLINE PyObject *
-__Pyx_PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
-{
-    PyObject *res;
-    Py_ssize_t i;
-    if (n <= 0) {
-        return __Pyx_NewRef(__pyx_mstate_global->__pyx_empty_tuple);
-    }
-    res = PyTuple_New(n);
-    if (unlikely(res == NULL)) return NULL;
-    for (i = 0; i < n; i++) {
-        if (unlikely(__Pyx_PyTuple_SET_ITEM(res, i, src[i]) < (0))) {
-            Py_DECREF(res);
-            return NULL;
-        }
-        Py_INCREF(src[i]);
-    }
-    return res;
-}
-#elif CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE void __Pyx_copy_object_array(PyObject *const *CYTHON_RESTRICT src, PyObject** CYTHON_RESTRICT dest, Py_ssize_t length) {
-    PyObject *v;
-    Py_ssize_t i;
-    for (i = 0; i < length; i++) {
-        v = dest[i] = src[i];
-        Py_INCREF(v);
-    }
-}
-static CYTHON_INLINE PyObject *
-__Pyx_PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
-{
-    PyObject *res;
-    if (n <= 0) {
-        return __Pyx_NewRef(__pyx_mstate_global->__pyx_empty_tuple);
-    }
-    res = PyTuple_New(n);
-    if (unlikely(res == NULL)) return NULL;
-    __Pyx_copy_object_array(src, ((PyTupleObject*)res)->ob_item, n);
-    return res;
-}
-static CYTHON_INLINE PyObject *
-__Pyx_PyList_FromArray(PyObject *const *src, Py_ssize_t n)
-{
-    PyObject *res;
-    if (n <= 0) {
-        return PyList_New(0);
-    }
-    res = PyList_New(n);
-    if (unlikely(res == NULL)) return NULL;
-    __Pyx_copy_object_array(src, ((PyListObject*)res)->ob_item, n);
-    return res;
-}
-#endif
 
 /* fastcall */
 #if CYTHON_METH_FASTCALL

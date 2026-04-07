@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import asdict
 from typing import Any, Dict, List
 
 from celery import group
@@ -39,7 +38,6 @@ from db.analysis_repository import (
     append_analysis_error,
     replace_module_results,
     fetch_module_results,
-    count_module_results,
     update_analysis_summary,
     update_analysis_status,
 )
@@ -110,10 +108,6 @@ def _store_empty_final_results(analysis_id: str, module: str) -> Dict[str, Any]:
 
 
 def _run_chunk_group_and_wait(task_signatures) -> List[dict]:
-    """
-    Lance un group Celery et attend les résultats.
-    Permet la jointure sync depuis une task Celery proprement.
-    """
     if not task_signatures:
         return []
 
@@ -125,81 +119,18 @@ def _run_chunk_group_and_wait(task_signatures) -> List[dict]:
     return results
 
 
-@celery_app.task(name="tasks.process_promoter_chunk")
-def process_promoter_chunk(
-    analysis_id: str,
+def _obj_to_dict(obj) -> dict:
+    return vars(obj).copy()
+
+
+@celery_app.task(name="tasks.process_feature_chunk")
+def process_feature_chunk(
     chunk: Dict[str, Any],
-    chunk_index: int,
     max_mismatches_box35: int = 2,
     max_mismatches_box10: int = 2,
     spacing_min: int = 16,
     spacing_max: int = 19,
-) -> Dict[str, Any]:
-    local_hits = find_promoters(
-        sequence=chunk["sequence"],
-        max_mismatches_box35=max_mismatches_box35,
-        max_mismatches_box10=max_mismatches_box10,
-        spacing_min=spacing_min,
-        spacing_max=spacing_max,
-    )
-
-    remapped = [remap_promoter_hit(hit, chunk["start"]) for hit in local_hits]
-    serialized = serialize_promoters(remapped)
-
-    count = replace_module_results(
-        analysis_id=analysis_id,
-        module="promoters",
-        results=serialized,
-        kind="raw_chunk",
-        chunk_index=chunk_index,
-    )
-
-    return {
-        "analysis_id": analysis_id,
-        "module": "promoters",
-        "chunk_index": chunk_index,
-        "count": count,
-        "status": "done",
-    }
-
-
-@celery_app.task(name="tasks.process_sd_chunk")
-def process_sd_chunk(
-    analysis_id: str,
-    chunk: Dict[str, Any],
-    chunk_index: int,
-    max_mismatches: int = 2,
-) -> Dict[str, Any]:
-    local_hits = find_shine_dalgarno_sites(
-        sequence=chunk["sequence"],
-        max_mismatches=max_mismatches,
-    )
-
-    remapped = [remap_sd_site(hit, chunk["start"]) for hit in local_hits]
-    serialized = serialize_sd_sites(remapped)
-
-    count = replace_module_results(
-        analysis_id=analysis_id,
-        module="shine_dalgarno",
-        results=serialized,
-        kind="raw_chunk",
-        chunk_index=chunk_index,
-    )
-
-    return {
-        "analysis_id": analysis_id,
-        "module": "shine_dalgarno",
-        "chunk_index": chunk_index,
-        "count": count,
-        "status": "done",
-    }
-
-
-@celery_app.task(name="tasks.process_terminator_chunk")
-def process_terminator_chunk(
-    analysis_id: str,
-    chunk: Dict[str, Any],
-    chunk_index: int,
+    max_sd_mismatches: int = 2,
     stem_min: int = 5,
     stem_max: int = 10,
     loop_min: int = 3,
@@ -208,7 +139,20 @@ def process_terminator_chunk(
     min_poly_t: int = 5,
     gc_threshold: float = 0.7,
 ) -> Dict[str, Any]:
-    local_hits = find_rho_independent_terminators(
+    local_promoters = find_promoters(
+        sequence=chunk["sequence"],
+        max_mismatches_box35=max_mismatches_box35,
+        max_mismatches_box10=max_mismatches_box10,
+        spacing_min=spacing_min,
+        spacing_max=spacing_max,
+    )
+
+    local_sd = find_shine_dalgarno_sites(
+        sequence=chunk["sequence"],
+        max_mismatches=max_sd_mismatches,
+    )
+
+    local_terminators = find_rho_independent_terminators(
         sequence=chunk["sequence"],
         stem_min=stem_min,
         stem_max=stem_max,
@@ -219,23 +163,14 @@ def process_terminator_chunk(
         gc_threshold=gc_threshold,
     )
 
-    remapped = [remap_terminator_hit(hit, chunk["start"]) for hit in local_hits]
-    serialized = serialize_terminators(remapped)
-
-    count = replace_module_results(
-        analysis_id=analysis_id,
-        module="terminators",
-        results=serialized,
-        kind="raw_chunk",
-        chunk_index=chunk_index,
-    )
+    remapped_promoters = [remap_promoter_hit(hit, chunk["start"]) for hit in local_promoters]
+    remapped_sd = [remap_sd_site(hit, chunk["start"]) for hit in local_sd]
+    remapped_terminators = [remap_terminator_hit(hit, chunk["start"]) for hit in local_terminators]
 
     return {
-        "analysis_id": analysis_id,
-        "module": "terminators",
-        "chunk_index": chunk_index,
-        "count": count,
-        "status": "done",
+        "promoters": serialize_promoters(remapped_promoters),
+        "shine_dalgarno": serialize_sd_sites(remapped_sd),
+        "terminators": serialize_terminators(remapped_terminators),
     }
 
 
@@ -255,7 +190,7 @@ def run_global_coding_orfs_store(
             min_aa=min_aa,
             longest_only_per_stop=longest_only_per_stop,
         )
-        serialized = [asdict(x) for x in coding_orfs]
+        serialized = [_obj_to_dict(x) for x in coding_orfs]
 
         count = replace_module_results(
             analysis_id=analysis_id,
@@ -278,136 +213,17 @@ def run_global_coding_orfs_store(
         raise
 
 
-@celery_app.task(name="tasks.run_chunked_promoters_store")
-def run_chunked_promoters_store(
+@celery_app.task(name="tasks.run_chunked_features_store")
+def run_chunked_features_store(
     analysis_id: str,
     sequence: str,
-    chunk_size: int = 50_000,
-    overlap: int = 1_000,
+    chunk_size: int = 250_000,
+    overlap: int = 500,
     max_mismatches_box35: int = 2,
     max_mismatches_box10: int = 2,
     spacing_min: int = 16,
     spacing_max: int = 19,
-) -> Dict[str, Any]:
-    module = "promoters"
-    update_module_status(analysis_id, module, "running")
-
-    try:
-        chunks = chunk_sequence(sequence, chunk_size=chunk_size, overlap=overlap)
-
-        if not chunks:
-            return _store_empty_final_results(analysis_id, module)
-
-        task_signatures = [
-            process_promoter_chunk.s(
-                analysis_id=analysis_id,
-                chunk=chunk,
-                chunk_index=idx,
-                max_mismatches_box35=max_mismatches_box35,
-                max_mismatches_box10=max_mismatches_box10,
-                spacing_min=spacing_min,
-                spacing_max=spacing_max,
-            )
-            for idx, chunk in enumerate(chunks)
-        ]
-
-        _run_chunk_group_and_wait(task_signatures)
-
-        raw_hits = fetch_module_results(
-            analysis_id=analysis_id,
-            module=module,
-            kind="raw_chunk",
-        )
-        promoter_hits = promoters_from_dicts(raw_hits)
-        merged = deduplicate_promoters(promoter_hits)
-        serialized = serialize_promoters(merged)
-
-        replace_module_results(
-            analysis_id=analysis_id,
-            module=module,
-            results=serialized,
-            kind="final",
-        )
-
-        update_module_status(analysis_id, module, "done")
-        return {
-            "analysis_id": analysis_id,
-            "module": module,
-            "count": len(serialized),
-            "status": "done",
-        }
-
-    except Exception as exc:
-        update_module_status(analysis_id, module, "failed")
-        append_analysis_error(analysis_id, module, str(exc))
-        raise
-
-
-@celery_app.task(name="tasks.run_chunked_sd_store")
-def run_chunked_sd_store(
-    analysis_id: str,
-    sequence: str,
-    chunk_size: int = 50_000,
-    overlap: int = 1_000,
-    max_mismatches: int = 2,
-) -> Dict[str, Any]:
-    module = "shine_dalgarno"
-    update_module_status(analysis_id, module, "running")
-
-    try:
-        chunks = chunk_sequence(sequence, chunk_size=chunk_size, overlap=overlap)
-
-        if not chunks:
-            return _store_empty_final_results(analysis_id, module)
-
-        task_signatures = [
-            process_sd_chunk.s(
-                analysis_id=analysis_id,
-                chunk=chunk,
-                chunk_index=idx,
-                max_mismatches=max_mismatches,
-            )
-            for idx, chunk in enumerate(chunks)
-        ]
-
-        _run_chunk_group_and_wait(task_signatures)
-
-        raw_hits = fetch_module_results(
-            analysis_id=analysis_id,
-            module=module,
-            kind="raw_chunk",
-        )
-        sd_hits = sd_sites_from_dicts(raw_hits)
-        merged = deduplicate_sd_sites(sd_hits)
-        serialized = serialize_sd_sites(merged)
-
-        replace_module_results(
-            analysis_id=analysis_id,
-            module=module,
-            results=serialized,
-            kind="final",
-        )
-
-        update_module_status(analysis_id, module, "done")
-        return {
-            "analysis_id": analysis_id,
-            "module": module,
-            "count": len(serialized),
-            "status": "done",
-        }
-
-    except Exception as exc:
-        update_module_status(analysis_id, module, "failed")
-        append_analysis_error(analysis_id, module, str(exc))
-        raise
-
-
-@celery_app.task(name="tasks.run_chunked_terminators_store")
-def run_chunked_terminators_store(
-    analysis_id: str,
-    sequence: str,
-    chunk_size: int = 50_000,
-    overlap: int = 1_000,
+    max_sd_mismatches: int = 2,
     stem_min: int = 5,
     stem_max: int = 10,
     loop_min: int = 3,
@@ -416,20 +232,38 @@ def run_chunked_terminators_store(
     min_poly_t: int = 5,
     gc_threshold: float = 0.7,
 ) -> Dict[str, Any]:
-    module = "terminators"
-    update_module_status(analysis_id, module, "running")
+    update_module_status(analysis_id, "promoters", "running")
+    update_module_status(analysis_id, "shine_dalgarno", "running")
+    update_module_status(analysis_id, "terminators", "running")
 
     try:
         chunks = chunk_sequence(sequence, chunk_size=chunk_size, overlap=overlap)
 
         if not chunks:
-            return _store_empty_final_results(analysis_id, module)
+            replace_module_results(analysis_id, "promoters", [], kind="final")
+            replace_module_results(analysis_id, "shine_dalgarno", [], kind="final")
+            replace_module_results(analysis_id, "terminators", [], kind="final")
+
+            update_module_status(analysis_id, "promoters", "done")
+            update_module_status(analysis_id, "shine_dalgarno", "done")
+            update_module_status(analysis_id, "terminators", "done")
+
+            return {
+                "analysis_id": analysis_id,
+                "status": "done",
+                "promoters_count": 0,
+                "shine_dalgarno_count": 0,
+                "terminators_count": 0,
+            }
 
         task_signatures = [
-            process_terminator_chunk.s(
-                analysis_id=analysis_id,
+            process_feature_chunk.s(
                 chunk=chunk,
-                chunk_index=idx,
+                max_mismatches_box35=max_mismatches_box35,
+                max_mismatches_box10=max_mismatches_box10,
+                spacing_min=spacing_min,
+                spacing_max=spacing_max,
+                max_sd_mismatches=max_sd_mismatches,
                 stem_min=stem_min,
                 stem_max=stem_max,
                 loop_min=loop_min,
@@ -438,38 +272,68 @@ def run_chunked_terminators_store(
                 min_poly_t=min_poly_t,
                 gc_threshold=gc_threshold,
             )
-            for idx, chunk in enumerate(chunks)
+            for chunk in chunks
         ]
 
-        _run_chunk_group_and_wait(task_signatures)
+        chunk_results = _run_chunk_group_and_wait(task_signatures)
 
-        raw_hits = fetch_module_results(
-            analysis_id=analysis_id,
-            module=module,
-            kind="raw_chunk",
-        )
-        terminator_hits = terminators_from_dicts(raw_hits)
-        merged = deduplicate_terminators(terminator_hits)
-        serialized = serialize_terminators(merged)
+        all_promoters_dicts: List[dict] = []
+        all_sd_dicts: List[dict] = []
+        all_terminators_dicts: List[dict] = []
+
+        for result in chunk_results:
+            all_promoters_dicts.extend(result.get("promoters", []))
+            all_sd_dicts.extend(result.get("shine_dalgarno", []))
+            all_terminators_dicts.extend(result.get("terminators", []))
+
+        promoter_hits = promoters_from_dicts(all_promoters_dicts)
+        sd_hits = sd_sites_from_dicts(all_sd_dicts)
+        terminator_hits = terminators_from_dicts(all_terminators_dicts)
+
+        merged_promoters = deduplicate_promoters(promoter_hits)
+        merged_sd = deduplicate_sd_sites(sd_hits)
+        merged_terminators = deduplicate_terminators(terminator_hits)
+
+        final_promoters = serialize_promoters(merged_promoters)
+        final_sd = serialize_sd_sites(merged_sd)
+        final_terminators = serialize_terminators(merged_terminators)
 
         replace_module_results(
             analysis_id=analysis_id,
-            module=module,
-            results=serialized,
+            module="promoters",
+            results=final_promoters,
+            kind="final",
+        )
+        replace_module_results(
+            analysis_id=analysis_id,
+            module="shine_dalgarno",
+            results=final_sd,
+            kind="final",
+        )
+        replace_module_results(
+            analysis_id=analysis_id,
+            module="terminators",
+            results=final_terminators,
             kind="final",
         )
 
-        update_module_status(analysis_id, module, "done")
+        update_module_status(analysis_id, "promoters", "done")
+        update_module_status(analysis_id, "shine_dalgarno", "done")
+        update_module_status(analysis_id, "terminators", "done")
+
         return {
             "analysis_id": analysis_id,
-            "module": module,
-            "count": len(serialized),
             "status": "done",
+            "promoters_count": len(final_promoters),
+            "shine_dalgarno_count": len(final_sd),
+            "terminators_count": len(final_terminators),
         }
 
     except Exception as exc:
-        update_module_status(analysis_id, module, "failed")
-        append_analysis_error(analysis_id, module, str(exc))
+        update_module_status(analysis_id, "promoters", "failed")
+        update_module_status(analysis_id, "shine_dalgarno", "failed")
+        update_module_status(analysis_id, "terminators", "failed")
+        append_analysis_error(analysis_id, "chunked_features", str(exc))
         raise
 
 
@@ -518,7 +382,7 @@ def assemble_and_rank_from_storage(
             max_terminator_distance=max_terminator_distance,
         )
 
-        ranked_data = ranked if isinstance(ranked, list) else [asdict(x) for x in ranked]
+        ranked_data = ranked if isinstance(ranked, list) else [_obj_to_dict(x) for x in ranked]
 
         replace_module_results(
             analysis_id=analysis_id,
@@ -528,11 +392,11 @@ def assemble_and_rank_from_storage(
         )
 
         summary = {
-            "coding_orf_count": count_module_results(analysis_id, "coding_orfs", "final"),
-            "promoter_count": count_module_results(analysis_id, "promoters", "final"),
-            "shine_dalgarno_count": count_module_results(analysis_id, "shine_dalgarno", "final"),
-            "terminator_count": count_module_results(analysis_id, "terminators", "final"),
-            "ranked_coding_orf_count": count_module_results(analysis_id, "ranked_coding_orfs", "final"),
+            "coding_orf_count": len(coding_orfs_data),
+            "promoter_count": len(promoters_data),
+            "shine_dalgarno_count": len(sd_sites_data),
+            "terminator_count": len(terminators_data),
+            "ranked_coding_orf_count": len(ranked_data),
         }
 
         update_analysis_summary(analysis_id, summary)

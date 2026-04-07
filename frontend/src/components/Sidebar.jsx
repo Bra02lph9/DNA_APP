@@ -41,42 +41,42 @@ export default function Sidebar({
           <div className="space-y-2">
             <SidebarButton
               onClick={() => onRunAnalysis("orfs")}
-              className="bg-slate-900 hover:bg-slate-800"
+              className="bg-slate-900 hover:bg-slate-800 cursor-pointer"
             >
               Find ORFs
             </SidebarButton>
 
             <SidebarButton
               onClick={() => onRunAnalysis("coding-orfs")}
-              className="bg-slate-900 hover:bg-slate-800"
+              className="bg-slate-900 hover:bg-slate-800 cursor-pointer"
             >
               Find Coding ORFs
             </SidebarButton>
 
             <SidebarButton
               onClick={() => onRunAnalysis("promoters")}
-              className="bg-slate-900 hover:bg-slate-800"
+              className="bg-slate-900 hover:bg-slate-800 cursor-pointer"
             >
               Detect Promoters
             </SidebarButton>
 
             <SidebarButton
               onClick={() => onRunAnalysis("terminators")}
-              className="bg-slate-900 hover:bg-slate-800"
+              className="bg-slate-900 hover:bg-slate-800 cursor-pointer"
             >
               Detect Terminators
             </SidebarButton>
 
             <SidebarButton
               onClick={() => onRunAnalysis("shine-dalgarno")}
-              className="bg-slate-900 hover:bg-slate-800"
+              className="bg-slate-900 hover:bg-slate-800 cursor-pointer"
             >
               Detect Shine-Dalgarno
             </SidebarButton>
 
             <SidebarButton
               onClick={() => onRunAnalysis("ranked-coding-orfs")}
-              className="bg-fuchsia-700 hover:bg-fuchsia-600"
+              className="bg-fuchsia-700 hover:bg-fuchsia-600 cursor-pointer"
             >
               Most Plausible Coding ORFs
             </SidebarButton>
@@ -85,7 +85,7 @@ export default function Sidebar({
 
             <SidebarButton
               onClick={() => onRunAnalysis("all")}
-              className="bg-cyan-600 hover:bg-cyan-700"
+              className="bg-cyan-600 hover:bg-cyan-700 cursor-pointer"
             >
               Run Full Analysis
             </SidebarButton>
@@ -93,14 +93,14 @@ export default function Sidebar({
             <SidebarButton
               onClick={onDownload}
               disabled={!results}
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-emerald-600 hover:bg-emerald-700 cursor-pointer"
             >
               Download Results
             </SidebarButton>
 
             <SidebarButton
               onClick={onClear}
-              className="bg-red-500 hover:bg-red-600"
+              className="bg-red-500 hover:bg-red-600 cursor-pointer"
             >
               Clear Data
             </SidebarButton>

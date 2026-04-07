@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from typing import List, Optional, Dict, Tuple
 
 from .utils import reverse_complement
@@ -177,10 +177,10 @@ def _best_sd_for_start_python(
             continue
 
         key = (
-            -candidate[5],             # score desc
-            candidate[3],             # mismatches asc
-            abs(candidate[4] - 7),    # distance to ideal
-            candidate[0],             # earlier site
+            -candidate[5],
+            candidate[3],
+            abs(candidate[4] - 7),
+            candidate[0],
         )
 
         if best is None or key < best_key:
@@ -386,7 +386,17 @@ def find_shine_dalgarno_sites(
 
 
 def shine_dalgarno_to_dict(site: ShineDalgarnoSite) -> dict:
-    return asdict(site)
+    return {
+        "strand": site.strand,
+        "start": site.start,
+        "end": site.end,
+        "sequence": site.sequence,
+        "mismatches": site.mismatches,
+        "linked_start_codon": site.linked_start_codon,
+        "linked_start_position": site.linked_start_position,
+        "distance_to_start": site.distance_to_start,
+        "score": site.score,
+    }
 
 
 def format_shine_dalgarno_sites(sites: List[ShineDalgarnoSite]) -> str:
