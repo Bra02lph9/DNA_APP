@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import asdict, is_dataclass
 from typing import Dict, List, Any, Iterable
 
 from .promoters import PromoterHit
@@ -202,7 +203,13 @@ def deduplicate_terminators(terminators: List[TerminatorHit]) -> List[Terminator
 
 
 def _to_dict_light(obj) -> dict:
-    return vars(obj).copy()
+    if is_dataclass(obj):
+        return asdict(obj)
+    if hasattr(obj, "__dict__"):
+        return obj.__dict__.copy()
+    if hasattr(obj, "__slots__"):
+        return {slot: getattr(obj, slot) for slot in obj.__slots__}
+    return obj
 
 
 def serialize_promoters(promoters: List[PromoterHit]) -> List[dict]:
@@ -237,7 +244,7 @@ def sd_sites_from_dicts(items: List[dict]) -> List[ShineDalgarnoSite]:
     return [sd_site_from_dict(x) for x in items]
 
 
-def terminators_from_dicts(items: List[dict]) -> List[dict]:
+def terminators_from_dicts(items: List[dict]) -> List[TerminatorHit]:
     return [terminator_from_dict(x) for x in items]
 
 

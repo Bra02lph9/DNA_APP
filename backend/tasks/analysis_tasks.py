@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import logging
+import time
+from dataclasses import asdict, is_dataclass
 from typing import Any, Dict, List
 
 from celery import group
@@ -42,6 +45,24 @@ from db.analysis_repository import (
     update_analysis_status,
 )
 
+logger = logging.getLogger(__name__)
+
+
+class StepTimer:
+    def __init__(self, label: str, extra: dict[str, Any] | None = None):
+        self.label = label
+        self.extra = extra or {}
+        self.start = 0.0
+
+    def __enter__(self):
+        self.start = time.perf_counter()
+        logger.debug("[START] %s | %s", self.label, self.extra)
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        elapsed = time.perf_counter() - self.start
+        logger.debug("[DONE] %s took %.4fs | %s", self.label, elapsed, self.extra)
+
 
 @celery_app.task(bind=True, name="tasks.run_sequence_analysis")
 def run_sequence_analysis(
@@ -50,11 +71,15 @@ def run_sequence_analysis(
     analysis_type: str = "all",
     min_aa: int = 30,
 ) -> dict[str, Any]:
-    result = analyze_sequence_by_type(
-        sequence=sequence,
-        analysis_type=analysis_type,
-        min_aa=min_aa,
-    )
+    with StepTimer(
+        "run_sequence_analysis",
+        {"analysis_type": analysis_type, "seq_len": len(sequence)},
+    ):
+        result = analyze_sequence_by_type(
+            sequence=sequence,
+            analysis_type=analysis_type,
+            min_aa=min_aa,
+        )
 
     return {
         "status": "completed",
@@ -70,11 +95,15 @@ def run_folder_analysis(
     analysis_type: str = "all",
     min_aa: int = 30,
 ) -> dict[str, Any]:
-    result = analyze_folder_files(
-        files=files,
-        analysis_type=analysis_type,
-        min_aa=min_aa,
-    )
+    with StepTimer(
+        "run_folder_analysis",
+        {"analysis_type": analysis_type, "file_count": len(files)},
+    ):
+        result = analyze_folder_files(
+            files=files,
+            analysis_type=analysis_type,
+            min_aa=min_aa,
+        )
 
     return {
         "status": "completed",
@@ -91,36 +120,146 @@ def _coding_orfs_from_dicts(items: List[dict]) -> List[CodingORF]:
     return [_coding_orf_from_dict(x) for x in items]
 
 
-def _store_empty_final_results(analysis_id: str, module: str) -> Dict[str, Any]:
-    replace_module_results(
-        analysis_id=analysis_id,
-        module=module,
-        results=[],
-        kind="final",
-    )
-    update_module_status(analysis_id, module, "done")
-    return {
-        "analysis_id": analysis_id,
-        "module": module,
-        "count": 0,
-        "status": "done",
-    }
+def _safe_update_module_status(analysis_id: str, module: str, status: str) -> None:
+    try:
+        update_module_status(analysis_id, module, status)
+    except Exception as exc:
+        logger.warning(
+            "update_module_status failed | analysis_id=%s module=%s status=%s err=%s",
+            analysis_id,
+            module,
+            status,
+            exc,
+        )
+
+
+def _safe_append_analysis_error(analysis_id: str, module: str, message: str) -> None:
+    try:
+        append_analysis_error(analysis_id, module, message)
+    except Exception as exc:
+        logger.warning(
+            "append_analysis_error failed | analysis_id=%s module=%s err=%s",
+            analysis_id,
+            module,
+            exc,
+        )
+
+
+def _safe_replace_module_results(
+    analysis_id: str,
+    module: str,
+    results: list,
+    kind: str = "final",
+) -> int:
+    try:
+        return replace_module_results(
+            analysis_id=analysis_id,
+            module=module,
+            results=results,
+            kind=kind,
+        )
+    except Exception as exc:
+        logger.warning(
+            "replace_module_results failed | analysis_id=%s module=%s kind=%s err=%s",
+            analysis_id,
+            module,
+            kind,
+            exc,
+        )
+        return len(results)
+
+
+def _safe_update_analysis_summary(analysis_id: str, summary: dict) -> None:
+    try:
+        update_analysis_summary(analysis_id, summary)
+    except Exception as exc:
+        logger.warning(
+            "update_analysis_summary failed | analysis_id=%s err=%s",
+            analysis_id,
+            exc,
+        )
+
+
+def _safe_update_analysis_status(analysis_id: str, status: str) -> None:
+    try:
+        update_analysis_status(analysis_id, status)
+    except Exception as exc:
+        logger.warning(
+            "update_analysis_status failed | analysis_id=%s status=%s err=%s",
+            analysis_id,
+            status,
+            exc,
+        )
 
 
 def _run_chunk_group_and_wait(task_signatures) -> List[dict]:
     if not task_signatures:
         return []
 
-    job = group(task_signatures).apply_async()
+    with StepTimer("chunk_group_dispatch", {"task_count": len(task_signatures)}):
+        job = group(task_signatures).apply_async()
 
-    with allow_join_result():
-        results = job.get(disable_sync_subtasks=False)
+    with StepTimer("chunk_group_wait", {"task_count": len(task_signatures)}):
+        with allow_join_result():
+            results = job.get(disable_sync_subtasks=False)
 
     return results
 
 
 def _obj_to_dict(obj) -> dict:
-    return vars(obj).copy()
+    if obj is None:
+        return {}
+
+    if isinstance(obj, dict):
+        return obj.copy()
+
+    if is_dataclass(obj):
+        return asdict(obj)
+
+    if hasattr(obj, "__dict__"):
+        return obj.__dict__.copy()
+
+    slots = getattr(obj, "__slots__", None)
+    if slots:
+        if isinstance(slots, str):
+            slots = [slots]
+        return {slot: getattr(obj, slot) for slot in slots if hasattr(obj, slot)}
+
+    raise TypeError(f"Cannot serialize object of type {type(obj).__name__}")
+
+
+def _serialize_list(items: list[Any]) -> list[dict]:
+    return [_obj_to_dict(x) for x in items]
+
+
+def _feature_task_kwargs(
+    max_mismatches_box35: int = 2,
+    max_mismatches_box10: int = 2,
+    spacing_min: int = 16,
+    spacing_max: int = 19,
+    max_sd_mismatches: int = 2,
+    stem_min: int = 5,
+    stem_max: int = 10,
+    loop_min: int = 3,
+    loop_max: int = 7,
+    max_stem_mismatches: int = 1,
+    min_poly_t: int = 5,
+    gc_threshold: float = 0.7,
+) -> dict[str, Any]:
+    return {
+        "max_mismatches_box35": max_mismatches_box35,
+        "max_mismatches_box10": max_mismatches_box10,
+        "spacing_min": spacing_min,
+        "spacing_max": spacing_max,
+        "max_sd_mismatches": max_sd_mismatches,
+        "stem_min": stem_min,
+        "stem_max": stem_max,
+        "loop_min": loop_min,
+        "loop_max": loop_max,
+        "max_stem_mismatches": max_stem_mismatches,
+        "min_poly_t": min_poly_t,
+        "gc_threshold": gc_threshold,
+    }
 
 
 @celery_app.task(name="tasks.process_feature_chunk")
@@ -139,39 +278,50 @@ def process_feature_chunk(
     min_poly_t: int = 5,
     gc_threshold: float = 0.7,
 ) -> Dict[str, Any]:
-    local_promoters = find_promoters(
-        sequence=chunk["sequence"],
-        max_mismatches_box35=max_mismatches_box35,
-        max_mismatches_box10=max_mismatches_box10,
-        spacing_min=spacing_min,
-        spacing_max=spacing_max,
-    )
+    chunk_start = chunk["start"]
+    chunk_seq = chunk["sequence"]
 
-    local_sd = find_shine_dalgarno_sites(
-        sequence=chunk["sequence"],
-        max_mismatches=max_sd_mismatches,
-    )
+    with StepTimer(
+        "process_feature_chunk",
+        {"chunk_start": chunk_start, "chunk_len": len(chunk_seq)},
+    ):
+        local_promoters = find_promoters(
+            sequence=chunk_seq,
+            max_mismatches_box35=max_mismatches_box35,
+            max_mismatches_box10=max_mismatches_box10,
+            spacing_min=spacing_min,
+            spacing_max=spacing_max,
+        )
 
-    local_terminators = find_rho_independent_terminators(
-        sequence=chunk["sequence"],
-        stem_min=stem_min,
-        stem_max=stem_max,
-        loop_min=loop_min,
-        loop_max=loop_max,
-        max_stem_mismatches=max_stem_mismatches,
-        min_poly_t=min_poly_t,
-        gc_threshold=gc_threshold,
-    )
+        local_sd = find_shine_dalgarno_sites(
+            sequence=chunk_seq,
+            max_mismatches=max_sd_mismatches,
+        )
 
-    remapped_promoters = [remap_promoter_hit(hit, chunk["start"]) for hit in local_promoters]
-    remapped_sd = [remap_sd_site(hit, chunk["start"]) for hit in local_sd]
-    remapped_terminators = [remap_terminator_hit(hit, chunk["start"]) for hit in local_terminators]
+        local_terminators = find_rho_independent_terminators(
+            sequence=chunk_seq,
+            stem_min=stem_min,
+            stem_max=stem_max,
+            loop_min=loop_min,
+            loop_max=loop_max,
+            max_stem_mismatches=max_stem_mismatches,
+            min_poly_t=min_poly_t,
+            gc_threshold=gc_threshold,
+        )
 
-    return {
-        "promoters": serialize_promoters(remapped_promoters),
-        "shine_dalgarno": serialize_sd_sites(remapped_sd),
-        "terminators": serialize_terminators(remapped_terminators),
-    }
+        remapped_promoters = [
+            remap_promoter_hit(hit, chunk_start) for hit in local_promoters
+        ]
+        remapped_sd = [remap_sd_site(hit, chunk_start) for hit in local_sd]
+        remapped_terminators = [
+            remap_terminator_hit(hit, chunk_start) for hit in local_terminators
+        ]
+
+        return {
+            "promoters": serialize_promoters(remapped_promoters),
+            "shine_dalgarno": serialize_sd_sites(remapped_sd),
+            "terminators": serialize_terminators(remapped_terminators),
+        }
 
 
 @celery_app.task(name="tasks.run_global_coding_orfs_store")
@@ -182,24 +332,32 @@ def run_global_coding_orfs_store(
     longest_only_per_stop: bool = False,
 ) -> Dict[str, Any]:
     module = "coding_orfs"
-    update_module_status(analysis_id, module, "running")
+    _safe_update_module_status(analysis_id, module, "running")
 
     try:
-        coding_orfs = find_coding_orfs(
-            sequence=sequence,
-            min_aa=min_aa,
-            longest_only_per_stop=longest_only_per_stop,
-        )
-        serialized = [_obj_to_dict(x) for x in coding_orfs]
+        with StepTimer(
+            "find_coding_orfs",
+            {"analysis_id": analysis_id, "seq_len": len(sequence)},
+        ):
+            coding_orfs = find_coding_orfs(
+                sequence=sequence,
+                min_aa=min_aa,
+                longest_only_per_stop=longest_only_per_stop,
+            )
 
-        count = replace_module_results(
-            analysis_id=analysis_id,
-            module=module,
-            results=serialized,
-            kind="final",
-        )
+        with StepTimer(
+            "store_coding_orfs",
+            {"analysis_id": analysis_id, "count": len(coding_orfs)},
+        ):
+            serialized = _serialize_list(coding_orfs)
+            count = _safe_replace_module_results(
+                analysis_id=analysis_id,
+                module=module,
+                results=serialized,
+                kind="final",
+            )
 
-        update_module_status(analysis_id, module, "done")
+        _safe_update_module_status(analysis_id, module, "done")
         return {
             "analysis_id": analysis_id,
             "module": module,
@@ -208,8 +366,8 @@ def run_global_coding_orfs_store(
         }
 
     except Exception as exc:
-        update_module_status(analysis_id, module, "failed")
-        append_analysis_error(analysis_id, module, str(exc))
+        _safe_update_module_status(analysis_id, module, "failed")
+        _safe_append_analysis_error(analysis_id, module, str(exc))
         raise
 
 
@@ -232,21 +390,26 @@ def run_chunked_features_store(
     min_poly_t: int = 5,
     gc_threshold: float = 0.7,
 ) -> Dict[str, Any]:
-    update_module_status(analysis_id, "promoters", "running")
-    update_module_status(analysis_id, "shine_dalgarno", "running")
-    update_module_status(analysis_id, "terminators", "running")
+    modules = ("promoters", "shine_dalgarno", "terminators")
+    for module in modules:
+        _safe_update_module_status(analysis_id, module, "running")
 
     try:
-        chunks = chunk_sequence(sequence, chunk_size=chunk_size, overlap=overlap)
+        with StepTimer(
+            "chunk_sequence",
+            {
+                "analysis_id": analysis_id,
+                "seq_len": len(sequence),
+                "chunk_size": chunk_size,
+                "overlap": overlap,
+            },
+        ):
+            chunks = chunk_sequence(sequence, chunk_size=chunk_size, overlap=overlap)
 
         if not chunks:
-            replace_module_results(analysis_id, "promoters", [], kind="final")
-            replace_module_results(analysis_id, "shine_dalgarno", [], kind="final")
-            replace_module_results(analysis_id, "terminators", [], kind="final")
-
-            update_module_status(analysis_id, "promoters", "done")
-            update_module_status(analysis_id, "shine_dalgarno", "done")
-            update_module_status(analysis_id, "terminators", "done")
+            for module in modules:
+                _safe_replace_module_results(analysis_id, module, [], kind="final")
+                _safe_update_module_status(analysis_id, module, "done")
 
             return {
                 "analysis_id": analysis_id,
@@ -256,84 +419,91 @@ def run_chunked_features_store(
                 "terminators_count": 0,
             }
 
+        feature_kwargs = _feature_task_kwargs(
+            max_mismatches_box35=max_mismatches_box35,
+            max_mismatches_box10=max_mismatches_box10,
+            spacing_min=spacing_min,
+            spacing_max=spacing_max,
+            max_sd_mismatches=max_sd_mismatches,
+            stem_min=stem_min,
+            stem_max=stem_max,
+            loop_min=loop_min,
+            loop_max=loop_max,
+            max_stem_mismatches=max_stem_mismatches,
+            min_poly_t=min_poly_t,
+            gc_threshold=gc_threshold,
+        )
+
         task_signatures = [
-            process_feature_chunk.s(
-                chunk=chunk,
-                max_mismatches_box35=max_mismatches_box35,
-                max_mismatches_box10=max_mismatches_box10,
-                spacing_min=spacing_min,
-                spacing_max=spacing_max,
-                max_sd_mismatches=max_sd_mismatches,
-                stem_min=stem_min,
-                stem_max=stem_max,
-                loop_min=loop_min,
-                loop_max=loop_max,
-                max_stem_mismatches=max_stem_mismatches,
-                min_poly_t=min_poly_t,
-                gc_threshold=gc_threshold,
-            )
+            process_feature_chunk.s(chunk=chunk, **feature_kwargs)
             for chunk in chunks
         ]
 
         chunk_results = _run_chunk_group_and_wait(task_signatures)
 
-        all_promoters_dicts: List[dict] = []
-        all_sd_dicts: List[dict] = []
-        all_terminators_dicts: List[dict] = []
+        with StepTimer(
+            "merge_chunk_results",
+            {"analysis_id": analysis_id, "chunk_count": len(chunk_results)},
+        ):
+            all_promoters_dicts: List[dict] = []
+            all_sd_dicts: List[dict] = []
+            all_terminators_dicts: List[dict] = []
 
-        for result in chunk_results:
-            all_promoters_dicts.extend(result.get("promoters", []))
-            all_sd_dicts.extend(result.get("shine_dalgarno", []))
-            all_terminators_dicts.extend(result.get("terminators", []))
+            for result in chunk_results:
+                all_promoters_dicts.extend(result.get("promoters", []))
+                all_sd_dicts.extend(result.get("shine_dalgarno", []))
+                all_terminators_dicts.extend(result.get("terminators", []))
 
-        promoter_hits = promoters_from_dicts(all_promoters_dicts)
-        sd_hits = sd_sites_from_dicts(all_sd_dicts)
-        terminator_hits = terminators_from_dicts(all_terminators_dicts)
+        with StepTimer("deserialize_and_deduplicate", {"analysis_id": analysis_id}):
+            promoter_hits = promoters_from_dicts(all_promoters_dicts)
+            sd_hits = sd_sites_from_dicts(all_sd_dicts)
+            terminator_hits = terminators_from_dicts(all_terminators_dicts)
 
-        merged_promoters = deduplicate_promoters(promoter_hits)
-        merged_sd = deduplicate_sd_sites(sd_hits)
-        merged_terminators = deduplicate_terminators(terminator_hits)
+            merged_promoters = deduplicate_promoters(promoter_hits)
+            merged_sd = deduplicate_sd_sites(sd_hits)
+            merged_terminators = deduplicate_terminators(terminator_hits)
 
-        final_promoters = serialize_promoters(merged_promoters)
-        final_sd = serialize_sd_sites(merged_sd)
-        final_terminators = serialize_terminators(merged_terminators)
+        with StepTimer("serialize_final_features", {"analysis_id": analysis_id}):
+            final_promoters = serialize_promoters(merged_promoters)
+            final_sd = serialize_sd_sites(merged_sd)
+            final_terminators = serialize_terminators(merged_terminators)
 
-        replace_module_results(
-            analysis_id=analysis_id,
-            module="promoters",
-            results=final_promoters,
-            kind="final",
-        )
-        replace_module_results(
-            analysis_id=analysis_id,
-            module="shine_dalgarno",
-            results=final_sd,
-            kind="final",
-        )
-        replace_module_results(
-            analysis_id=analysis_id,
-            module="terminators",
-            results=final_terminators,
-            kind="final",
-        )
+        with StepTimer("store_final_features", {"analysis_id": analysis_id}):
+            _safe_replace_module_results(
+                analysis_id=analysis_id,
+                module="promoters",
+                results=final_promoters,
+                kind="final",
+            )
+            _safe_replace_module_results(
+                analysis_id=analysis_id,
+                module="shine_dalgarno",
+                results=final_sd,
+                kind="final",
+            )
+            _safe_replace_module_results(
+                analysis_id=analysis_id,
+                module="terminators",
+                results=final_terminators,
+                kind="final",
+            )
 
-        update_module_status(analysis_id, "promoters", "done")
-        update_module_status(analysis_id, "shine_dalgarno", "done")
-        update_module_status(analysis_id, "terminators", "done")
+        for module in modules:
+            _safe_update_module_status(analysis_id, module, "done")
 
         return {
             "analysis_id": analysis_id,
             "status": "done",
+            "chunk_count": len(chunks),
             "promoters_count": len(final_promoters),
             "shine_dalgarno_count": len(final_sd),
             "terminators_count": len(final_terminators),
         }
 
     except Exception as exc:
-        update_module_status(analysis_id, "promoters", "failed")
-        update_module_status(analysis_id, "shine_dalgarno", "failed")
-        update_module_status(analysis_id, "terminators", "failed")
-        append_analysis_error(analysis_id, "chunked_features", str(exc))
+        for module in modules:
+            _safe_update_module_status(analysis_id, module, "failed")
+        _safe_append_analysis_error(analysis_id, "chunked_features", str(exc))
         raise
 
 
@@ -344,52 +514,66 @@ def assemble_and_rank_from_storage(
     max_terminator_distance: int = 300,
 ) -> Dict[str, Any]:
     module = "ranking"
-    update_module_status(analysis_id, module, "running")
+    _safe_update_module_status(analysis_id, module, "running")
 
     try:
-        coding_orfs_data = fetch_module_results(
-            analysis_id=analysis_id,
-            module="coding_orfs",
-            kind="final",
-        )
-        promoters_data = fetch_module_results(
-            analysis_id=analysis_id,
-            module="promoters",
-            kind="final",
-        )
-        sd_sites_data = fetch_module_results(
-            analysis_id=analysis_id,
-            module="shine_dalgarno",
-            kind="final",
-        )
-        terminators_data = fetch_module_results(
-            analysis_id=analysis_id,
-            module="terminators",
-            kind="final",
-        )
+        with StepTimer("fetch_results_for_ranking", {"analysis_id": analysis_id}):
+            coding_orfs_data = fetch_module_results(
+                analysis_id=analysis_id,
+                module="coding_orfs",
+                kind="final",
+            )
+            promoters_data = fetch_module_results(
+                analysis_id=analysis_id,
+                module="promoters",
+                kind="final",
+            )
+            sd_sites_data = fetch_module_results(
+                analysis_id=analysis_id,
+                module="shine_dalgarno",
+                kind="final",
+            )
+            terminators_data = fetch_module_results(
+                analysis_id=analysis_id,
+                module="terminators",
+                kind="final",
+            )
 
-        coding_orfs = _coding_orfs_from_dicts(coding_orfs_data)
-        promoters = promoters_from_dicts(promoters_data)
-        sd_sites = sd_sites_from_dicts(sd_sites_data)
-        terminators = terminators_from_dicts(terminators_data)
+        with StepTimer(
+            "deserialize_results_for_ranking",
+            {"analysis_id": analysis_id},
+        ):
+            coding_orfs = _coding_orfs_from_dicts(coding_orfs_data)
+            promoters = promoters_from_dicts(promoters_data)
+            sd_sites = sd_sites_from_dicts(sd_sites_data)
+            terminators = terminators_from_dicts(terminators_data)
 
-        ranked = rank_coding_orfs_from_features(
-            coding_orfs=coding_orfs,
-            promoters=promoters,
-            sd_sites=sd_sites,
-            terminators=terminators,
-            max_promoter_distance=max_promoter_distance,
-            max_terminator_distance=max_terminator_distance,
-        )
+        with StepTimer(
+            "rank_coding_orfs_from_features",
+            {"analysis_id": analysis_id, "orf_count": len(coding_orfs)},
+        ):
+            ranked = rank_coding_orfs_from_features(
+                coding_orfs=coding_orfs,
+                promoters=promoters,
+                sd_sites=sd_sites,
+                terminators=terminators,
+                max_promoter_distance=max_promoter_distance,
+                max_terminator_distance=max_terminator_distance,
+            )
 
-        ranked_data = ranked if isinstance(ranked, list) else [_obj_to_dict(x) for x in ranked]
+        with StepTimer("serialize_ranked_orfs", {"analysis_id": analysis_id}):
+            ranked_data = _serialize_list(ranked)
 
-        replace_module_results(
-            analysis_id=analysis_id,
-            module="ranked_coding_orfs",
-            results=ranked_data,
-            kind="final",
-        )
+        with StepTimer(
+            "store_ranked_orfs",
+            {"analysis_id": analysis_id, "count": len(ranked_data)},
+        ):
+            _safe_replace_module_results(
+                analysis_id=analysis_id,
+                module="ranked_coding_orfs",
+                results=ranked_data,
+                kind="final",
+            )
 
         summary = {
             "coding_orf_count": len(coding_orfs_data),
@@ -399,9 +583,9 @@ def assemble_and_rank_from_storage(
             "ranked_coding_orf_count": len(ranked_data),
         }
 
-        update_analysis_summary(analysis_id, summary)
-        update_module_status(analysis_id, module, "done")
-        update_analysis_status(analysis_id, "completed")
+        _safe_update_analysis_summary(analysis_id, summary)
+        _safe_update_module_status(analysis_id, module, "done")
+        _safe_update_analysis_status(analysis_id, "completed")
 
         return {
             "analysis_id": analysis_id,
@@ -410,9 +594,9 @@ def assemble_and_rank_from_storage(
         }
 
     except Exception as exc:
-        update_module_status(analysis_id, module, "failed")
-        update_analysis_status(analysis_id, "failed")
-        append_analysis_error(analysis_id, module, str(exc))
+        _safe_update_module_status(analysis_id, module, "failed")
+        _safe_update_analysis_status(analysis_id, "failed")
+        _safe_append_analysis_error(analysis_id, module, str(exc))
         raise
 
 
@@ -423,7 +607,11 @@ def run_large_sequence_analysis_task(
 ):
     from analysis.large_sequence_service import run_large_sequence_analysis
 
-    return run_large_sequence_analysis(
-        sequence=sequence,
-        min_aa=min_aa,
-    )
+    with StepTimer(
+        "run_large_sequence_analysis_task",
+        {"seq_len": len(sequence), "min_aa": min_aa},
+    ):
+        return run_large_sequence_analysis(
+            sequence=sequence,
+            min_aa=min_aa,
+        )
