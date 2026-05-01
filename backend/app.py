@@ -21,6 +21,7 @@ from tasks.analysis_tasks import (
     run_global_coding_orfs_store,
     run_chunked_features_store,
     assemble_and_rank_from_storage,
+    align_similar_orfs_from_storage,
 )
 from tasks.celery_app import celery_app
 
@@ -112,6 +113,7 @@ def normalize_result_module(module: str) -> str:
         "sd": "shine_dalgarno",
         "terminators": "terminators",
         "ranked_coding_orfs": "ranked_coding_orfs",
+        "aligned_orfs": "aligned_orfs",
     }
     normalized = mapping.get(module)
     if not normalized:
@@ -636,6 +638,49 @@ def get_analysis_results_route(analysis_id):
         return error_response(str(e), 400)
     except Exception as e:
         print("GET ANALYSIS RESULTS ERROR:", e)
+        return error_response(str(e), 500)
+
+
+@app.route("/analyses/<analysis_id>/align-orfs", methods=["POST"])
+def align_orfs_route(analysis_id):
+    try:
+        analysis = get_analysis(analysis_id)
+        if not analysis:
+            return error_response("analysis not found", 404)
+
+        modules = analysis.get("modules", {})
+
+        if modules.get("ranking") != "done":
+            return error_response(
+                "Cannot align ORFs yet. Ranking is not finished.",
+                409,
+            )
+
+        data = get_json_data()
+
+        identity_threshold = float(data.get("identity_threshold", 0.90))
+        max_orfs = int(data.get("max_orfs", 500))
+        kmer_threshold = float(data.get("kmer_threshold", 0.50))
+
+        if identity_threshold <= 0 or identity_threshold > 1:
+            return error_response("identity_threshold must be between 0 and 1")
+
+        task = align_similar_orfs_from_storage.delay(
+            analysis_id=analysis_id,
+            identity_threshold=identity_threshold,
+            max_orfs=max_orfs,
+            kmer_threshold=kmer_threshold,
+        )
+
+        return jsonify({
+            "analysis_id": analysis_id,
+            "status": "queued",
+            "task_id": task.id,
+            "message": "Biological ORF alignment started",
+        }), 202
+
+    except Exception as e:
+        print("ALIGN ORFS ERROR:", e)
         return error_response(str(e), 500)
 
 

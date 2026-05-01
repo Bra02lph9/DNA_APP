@@ -946,6 +946,145 @@ function RankedCodingORFList({ items = [], onSelectFeature }) {
   );
 }
 
+function AlignedORFClusters({ items = [] }) {
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [items]);
+
+  if (!items.length) {
+    return <EmptyState text="No similar ORF clusters detected at ≥ 90% identity." />;
+  }
+
+  const paginatedItems = paginateItems(items, currentPage);
+
+  return (
+    <>
+      <div className="space-y-5">
+        {paginatedItems.map((cluster) => (
+          <div
+            key={cluster.cluster_id}
+            className="rounded-2xl border border-indigo-200 bg-white/90 p-5 shadow-sm"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h4 className="text-lg font-bold text-slate-900">
+                  Cluster #{cluster.cluster_id}
+                </h4>
+                <p className="text-sm text-slate-600">
+                  {cluster.orf_count} similar ORFs detected
+                </p>
+              </div>
+
+              <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-bold text-indigo-700">
+                Best: {cluster.best_orf_uid}
+              </span>
+            </div>
+
+            <div className="mt-4 grid gap-3 text-sm text-slate-700 md:grid-cols-2">
+              <p>
+                <span className="font-medium">Identity threshold:</span>{" "}
+                {cluster.identity_threshold}%
+              </p>
+              <p>
+                <span className="font-medium">Best ORF score:</span>{" "}
+                {cluster.best_orf_score ?? "N/A"}
+              </p>
+              <p>
+                <span className="font-medium">Best position:</span>{" "}
+                {cluster.best_orf_start} → {cluster.best_orf_end}
+              </p>
+              <p>
+                <span className="font-medium">Best strand:</span>{" "}
+                {cluster.best_orf_strand}
+              </p>
+            </div>
+
+            <div className="mt-5">
+              <h5 className="mb-2 font-semibold text-slate-900">
+                ORFs in this cluster
+              </h5>
+
+              <div className="overflow-x-auto rounded-xl border border-slate-200">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-slate-50 text-slate-700">
+                    <tr>
+                      <th className="px-4 py-3 text-left">ORF</th>
+                      <th className="px-4 py-3 text-left">Strand</th>
+                      <th className="px-4 py-3 text-left">Frame</th>
+                      <th className="px-4 py-3 text-left">Start</th>
+                      <th className="px-4 py-3 text-left">End</th>
+                      <th className="px-4 py-3 text-left">Length</th>
+                      <th className="px-4 py-3 text-left">Score</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {(cluster.orfs || []).map((orf, index) => (
+                      <tr key={index} className="border-t border-slate-200">
+                        <td className="px-4 py-3 font-semibold">
+                          {orf.orf_uid}
+                        </td>
+                        <td className="px-4 py-3">{orf.strand}</td>
+                        <td className="px-4 py-3">{orf.frame}</td>
+                        <td className="px-4 py-3">{orf.start}</td>
+                        <td className="px-4 py-3">{orf.end}</td>
+                        <td className="px-4 py-3">{orf.length_nt} nt</td>
+                        <td className="px-4 py-3">{orf.score ?? "N/A"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="mt-5 space-y-3">
+              <h5 className="font-semibold text-slate-900">
+                Protein alignments
+              </h5>
+
+              {(cluster.alignments || []).map((aln, index) => (
+                <div
+                  key={index}
+                  className="rounded-xl border border-slate-800 bg-slate-950 p-4 text-xs text-slate-100"
+                >
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-semibold text-cyan-300">
+                      {aln.orf_1} vs {aln.orf_2}
+                    </p>
+
+                    <span className="rounded-full bg-cyan-500/20 px-3 py-1 font-bold text-cyan-200">
+                      Identity: {aln.identity_percent}%
+                    </span>
+                  </div>
+
+                  <p className="mb-2 text-slate-400">
+                    Score: {aln.alignment_score} | Matches: {aln.matches}/
+                    {aln.alignment_length}
+                  </p>
+
+                  <div className="overflow-x-auto font-mono leading-6">
+                    <pre>{aln.aligned_seq_1}</pre>
+                    <pre>{aln.aligned_seq_2}</pre>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <Pagination
+        currentPage={currentPage}
+        totalItems={items.length}
+        onPageChange={setCurrentPage}
+        maxVisiblePages={7}
+      />
+    </>
+  );
+}
+
 function getItems(results, key) {
   if (Array.isArray(results)) return results;
   if (Array.isArray(results?.[key])) return results[key];
@@ -1153,6 +1292,18 @@ const renderRankedCodingOrfs = () => {
     );
   };
 
+  const renderAlignedOrfs = () => {
+  const items = getItems(results, "aligned_orfs");
+
+  return (
+    <ResultsContainer>
+      <SectionCard title="Aligned Similar ORFs ≥ 90%" count={items.length}>
+        <AlignedORFClusters items={items} />
+      </SectionCard>
+    </ResultsContainer>
+  );
+};
+
   const renderAllResults = () => {
     const summary = {
       orfs: results.orfs?.length ?? 0,
@@ -1228,6 +1379,8 @@ const renderRankedCodingOrfs = () => {
 
     case "shine-dalgarno":
       return renderShineDalgarno();
+    case "aligned_orfs":
+      return renderAlignedOrfs();
 
     default:
       return renderAllResults();

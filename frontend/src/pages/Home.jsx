@@ -8,7 +8,12 @@ import {
   createAnalysisTask,
   getTaskStatus,
   runStoredAnalysis,
+  startOrfAlignment,
+  getAlignedOrfs,
+  getAnalysisSummary,
+  assembleStoredAnalysis,
 } from "../api";
+
 import { formatResultsAsText } from "../utils/formatResults";
 import { downloadPdfFile } from "../utils/downloadResults";
 import bgImage from "../assets/bg2.jpg";
@@ -184,6 +189,8 @@ export default function Home() {
   const [taskStatus, setTaskStatus] = useState(null);
 
   const [storedAnalysisId, setStoredAnalysisId] = useState(null);
+  const [alignLoading, setAlignLoading] = useState(false);
+  const [alignedOrfs, setAlignedOrfs] = useState([]);
 
   const fullSequenceRef = useRef("");
   const latestWindowRequestIdRef = useRef(0);
@@ -215,6 +222,33 @@ export default function Home() {
       await sleep(2000);
     }
   };
+
+  const waitStoredModulesDone = async (analysisId) => {
+  while (true) {
+    const summary = await getAnalysisSummary(analysisId);
+    const modules = summary.modules || {};
+
+    const ready =
+      modules.coding_orfs === "done" &&
+      modules.promoters === "done" &&
+      modules.shine_dalgarno === "done" &&
+      modules.terminators === "done";
+
+    if (ready) return summary;
+
+    if (
+      modules.coding_orfs === "failed" ||
+      modules.promoters === "failed" ||
+      modules.shine_dalgarno === "failed" ||
+      modules.terminators === "failed"
+    ) {
+      throw new Error("Stored analysis failed before ranking.");
+    }
+
+    setTaskStatus("Waiting stored modules...");
+    await sleep(2000);
+  }
+};
 
   const startStoredAnalysisInBackground = async ({
     endpoint,
@@ -362,6 +396,63 @@ export default function Home() {
     }, 80);
   };
 
+
+const handleAlignOrfs = async () => {
+  if (!storedAnalysisId) {
+    alert("No stored analysis found yet.");
+    return;
+  }
+
+  try {
+    setAlignLoading(true);
+    setTaskStatus("Waiting stored modules...");
+
+    const summary = await waitStoredModulesDone(storedAnalysisId);
+
+    if (summary.modules?.ranking !== "done") {
+      setTaskStatus("Assembling ranking...");
+
+      const assembleTask = await assembleStoredAnalysis(storedAnalysisId);
+      setTaskId(assembleTask.task_id);
+      setTaskStatus(assembleTask.status || "QUEUED");
+
+      await pollTaskUntilDone(assembleTask.task_id);
+    }
+
+    setTaskStatus("Starting ORF alignment...");
+
+    const task = await startOrfAlignment(storedAnalysisId, {
+      identity_threshold: 0.9,
+      max_orfs: 500,
+      kmer_threshold: 0.5,
+    });
+
+    setTaskId(task.task_id);
+    setTaskStatus(task.status || "QUEUED");
+
+    await pollTaskUntilDone(task.task_id);
+
+    const alignedData = await getAlignedOrfs(storedAnalysisId, {
+      limit: 100,
+    });
+
+    setAlignedOrfs(alignedData.results || []);
+
+    setResults((prev) => ({
+      ...(prev || {}),
+      aligned_orfs: alignedData.results || [],
+    }));
+
+    setActiveView("aligned_orfs");
+  } catch (error) {
+    console.error(error);
+    alert(error.message || "Error during ORF alignment");
+  } finally {
+    setAlignLoading(false);
+    setTaskStatus(null);
+  }
+};
+
   const downloadResults = () => {
     if (!results) {
       alert("No results to download.");
@@ -385,6 +476,8 @@ export default function Home() {
     setTaskId(null);
     setTaskStatus(null);
     setStoredAnalysisId(null);
+    setAlignLoading(false);
+    setAlignedOrfs([]);
   };
 
   const uploadProps = {
@@ -417,6 +510,12 @@ export default function Home() {
     setSequenceMeta: setSequenceMeta,
   };
 
+const canAlignOrfs =
+  mode === "single" &&
+  !!storedAnalysisId &&
+  !loading &&
+  !alignLoading;
+
   const viewerProps = {
     sequence,
     setSequence: setSingleSequenceState,
@@ -429,13 +528,13 @@ export default function Home() {
     onAnalyzeWindow: handleAnalyzeWindow,
   };
 
-  const resultsProps = {
-    results,
-    loading,
-    mode,
-    activeView,
-    onSelectFeature: handleSelectFeature,
-  };
+const resultsProps = {
+  results,
+  loading: loading || alignLoading,
+  mode,
+  activeView,
+  onSelectFeature: handleSelectFeature,
+};
 
   return (
     <div
@@ -455,6 +554,9 @@ export default function Home() {
                 onRunAnalysis={handleRunAnalysis}
                 onDownload={downloadResults}
                 onClear={clearAll}
+                onAlignOrfs={handleAlignOrfs}
+                canAlignOrfs={canAlignOrfs}
+                alignLoading={alignLoading}
               />
             </div>
           </aside>
@@ -471,7 +573,7 @@ export default function Home() {
               <UploadFile {...uploadProps} />
             </div>
 
-            {loading && taskStatus && (
+            {(loading || alignLoading) && taskStatus && (
               <div className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm">
                 <p className="text-sm text-slate-700">
                   <span className="font-medium">Background task status:</span>{" "}
@@ -520,7 +622,7 @@ export default function Home() {
             <UploadFile {...uploadProps} />
           </div>
 
-          {loading && taskStatus && (
+          {(loading || alignLoading) && taskStatus && (
             <div className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm">
               <p className="text-sm text-slate-700">
                 <span className="font-medium">Background task status:</span>{" "}

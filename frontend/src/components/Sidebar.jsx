@@ -24,6 +24,11 @@ export default function Sidebar({
   onRunAnalysis,
   onDownload,
   onClear,
+
+  // NEW
+  onAlignOrfs,
+  canAlignOrfs = false,
+  alignLoading = false,
 }) {
   return (
     <aside className="hidden w-56 shrink-0 lg:block">
@@ -81,14 +86,16 @@ export default function Sidebar({
               Most Plausible Coding ORFs
             </SidebarButton>
 
-            <div className="my-3 h-px bg-slate-200" />
-
+            {/* NEW BUTTON */}
             <SidebarButton
-              onClick={() => onRunAnalysis("all")}
-              className="bg-cyan-600 hover:bg-cyan-700 cursor-pointer"
+              onClick={onAlignOrfs}
+              disabled={!canAlignOrfs || alignLoading}
+              className="bg-indigo-700 hover:bg-indigo-600 cursor-pointer"
             >
-              Run Full Analysis
+              {alignLoading ? "Aligning ORFs..." : "Align Similar ORFs ≥ 90%"}
             </SidebarButton>
+
+            <div className="my-3 h-px bg-slate-200" />
 
             <SidebarButton
               onClick={onDownload}

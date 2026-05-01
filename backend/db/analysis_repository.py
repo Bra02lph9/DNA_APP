@@ -35,6 +35,7 @@ def create_analysis(
             "shine_dalgarno": "pending",
             "terminators": "pending",
             "ranking": "pending",
+            "aligned_orfs": "pending",
         },
         "summary": {},
         "errors": [],
